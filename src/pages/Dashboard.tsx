@@ -386,8 +386,8 @@ function EngagementProgressPanel({ progress }: {
 
 export default function Dashboard() {
  const navigate = useNavigate();
- const { engagements: allEngagementsRaw } = useEngagements();
- const allEngagements = allEngagementsRaw.filter(e => e.type === 'Audit (AUD)');
+ const { engagements: allEngagements } = useEngagements();
+
  const [searchQuery, setSearchQuery] = useState("");
  const [expandedEngagement, setExpandedEngagement] = useState<string | null>(null);
  function toggleExpand(id: string) { setExpandedEngagement(prev => prev === id ? null : id); }
