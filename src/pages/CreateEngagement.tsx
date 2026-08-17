@@ -973,7 +973,7 @@ export default function CreateEngagement() {
  </Select>
  </InlineRow>
               <InlineRow label="Data source" required>
-                <Select value={dataSource} onValueChange={setDataSource}>
+                <Select value={dataSource} onValueChange={v => setDataSource(v as "csv" | "source")}>
                   <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="csv">CSV</SelectItem>
