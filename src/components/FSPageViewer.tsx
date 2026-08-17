@@ -26,7 +26,7 @@ const FSPageContent = ({ pageType, isEditing, isCompilation }: FSPageViewerProps
  case 'toc':
  return <TableOfContentsPreview />;
  case 'comp-report':
- return <CompilationReportPreview isEditMode={isEditing} />;
+    return <CompilationReportPreview />;
  case 'auditor-report':
  return <AuditorReportPreview />;
  case 'bs':

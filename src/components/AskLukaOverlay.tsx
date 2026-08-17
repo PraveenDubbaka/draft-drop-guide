@@ -224,7 +224,7 @@ const ThreadRow = ({ thread, icon, isPinned, onPinToggle, onDelete }: ThreadRowP
 
 
 /* ── AutoFill constants ── */
-function LukaIcon({ size = 20 }: { size?: number }) {
+function LukaIcon({ size = 20 }: { size?: number; animated?: boolean }) {
  return <Zap className="text-white" size={size} fill="white" strokeWidth={0} />;
 }
 
@@ -671,7 +671,7 @@ export function AskLukaOverlay({
  if (open && pap501Mode) {
  if (pap501IsRegenerate) {
  setPap501Phase("analyzing");
- pap501AnalyzingTimerRef.current = window.setTimeout(() => setPap501Phase("artifact"), 2500);
+ pap501AnalyzingTimerRef.current = setTimeout(() => setPap501Phase("artifact"), 2500);
  } else {
  setPap501Phase("source-select");
  setPap501SourceType(null);
@@ -2111,7 +2111,7 @@ const [workspaceLoading, setWorkspaceLoading] = useState(false);
  setPap501Phase('upload');
  } else {
  setPap501Phase('analyzing');
- pap501AnalyzingTimerRef.current = window.setTimeout(() => setPap501Phase('artifact'), 2500);
+ pap501AnalyzingTimerRef.current = setTimeout(() => setPap501Phase('artifact'), 2500);
  }
  }}
  className="inline-flex items-center gap-1.5 h-8 px-4 rounded-lg text-sm font-semibold text-white transition-opacity disabled:opacity-40"
@@ -2190,7 +2190,7 @@ const [workspaceLoading, setWorkspaceLoading] = useState(false);
  disabled={!pap501Files.year1 || !pap501Files.year2}
  onClick={() => {
  setPap501Phase('analyzing');
- pap501AnalyzingTimerRef.current = window.setTimeout(() => setPap501Phase('artifact'), 3000);
+ pap501AnalyzingTimerRef.current = setTimeout(() => setPap501Phase('artifact'), 3000);
  }}
  className="inline-flex items-center gap-1.5 h-8 px-4 rounded-lg text-sm font-semibold text-white transition-opacity disabled:opacity-40"
  style={{ background: 'linear-gradient(135deg, #8649F1, #2355A4)' }}

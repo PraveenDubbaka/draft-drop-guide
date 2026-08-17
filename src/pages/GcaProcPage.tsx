@@ -109,7 +109,7 @@ export function GcaProcPage() {
           ))}
         </DropdownMenuContent>
       </DropdownMenu>
-      <Badge variant={status === "Completed" ? "completed" : status === "Not Started" ? "notStarted" : "inProgress"} className="ml-2 whitespace-nowrap">
+      <Badge variant={(status as string) === "Completed" ? "completed" : (status as string) === "Not Started" ? "notStarted" : "inProgress"} className="ml-2 whitespace-nowrap">
         {status}
       </Badge>
       {sourceIcon}

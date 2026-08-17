@@ -664,7 +664,7 @@ export default function CreateNewEngagement() {
             )}
 
             {/* SECTION 3: AUDIT CONFIGURATION — gated on isAudit + showDetails + type selected */}
-            {isAudit && showDetails && engagementType !== "" && (
+            {isAudit && showDetails && Boolean(engagementType) && (
               <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
                 <div className="px-5 py-4 border-b border-border bg-muted/30">
                   <div className="flex items-center gap-2">

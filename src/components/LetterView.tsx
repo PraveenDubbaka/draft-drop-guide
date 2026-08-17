@@ -42,7 +42,7 @@ export function LetterView({ checklist, onUpdate, variant = "letter", isEditing:
 
  const rawLetterHtml = checklist.sections?.[0]?.questions?.[0]?.text ?? "";
  const letterHtml = clientName
-   ? rawLetterHtml.replaceAll('Shipping Line Inc.', clientName)
+   ? rawLetterHtml.split('Shipping Line Inc.').join(clientName)
    : rawLetterHtml;
 
  // When entering edit mode, seed the editor with the current HTML.
