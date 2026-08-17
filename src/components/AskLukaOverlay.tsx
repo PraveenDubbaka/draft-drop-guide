@@ -224,7 +224,7 @@ const ThreadRow = ({ thread, icon, isPinned, onPinToggle, onDelete }: ThreadRowP
 
 
 /* ── AutoFill constants ── */
-function LukaIcon({ size = 20 }: { size?: number }) {
+function LukaIcon({ size = 20 }: { size?: number; animated?: boolean }) {
  return <Zap className="text-white" size={size} fill="white" strokeWidth={0} />;
 }
 
