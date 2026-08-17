@@ -297,7 +297,7 @@ export function AuditPAP501Worksheet({ isUS = false }: { isUS?: boolean }) {
  const saved = readJsonFromLocalStorage<PAP501Data | null>(storageKey, null);
  if (!saved && isDemoEngagement) {
   const def = buildDefault();
-  return { ...def, ...NPM_PAP501_SEED, fin: { ...def.fin, ...NPM_PAP501_SEED.fin } } as PAP501Data;
+  return { ...def, ...NPM_PAP501_SEED, fin: { ...def.fin, ...NPM_PAP501_SEED.fin }, streamLabels: [...NPM_PAP501_SEED.streamLabels] };
  }
  if (!saved) return buildDefault();
  const def = buildDefault();
