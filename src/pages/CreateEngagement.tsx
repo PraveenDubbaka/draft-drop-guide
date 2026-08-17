@@ -972,20 +972,15 @@ export default function CreateEngagement() {
  </SelectContent>
  </Select>
  </InlineRow>
- <InlineRow label="Data source" required>
- <div className="inline-flex rounded-[10px] border border-[#C3CBD6] dark:border-[hsl(220_15%_30%)] overflow-hidden text-sm font-medium select-none">
- {(["csv", "source"] as const).map(opt => (
- <button
- key={opt}
- type="button"
- onClick={() => setDataSource(opt)}
- className={`h-9 px-4 transition-colors ${dataSource === opt ? "bg-primary text-primary-foreground" : "bg-white dark:bg-card text-foreground"}`}
- >
- {opt === "csv" ? "CSV" : "Source"}
- </button>
- ))}
- </div>
- </InlineRow>
+              <InlineRow label="Data source" required>
+                <Select value={dataSource} onValueChange={v => setDataSource(v as "csv" | "source")}>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="csv">CSV</SelectItem>
+                    <SelectItem value="source">Source</SelectItem>
+                  </SelectContent>
+                </Select>
+              </InlineRow>
  {dataSource === "source" && !sourceConnected && (
  <div className="flex items-center gap-4 pb-2.5">
  <span className="w-44 shrink-0" />
