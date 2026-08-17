@@ -634,6 +634,8 @@ export default function CreateEngagement() {
  const [templateId, setTemplateId] = useState(prefillIsAudit ? "audit5100" : "");
  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
  const [budget, setBudget] = useState("10000.00");
+ const [dataSource, setDataSource] = useState<"csv" | "source">("csv");
+ const [sourceConnected, setSourceConnected] = useState(false);
  const [accountingStandards, setAccountingStandards] = useState(prefillIsAudit ? "ASPE — Canadian Accounting Standards for Private Enterprises" : "Section 2400 Review standards");
  const [additionalDisclosures, setAdditionalDisclosures] = useState(prefillIsAudit ? "Full financial statements" : "Statement of cash flows");
 
@@ -830,6 +832,7 @@ export default function CreateEngagement() {
  engagementTemplate.trim() !== "" &&
  engagementType !== "" &&
  budget.trim() !== "" &&
+ (dataSource === "csv" || sourceConnected) &&
  accountingStandards !== "" &&
  additionalDisclosures !== "" &&
  currentYearStart.trim() !== "" &&
@@ -969,6 +972,45 @@ export default function CreateEngagement() {
  </SelectContent>
  </Select>
  </InlineRow>
+ <InlineRow label="Data source" required>
+ <div className="inline-flex rounded-[10px] border border-[#C3CBD6] dark:border-[hsl(220_15%_30%)] overflow-hidden text-sm font-medium select-none">
+ {(["csv", "source"] as const).map(opt => (
+ <button
+ key={opt}
+ type="button"
+ onClick={() => setDataSource(opt)}
+ className={`h-9 px-4 transition-colors ${dataSource === opt ? "bg-primary text-primary-foreground" : "bg-white dark:bg-card text-foreground"}`}
+ >
+ {opt === "csv" ? "CSV" : "Source"}
+ </button>
+ ))}
+ </div>
+ </InlineRow>
+ {dataSource === "source" && !sourceConnected && (
+ <div className="flex items-center gap-4 pb-2.5">
+ <span className="w-44 shrink-0" />
+ <div className="flex-1 min-w-0 max-w-sm flex items-center justify-between gap-3 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+ <span className="text-sm text-amber-900 dark:text-amber-200">No source connection found for this client</span>
+ <Button size="sm" variant="outline" className="shrink-0" onClick={() => setSourceConnected(true)}>
+ Connect source
+ </Button>
+ </div>
+ </div>
+ )}
+ {dataSource === "source" && sourceConnected && (
+ <>
+ <div className="flex items-center gap-4 pb-2.5">
+ <span className="w-44 shrink-0" />
+ <div className="flex-1 min-w-0 max-w-sm flex items-center gap-2 rounded-[10px] border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 px-3 py-2">
+ <Check className="h-4 w-4 text-emerald-600 shrink-0" />
+ <span className="text-sm text-emerald-800 dark:text-emerald-200">Connected: Xero · Vizhenbooks Inc.</span>
+ </div>
+ </div>
+ <InlineRow label="Entity name">
+ <input type="text" value="Vizhenbooks Inc." readOnly className={ic + " bg-muted/40 cursor-default"} />
+ </InlineRow>
+ </>
+ )}
  <InlineRow label="Budget ($)" required>
  <input type="text" value={budget} onChange={e => setBudget(e.target.value)} className={ic} />
  </InlineRow>
