@@ -634,6 +634,8 @@ export default function CreateEngagement() {
  const [templateId, setTemplateId] = useState(prefillIsAudit ? "audit5100" : "");
  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
  const [budget, setBudget] = useState("10000.00");
+ const [dataSource, setDataSource] = useState<"csv" | "source">("csv");
+ const [sourceConnected, setSourceConnected] = useState(false);
  const [accountingStandards, setAccountingStandards] = useState(prefillIsAudit ? "ASPE — Canadian Accounting Standards for Private Enterprises" : "Section 2400 Review standards");
  const [additionalDisclosures, setAdditionalDisclosures] = useState(prefillIsAudit ? "Full financial statements" : "Statement of cash flows");
 
