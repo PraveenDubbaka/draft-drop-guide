@@ -339,7 +339,7 @@ export function Audit335Worksheet() {
           </td>
           {(["assets","liabilities","pretaxIncome","equity"] as const).map(col => (
            <td key={col} className={TD + " w-24"}>
-            <Input disabled={locked} value={(row as Record<string, string>)[col]}
+            <Input disabled={locked} value={(row as unknown as Record<string, string>)[col]}
              onChange={e => updRow(row.id, { [col]: e.target.value })}
              placeholder="0.00" className="h-8 text-sm text-right" />
            </td>
