@@ -832,7 +832,45 @@ export default function CreateEngagement() {
  ]
  : [
  { value: "Full year", label: "Full year" },
+ { value: "Stub period", label: "Stub period" },
  ];
+
+ const isFullYearPeriod = periodType === "Full Year" || periodType === "Full year";
+ const isStubPeriod = periodType === "Stub Period" || periodType === "Stub period";
+
+ const applyFullYearPriors = (cyStart: string, cyEnd: string) => {
+ setPriorYear1Start(shiftYearStr(cyStart, -1));
+ setPriorYear1End(shiftYearStr(cyEnd, -1));
+ setPriorYear2Start(shiftYearStr(cyStart, -2));
+ setPriorYear2End(shiftYearStr(cyEnd, -2));
+ };
+
+ const handlePeriodTypeChange = (val: string) => {
+ setPeriodType(val);
+ if (val === "Full Year" || val === "Full year") {
+ const autoEnd = addDaysStr(shiftYearStr(currentYearStart, 1), -1);
+ setCurrentYearEnd(autoEnd);
+ applyFullYearPriors(currentYearStart, autoEnd);
+ }
+ };
+
+ const handleCurrentYearStartChange = (val: string) => {
+ setCurrentYearStart(val);
+ if (isFullYearPeriod) {
+ const autoEnd = addDaysStr(shiftYearStr(val, 1), -1);
+ setCurrentYearEnd(autoEnd);
+ applyFullYearPriors(val, autoEnd);
+ }
+ };
+
+ const handleCurrentYearEndChange = (val: string) => {
+ setCurrentYearEnd(val);
+ if (isFullYearPeriod) {
+ const autoStart = addDaysStr(shiftYearStr(val, -1), 1);
+ setCurrentYearStart(autoStart);
+ applyFullYearPriors(autoStart, val);
+ }
+ };
 
  const engagementDetailsValid =
  engagementId.trim() !== "" &&
