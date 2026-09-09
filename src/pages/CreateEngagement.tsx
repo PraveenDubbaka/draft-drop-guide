@@ -602,15 +602,24 @@ const CLIENT_DATA: Record<string, {
  businessPhone: "-",
  cellPhone: "-",
  },
- "Maple Hill Farms": {
- entityLegalName: "Maple Hill Farms",
- entityType: "Corporation",
- contactPerson: "Margaret Hill",
- engagementPartner: "Ayesha Naaz",
- integrations: [],
- businessPhone: "(519) 555-0488",
- cellPhone: "(519) 555-0489",
- },
+  "Maple Hill Farms": {
+    entityLegalName: "Maple Hill Farms",
+    entityType: "Corporation",
+    contactPerson: "Margaret Hill",
+    engagementPartner: "Ayesha Naaz",
+    integrations: [],
+    businessPhone: "(519) 555-0488",
+    cellPhone: "(519) 555-0489",
+  },
+  "Northline Precision": {
+    entityLegalName: "Northline Precision Manufacturing Inc.",
+    entityType: "Corporation",
+    contactPerson: "Sarah Mitchell",
+    engagementPartner: "Atin Gupta",
+    integrations: [],
+    businessPhone: "+1 (778) 555-0341",
+    cellPhone: "",
+  },
 };
 
 function shiftYearStr(mmddyyyy: string, delta: number): string {
