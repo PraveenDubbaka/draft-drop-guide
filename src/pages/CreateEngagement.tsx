@@ -1304,14 +1304,25 @@ export default function CreateEngagement() {
   <span className="text-sm text-emerald-800 dark:text-emerald-200">Connected: Xero · Vizhenbooks Inc.</span>
   </div>
   </div>
-  <div className="flex items-center gap-4 py-2.5">
-  <span className="text-sm text-foreground w-32 shrink-0 whitespace-nowrap">Entity name</span>
-  <div className="flex-1 min-w-0 max-w-sm">
-  <input type="text" value="Vizhenbooks Inc." readOnly className={ic + " bg-muted/40 cursor-default"} />
-  </div>
-  </div>
-  </>
-  )}
+ <div className="flex items-center gap-4 py-2.5">
+ <span className="text-sm text-foreground w-32 shrink-0 whitespace-nowrap">Entity name</span>
+ <div className="flex-1 min-w-0 max-w-sm">
+ <input type="text" value="Vizhenbooks Inc." readOnly className={ic + " bg-muted/40 cursor-default"} />
+ </div>
+ </div>
+ </>
+ )}
+ {isCsvToSourceSwitch && (
+ <div className="flex items-start gap-4 pb-2.5">
+ <span className="w-32 shrink-0" />
+ <div className="flex-1 min-w-0 max-w-sm flex items-start gap-2 rounded-[10px] border border-blue-300 bg-blue-50 dark:bg-blue-950/30 px-3 py-2">
+ <Info className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+ <span className="text-sm text-blue-800 dark:text-blue-200">
+ Switching to Source will replace your existing CSV trial balance data. You will be asked how to handle existing data when you click Update Engagement.
+ </span>
+ </div>
+ </div>
+ )}
   </SectionCard>
   )}
  </div>
