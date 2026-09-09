@@ -1206,15 +1206,11 @@ export default function CreateEngagement() {
    <span className="w-32 shrink-0" />
    <div className="flex-1 min-w-0 max-w-sm flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
    <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
-   <div className="flex flex-col gap-2">
-   <span className="text-sm text-red-800 dark:text-red-200">
-   No source connection found for this client. Connect your accounting software to continue.
-   </span>
- <div className="flex items-center gap-4 text-sm">
- <button type="button" onClick={() => navigate("/clients")} className="text-link hover:underline font-medium whitespace-nowrap">Connect from client page →</button>
- <button type="button" onClick={() => navigate("/clients")} className="text-link hover:underline font-medium whitespace-nowrap">Connect here →</button>
- </div>
-   </div>
+    <div className="flex flex-col gap-2">
+    <span className="text-sm text-red-800 dark:text-red-200">
+    No source connection found for this client. Connect your accounting software to continue.
+    </span>
+    </div>
    </div>
    </div>
    )}
