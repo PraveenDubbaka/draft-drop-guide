@@ -1012,6 +1012,16 @@ export default function CreateEngagement() {
  navigate("/engagements");
  };
 
+ const [showDataHandlingModal, setShowDataHandlingModal] = useState(false);
+
+ const handleCreate = () => {
+ if (isCsvToSourceSwitch) {
+ setShowDataHandlingModal(true);
+ return;
+ }
+ performSave();
+ };
+
  return (
  <Layout title={isEditMode ? "Edit Engagement" : "Create Engagement"} hideSidebar={isEditMode}>
  <div className="flex-1 overflow-y-auto bg-background">
