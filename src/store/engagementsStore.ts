@@ -115,6 +115,15 @@ export type EngagementMeta = {
  firstTimeAdoption?: boolean; // first-time adoption of accounting standard
  dataSource?: "csv" | "source";
  sourceProvider?: "xero" | "quickbooks"; // which accounting source the engagement is linked to
+ teamMembers?: {
+   id: string;
+   role: string;
+   name: string;
+   email: string;
+   title: string;
+   hourlyRate: string;
+   timeAllocation: string;
+ }[];
 };
 
 export function getEngagementMeta(id: string): EngagementMeta {
