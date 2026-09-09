@@ -7,7 +7,7 @@ import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
 import xeroLogo from "@/assets/xero-logo.png";
 import { clientsData as appClientsData } from "@/data/clientsData";
 import { getClientSourceIntegration, sourceLabel } from "@/lib/clientSource";
-import { ArrowLeft, Briefcase, Calendar, Users, ChevronDown, Plus, Pencil, Trash2, Search, ExternalLink, X, Building2, FileText, Settings2, Check, UserPlus, Link2, AlertTriangle, XCircle, Info } from "lucide-react";
+import { ArrowLeft, Briefcase, Calendar, Users, ChevronDown, Plus, Pencil, Trash2, Search, ExternalLink, X, Building2, FileText, Settings2, Check, UserPlus, Link2, AlertTriangle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -1345,9 +1345,9 @@ export default function CreateEngagement() {
  {isCsvToSourceSwitch && (
  <div className="flex items-start gap-4 pb-2.5">
  <span className="w-32 shrink-0" />
- <div className="flex-1 min-w-0 max-w-sm flex items-start gap-2 rounded-[10px] border border-blue-300 bg-blue-50 dark:bg-blue-950/30 px-3 py-2">
- <Info className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
- <span className="text-sm text-blue-800 dark:text-blue-200">
+ <div className="flex-1 min-w-0 max-w-sm flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+ <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+ <span className="text-sm text-amber-800 dark:text-amber-200">
  Switching to Source will replace your existing CSV trial balance data. You will be asked how to handle existing data when you click Update Engagement.
  </span>
  </div>
