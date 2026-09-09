@@ -682,10 +682,12 @@ export default function CreateEngagement() {
           || c.legalEntityName.toLowerCase().includes(n) || n.includes(c.entityName.toLowerCase());
       })
     : undefined;
-  const clientInfo = CLIENT_DATA[clientName]
+  const localClientInfo = CLIENT_DATA[clientName]
      ?? Object.entries(CLIENT_DATA).find(([key, c]) =>
           key === clientName || c.entityLegalName === clientName || key.includes(clientName) || clientName.includes(key)
         )?.[1]
+     ?? null;
+  const clientInfo = localClientInfo
      ?? (appClient ? {
           entityLegalName: appClient.legalEntityName,
           entityType: appClient.entityType,
@@ -710,16 +712,17 @@ export default function CreateEngagement() {
     // Sync data source default when client selection changes based on source connection status
     useEffect(() => {
       {
-        const integ = getClientSourceIntegration(clientName)
-          ?? (clientInfo?.integrations.includes("xero") ? "xero"
-            : clientInfo?.integrations.includes("quickbooks") ? "quickbooks"
-            : null);
+        const integ = localClientInfo
+          ? (localClientInfo.integrations.includes("xero") ? "xero"
+            : localClientInfo.integrations.includes("quickbooks") ? "quickbooks"
+            : null)
+          : getClientSourceIntegration(clientName);
         setSourceConnected(integ !== null);
         // In edit mode keep the saved data source until the user picks a different client
         if (isEditMode && clientName === initialClientRef.current) return;
         setDataSource("csv");
       }
-    }, [clientName, clientInfo]);
+    }, [clientName, clientInfo, localClientInfo]);
 
  const [accountingStandards, setAccountingStandards] = useState(editingMeta?.accountingStandards ?? (prefillIsAudit ? "ASPE — Canadian Accounting Standards for Private Enterprises" : "Section 2400 Review standards"));
  const [additionalDisclosures, setAdditionalDisclosures] = useState(prefillIsAudit ? "Full financial statements" : "Statement of cash flows");
@@ -908,10 +911,11 @@ export default function CreateEngagement() {
 
  const isFullYearPeriod = periodType === "Full Year" || periodType === "Full year";
  const isStubPeriod = periodType === "Stub Period" || periodType === "Stub period";
- const clientSourceIntegration = getClientSourceIntegration(clientName)
-   ?? (clientInfo?.integrations.includes("xero") ? "xero" as const
-     : clientInfo?.integrations.includes("quickbooks") ? "quickbooks" as const
-     : null);
+ const clientSourceIntegration = localClientInfo
+   ? (localClientInfo.integrations.includes("xero") ? "xero" as const
+     : localClientInfo.integrations.includes("quickbooks") ? "quickbooks" as const
+     : null)
+   : getClientSourceIntegration(clientName);
  const clientHasSourceConnection = clientSourceIntegration !== null;
 
  const applyFullYearPriors = (cyStart: string, cyEnd: string) => {
