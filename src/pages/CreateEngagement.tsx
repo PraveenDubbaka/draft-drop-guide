@@ -1332,12 +1332,6 @@ export default function CreateEngagement() {
    <span className="text-sm text-red-800 dark:text-red-200">
    No source connection found for this client. Connect your accounting software {isEditMode ? "before updating." : "to continue."}
    </span>
-   {isEditMode && (
-   <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-   <button type="button" onClick={() => navigate("/clients")} className="text-sm text-[#1C63A6] hover:underline">Connect from client page →</button>
-   <button type="button" onClick={() => setSourceConnected(true)} className="text-sm text-[#1C63A6] hover:underline">Connect here →</button>
-   </div>
-   )}
    </div>
   </div>
   </div>
