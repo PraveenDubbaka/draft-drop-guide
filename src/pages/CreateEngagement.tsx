@@ -4,6 +4,9 @@ import { useEngagements } from "@/store/EngagementsContext";
 import { EngagementRecord, setEngagementMeta, getEngagementMeta, loadEngagements } from "@/store/engagementsStore";
 import { toast } from "sonner";
 import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
+import xeroLogo from "@/assets/xero-logo.png";
+import { clientsData as appClientsData } from "@/data/clientsData";
+import { getClientSourceIntegration, sourceLabel } from "@/lib/clientSource";
 import { ArrowLeft, Briefcase, Calendar, Users, ChevronDown, Plus, Pencil, Trash2, Search, ExternalLink, X, Building2, FileText, Settings2, Check, UserPlus, Link2, AlertTriangle, XCircle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -672,11 +675,26 @@ export default function CreateEngagement() {
 
   // Engagement Details state
   const [clientName, setClientName] = useState(findClientKey(prefill.clientName || ""));
+  const appClient = clientName
+    ? appClientsData.find(c => {
+        const n = clientName.trim().toLowerCase();
+        return c.legalEntityName.toLowerCase() === n || c.entityName.toLowerCase() === n
+          || c.legalEntityName.toLowerCase().includes(n) || n.includes(c.entityName.toLowerCase());
+      })
+    : undefined;
   const clientInfo = CLIENT_DATA[clientName]
      ?? Object.entries(CLIENT_DATA).find(([key, c]) =>
           key === clientName || c.entityLegalName === clientName || key.includes(clientName) || clientName.includes(key)
         )?.[1]
-     ?? null;
+     ?? (appClient ? {
+          entityLegalName: appClient.legalEntityName,
+          entityType: appClient.entityType,
+          contactPerson: appClient.contactPerson,
+          engagementPartner: appClient.engagementPartner,
+          integrations: appClient.integration === "xero" || appClient.integration === "quickbooks" ? [appClient.integration] : [],
+          businessPhone: appClient.businessPhone || "",
+          cellPhone: appClient.cellPhone || "",
+        } : null);
  const [engagementType, setEngagementType] = useState(prefill.engagementType || "Review (REV)");
  const prefillIsAudit = (prefill.engagementType || "Review (REV)") === "Audit (AUD)";
  const [engagementId, setEngagementId] = useState(editingRecord?.id ?? (prefillIsAudit ? "AUD-HFL-Mar312024" : "REV-DEF-Nov302023"));
@@ -691,14 +709,17 @@ export default function CreateEngagement() {
 
     // Sync data source default when client selection changes based on source connection status
     useEffect(() => {
-      if (clientInfo) {
-        const hasSource = clientInfo.integrations.includes("quickbooks");
-        setSourceConnected(hasSource);
+      {
+        const integ = getClientSourceIntegration(clientName)
+          ?? (clientInfo?.integrations.includes("xero") ? "xero"
+            : clientInfo?.integrations.includes("quickbooks") ? "quickbooks"
+            : null);
+        setSourceConnected(integ !== null);
         // In edit mode keep the saved data source until the user picks a different client
         if (isEditMode && clientName === initialClientRef.current) return;
         setDataSource("csv");
       }
-    }, [clientInfo]);
+    }, [clientName, clientInfo]);
 
  const [accountingStandards, setAccountingStandards] = useState(editingMeta?.accountingStandards ?? (prefillIsAudit ? "ASPE — Canadian Accounting Standards for Private Enterprises" : "Section 2400 Review standards"));
  const [additionalDisclosures, setAdditionalDisclosures] = useState(prefillIsAudit ? "Full financial statements" : "Statement of cash flows");
@@ -887,7 +908,11 @@ export default function CreateEngagement() {
 
  const isFullYearPeriod = periodType === "Full Year" || periodType === "Full year";
  const isStubPeriod = periodType === "Stub Period" || periodType === "Stub period";
- const clientHasSourceConnection = clientInfo?.integrations.includes("quickbooks") ?? false;
+ const clientSourceIntegration = getClientSourceIntegration(clientName)
+   ?? (clientInfo?.integrations.includes("xero") ? "xero" as const
+     : clientInfo?.integrations.includes("quickbooks") ? "quickbooks" as const
+     : null);
+ const clientHasSourceConnection = clientSourceIntegration !== null;
 
  const applyFullYearPriors = (cyStart: string, cyEnd: string) => {
  setPriorYear1Start(shiftYearStr(cyStart, -1));
@@ -1058,8 +1083,8 @@ export default function CreateEngagement() {
  <span className="text-xs font-semibold text-primary">{col.label}</span>
               {Array.isArray(col.value) ? (
                 <div className="flex items-center gap-1.5">
-                  {col.value.includes("quickbooks") ? (
-                    <img src={intuitQuickbooksLogo} alt="QuickBooks" className="h-5 object-contain" />
+                  {clientSourceIntegration ? (
+                    <img src={clientSourceIntegration === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={sourceLabel(clientSourceIntegration)} className="h-5 object-contain" />
                   ) : (
                     <span className="text-sm text-foreground">—</span>
                   )}
@@ -1083,7 +1108,7 @@ export default function CreateEngagement() {
  <Select value={clientName} onValueChange={setClientName}>
  <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select client..." /></SelectTrigger>
  <SelectContent>
- {Object.keys(CLIENT_DATA).map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}
+ {Array.from(new Set([...Object.keys(CLIENT_DATA), ...appClientsData.map(c => c.entityName), ...(clientName ? [clientName] : [])])).map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}
  </SelectContent>
  </Select>
  </InlineRow>
@@ -1240,7 +1265,7 @@ export default function CreateEngagement() {
   <div className="flex-1 min-w-0 max-w-sm">
   {clientHasSourceConnection ? (
   <div className="inline-flex items-center rounded-[10px] border border-border bg-card px-3 py-1.5">
-  <img src={intuitQuickbooksLogo} alt="QuickBooks" className="h-5 object-contain" />
+  <img src={clientSourceIntegration === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={sourceLabel(clientSourceIntegration)} className="h-5 object-contain" />
   </div>
   ) : (
   <div className="inline-flex items-center gap-2 rounded-[10px] border border-border bg-card px-3 py-1.5">
@@ -1281,7 +1306,7 @@ export default function CreateEngagement() {
    <div className="flex-1 min-w-0 max-w-sm flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
    <span className="text-sm text-amber-800 dark:text-amber-200">
-   Your client is connected to QuickBooks Online. This engagement will use manually imported CSV data. The source connection will remain active but won't be used for this engagement.
+   Your client is connected to {sourceLabel(clientSourceIntegration)}. This engagement will use manually imported CSV data. The source connection will remain active but won't be used for this engagement.
    </span>
    </div>
    </div>
