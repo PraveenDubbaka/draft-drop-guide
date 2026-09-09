@@ -744,7 +744,8 @@ export default function CreateEngagement() {
  // Sync engagement details when type changes (skip initial render)
  const isFirstMount = useRef(true);
  useEffect(() => {
- if (isFirstMount.current) { isFirstMount.current = false; return; }
+  if (isFirstMount.current) { isFirstMount.current = false; return; }
+  if (isEditMode) return; // never overwrite saved values when editing
  if (isAudit) {
  setEngagementId("AUD-HFL-Mar312024");
  if (!templateId) {
