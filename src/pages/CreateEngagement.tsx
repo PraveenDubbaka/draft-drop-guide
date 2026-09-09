@@ -649,7 +649,7 @@ export default function CreateEngagement() {
 
  // Engagement Details state
  const [clientName, setClientName] = useState(prefill.clientName || "");
- const clientInfo = CLIENT_DATA[clientName] ?? null;
+ const clientInfo = CLIENT_DATA[clientName] ?? Object.values(CLIENT_DATA).find(c => c.entityLegalName === clientName) ?? null;
  const [engagementType, setEngagementType] = useState(prefill.engagementType || "Review (REV)");
  const prefillIsAudit = (prefill.engagementType || "Review (REV)") === "Audit (AUD)";
  const [engagementId, setEngagementId] = useState(prefillIsAudit ? "AUD-HFL-Mar312024" : "REV-DEF-Nov302023");
