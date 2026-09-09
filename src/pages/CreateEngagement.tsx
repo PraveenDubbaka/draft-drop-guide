@@ -4,7 +4,7 @@ import { useEngagements } from "@/store/EngagementsContext";
 import { EngagementRecord, setEngagementMeta, getEngagementMeta, loadEngagements } from "@/store/engagementsStore";
 import { toast } from "sonner";
 import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
-import { ArrowLeft, Briefcase, Calendar, Users, ChevronDown, Plus, Pencil, Trash2, Search, ExternalLink, X, Building2, FileText, Settings2, Check, UserPlus, Link2, AlertTriangle, XCircle } from "lucide-react";
+import { ArrowLeft, Briefcase, Calendar, Users, ChevronDown, Plus, Pencil, Trash2, Search, ExternalLink, X, Building2, FileText, Settings2, Check, UserPlus, Link2, AlertTriangle, XCircle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -684,17 +684,21 @@ export default function CreateEngagement() {
  const [templateId, setTemplateId] = useState(editingMeta?.templateId ?? (prefillIsAudit ? "audit5100" : ""));
  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
  const [budget, setBudget] = useState(editingMeta?.budget ?? "10000.00");
- const [dataSource, setDataSource] = useState<"csv" | "source">("csv");
+ const [dataSource, setDataSource] = useState<"csv" | "source">(editingMeta?.dataSource ?? "csv");
  const [sourceConnected, setSourceConnected] = useState(false);
+ const originalDataSource = editingMeta?.dataSource ?? "csv";
+ const initialClientRef = useRef(clientName);
 
-   // Sync data source default when client selection changes based on source connection status
-   useEffect(() => {
-     if (clientInfo) {
-       const hasSource = clientInfo.integrations.includes("quickbooks");
-       setDataSource("csv");
-       setSourceConnected(hasSource);
-     }
-   }, [clientInfo]);
+    // Sync data source default when client selection changes based on source connection status
+    useEffect(() => {
+      if (clientInfo) {
+        const hasSource = clientInfo.integrations.includes("quickbooks");
+        setSourceConnected(hasSource);
+        // In edit mode keep the saved data source until the user picks a different client
+        if (isEditMode && clientName === initialClientRef.current) return;
+        setDataSource("csv");
+      }
+    }, [clientInfo]);
 
  const [accountingStandards, setAccountingStandards] = useState(editingMeta?.accountingStandards ?? (prefillIsAudit ? "ASPE — Canadian Accounting Standards for Private Enterprises" : "Section 2400 Review standards"));
  const [additionalDisclosures, setAdditionalDisclosures] = useState(prefillIsAudit ? "Full financial statements" : "Statement of cash flows");
@@ -938,7 +942,10 @@ export default function CreateEngagement() {
  currentYearEnd.trim() !== "" &&
  (isEditMode || teamMembers.length > 0);
 
- const handleCreate = () => {
+ // Edit-mode scenario: engagement was CSV, client has a source connection, user switched to Source
+ const isCsvToSourceSwitch = isEditMode && clientHasSourceConnection && originalDataSource === "csv" && dataSource === "source" && sourceConnected;
+
+ const performSave = () => {
  const record: EngagementRecord = {
  id: engagementId,
  client: clientName,
@@ -967,6 +974,7 @@ export default function CreateEngagement() {
  budget,
  periodStart: currentYearStart,
  periodEnd: currentYearEnd,
+ dataSource,
  auditPeriodType: isAudit ? periodType : undefined,
  annualizeInterim: isAudit && periodType === "Interim (6-month)" ? annualizeInterim : undefined,
  firstTimeAdoption: isAudit ? firstTimeAdoption : undefined,
@@ -1002,6 +1010,16 @@ export default function CreateEngagement() {
  toast.success("Engagement created successfully.");
  }
  navigate("/engagements");
+ };
+
+ const [showDataHandlingModal, setShowDataHandlingModal] = useState(false);
+
+ const handleCreate = () => {
+ if (isCsvToSourceSwitch) {
+ setShowDataHandlingModal(true);
+ return;
+ }
+ performSave();
  };
 
  return (
@@ -1286,14 +1304,25 @@ export default function CreateEngagement() {
   <span className="text-sm text-emerald-800 dark:text-emerald-200">Connected: Xero · Vizhenbooks Inc.</span>
   </div>
   </div>
-  <div className="flex items-center gap-4 py-2.5">
-  <span className="text-sm text-foreground w-32 shrink-0 whitespace-nowrap">Entity name</span>
-  <div className="flex-1 min-w-0 max-w-sm">
-  <input type="text" value="Vizhenbooks Inc." readOnly className={ic + " bg-muted/40 cursor-default"} />
-  </div>
-  </div>
-  </>
-  )}
+ <div className="flex items-center gap-4 py-2.5">
+ <span className="text-sm text-foreground w-32 shrink-0 whitespace-nowrap">Entity name</span>
+ <div className="flex-1 min-w-0 max-w-sm">
+ <input type="text" value="Vizhenbooks Inc." readOnly className={ic + " bg-muted/40 cursor-default"} />
+ </div>
+ </div>
+ </>
+ )}
+ {isCsvToSourceSwitch && (
+ <div className="flex items-start gap-4 pb-2.5">
+ <span className="w-32 shrink-0" />
+ <div className="flex-1 min-w-0 max-w-sm flex items-start gap-2 rounded-[10px] border border-blue-300 bg-blue-50 dark:bg-blue-950/30 px-3 py-2">
+ <Info className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+ <span className="text-sm text-blue-800 dark:text-blue-200">
+ Switching to Source will replace your existing CSV trial balance data. You will be asked how to handle existing data when you click Update Engagement.
+ </span>
+ </div>
+ </div>
+ )}
   </SectionCard>
   )}
  </div>
@@ -1422,6 +1451,32 @@ export default function CreateEngagement() {
  </div>
  </div>
  </div>
+ <Dialog open={showDataHandlingModal} onOpenChange={setShowDataHandlingModal}>
+ <DialogContent className="max-w-md">
+ <div className="flex flex-col items-center text-center gap-3 pt-2">
+ <div className="h-14 w-14 rounded-full bg-red-50 dark:bg-red-950/40 flex items-center justify-center">
+ <AlertTriangle className="h-7 w-7 text-red-500" />
+ </div>
+ <DialogHeader className="space-y-1">
+ <DialogTitle className="text-center text-lg">Engagement Update Warning</DialogTitle>
+ </DialogHeader>
+ <p className="text-sm text-foreground">Changing the source may impact your existing data.</p>
+ <p className="text-sm text-foreground">Proceeding will permanently delete all existing data, including:</p>
+ <div className="w-full rounded-[10px] border px-4 py-3 text-left">
+ <ul className="list-disc pl-5 space-y-1 text-sm text-foreground">
+ <li>Trial balance</li>
+ <li>Adjusting entries</li>
+ <li>Mapping and related work</li>
+ </ul>
+ </div>
+ <p className="text-sm text-red-600"><span className="font-semibold">Note:</span> This action cannot be undone.</p>
+ </div>
+ <DialogFooter className="sm:justify-stretch gap-3 pt-2">
+ <Button variant="outline" className="flex-1" onClick={() => setShowDataHandlingModal(false)}>Cancel</Button>
+ <Button className="flex-1 bg-red-600 hover:bg-red-700 text-white" onClick={() => { setShowDataHandlingModal(false); performSave(); }}>Proceed</Button>
+ </DialogFooter>
+ </DialogContent>
+ </Dialog>
  <Dialog open={showAddRoleModal} onOpenChange={setShowAddRoleModal}>
  <DialogContent className="max-w-sm">
  <DialogHeader>
