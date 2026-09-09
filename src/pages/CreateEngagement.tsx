@@ -654,15 +654,23 @@ export default function CreateEngagement() {
  const navigate = useNavigate();
  const location = useLocation();
  const { addEngagement } = useEngagements();
- const prefill = (location.state as { clientName?: string; engagementType?: string } | null) ?? {};
+  const prefill = (location.state as { clientName?: string; engagementType?: string } | null) ?? {};
 
- // Engagement Details state
- const [clientName, setClientName] = useState(prefill.clientName || "");
- const clientInfo = CLIENT_DATA[clientName]
-    ?? Object.entries(CLIENT_DATA).find(([key, c]) =>
-         key === clientName || c.entityLegalName === clientName || key.includes(clientName) || clientName.includes(key)
-       )?.[1]
-    ?? null;
+  const findClientKey = (name: string): string => {
+    if (CLIENT_DATA[name]) return name;
+    const match = Object.entries(CLIENT_DATA).find(([key, c]) =>
+      key === name || c.entityLegalName === name || key.includes(name) || name.includes(key)
+    );
+    return match?.[0] || name;
+  };
+
+  // Engagement Details state
+  const [clientName, setClientName] = useState(findClientKey(prefill.clientName || ""));
+  const clientInfo = CLIENT_DATA[clientName]
+     ?? Object.entries(CLIENT_DATA).find(([key, c]) =>
+          key === clientName || c.entityLegalName === clientName || key.includes(clientName) || clientName.includes(key)
+        )?.[1]
+     ?? null;
  const [engagementType, setEngagementType] = useState(prefill.engagementType || "Review (REV)");
  const prefillIsAudit = (prefill.engagementType || "Review (REV)") === "Audit (AUD)";
  const [engagementId, setEngagementId] = useState(prefillIsAudit ? "AUD-HFL-Mar312024" : "REV-DEF-Nov302023");
