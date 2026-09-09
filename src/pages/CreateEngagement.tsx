@@ -604,6 +604,20 @@ const CLIENT_DATA: Record<string, {
  },
 };
 
+function shiftYearStr(mmddyyyy: string, delta: number): string {
+  const p = mmddyyyy.split("/");
+  if (p.length !== 3) return mmddyyyy;
+  return `${p[0]}/${p[1]}/${String(parseInt(p[2]) + delta)}`;
+}
+
+function addDaysStr(mmddyyyy: string, days: number): string {
+  const p = mmddyyyy.split("/");
+  if (p.length !== 3) return mmddyyyy;
+  const d = new Date(parseInt(p[2]), parseInt(p[0]) - 1, parseInt(p[1]));
+  d.setDate(d.getDate() + days);
+  return `${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}/${d.getFullYear()}`;
+}
+
 function formatYearEnd(dateStr: string): string {
  const parts = dateStr.split("/");
  if (parts.length !== 3) return dateStr;
@@ -818,7 +832,45 @@ export default function CreateEngagement() {
  ]
  : [
  { value: "Full year", label: "Full year" },
+ { value: "Stub period", label: "Stub period" },
  ];
+
+ const isFullYearPeriod = periodType === "Full Year" || periodType === "Full year";
+ const isStubPeriod = periodType === "Stub Period" || periodType === "Stub period";
+
+ const applyFullYearPriors = (cyStart: string, cyEnd: string) => {
+ setPriorYear1Start(shiftYearStr(cyStart, -1));
+ setPriorYear1End(shiftYearStr(cyEnd, -1));
+ setPriorYear2Start(shiftYearStr(cyStart, -2));
+ setPriorYear2End(shiftYearStr(cyEnd, -2));
+ };
+
+ const handlePeriodTypeChange = (val: string) => {
+ setPeriodType(val);
+ if (val === "Full Year" || val === "Full year") {
+ const autoEnd = addDaysStr(shiftYearStr(currentYearStart, 1), -1);
+ setCurrentYearEnd(autoEnd);
+ applyFullYearPriors(currentYearStart, autoEnd);
+ }
+ };
+
+ const handleCurrentYearStartChange = (val: string) => {
+ setCurrentYearStart(val);
+ if (isFullYearPeriod) {
+ const autoEnd = addDaysStr(shiftYearStr(val, 1), -1);
+ setCurrentYearEnd(autoEnd);
+ applyFullYearPriors(val, autoEnd);
+ }
+ };
+
+ const handleCurrentYearEndChange = (val: string) => {
+ setCurrentYearEnd(val);
+ if (isFullYearPeriod) {
+ const autoStart = addDaysStr(shiftYearStr(val, -1), 1);
+ setCurrentYearStart(autoStart);
+ applyFullYearPriors(autoStart, val);
+ }
+ };
 
  const engagementDetailsValid =
  engagementId.trim() !== "" &&
@@ -1095,7 +1147,7 @@ export default function CreateEngagement() {
  <div className="flex items-center gap-4 py-2.5">
  <span className="text-sm text-foreground w-32 shrink-0 whitespace-nowrap">Period Type<span className="text-destructive ml-0.5">*</span></span>
  <div className="flex-1 min-w-0 max-w-sm">
- <Select value={periodType} onValueChange={setPeriodType}>
+ <Select value={periodType} onValueChange={handlePeriodTypeChange}>
  <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select..." /></SelectTrigger>
  <SelectContent>
  {periodTypeOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
@@ -1103,9 +1155,17 @@ export default function CreateEngagement() {
  </Select>
  </div>
  </div>
+ {isStubPeriod && (
+ <div className="flex items-start gap-4 pb-2.5">
+ <span className="w-32 shrink-0" />
+ <p className="text-xs text-muted-foreground max-w-lg">
+ Stub period selected — enter the exact start and end dates for this shorter period. Dates are not auto-derived and comparatives are not annualized.
+ </p>
+ </div>
+ )}
  {/* Year rows */}
  {[
- { label: "Current Year", required: true, start: currentYearStart, setStart: setCurrentYearStart, end: currentYearEnd, setEnd: setCurrentYearEnd },
+ { label: "Current Year", required: true, start: currentYearStart, setStart: handleCurrentYearStartChange, end: currentYearEnd, setEnd: handleCurrentYearEndChange },
  { label: "Prior Year 1", required: false, start: priorYear1Start, setStart: setPriorYear1Start, end: priorYear1End, setEnd: setPriorYear1End },
  { label: "Prior Year 2", required: false, start: priorYear2Start, setStart: setPriorYear2Start, end: priorYear2End, setEnd: setPriorYear2End },
  ].map(row => (
