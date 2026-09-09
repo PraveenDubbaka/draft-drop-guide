@@ -856,6 +856,7 @@ export default function CreateEngagement() {
 
  const isFullYearPeriod = periodType === "Full Year" || periodType === "Full year";
  const isStubPeriod = periodType === "Stub Period" || periodType === "Stub period";
+ const clientHasSourceConnection = clientInfo?.integrations.includes("quickbooks") ?? false;
 
  const applyFullYearPriors = (cyStart: string, cyEnd: string) => {
  setPriorYear1Start(shiftYearStr(cyStart, -1));
