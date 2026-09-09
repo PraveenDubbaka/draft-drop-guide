@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useEngagements } from "@/store/EngagementsContext";
+import { clientsData as appClientsData } from "@/data/clientsData";
 import { Search, ChevronDown, MessageSquare, Send, AlertCircle, Layers, Briefcase, Loader, CheckCircle2, Archive } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,19 @@ import { StyledCard } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
 import sageLogo from "@/assets/sage-logo.svg";
+
+function getClientSourceIntegration(clientName: string): 'xero' | 'quickbooks' | null {
+  const normalized = clientName.trim().toLowerCase();
+  const client = appClientsData.find(c =>
+    c.legalEntityName.toLowerCase() === normalized ||
+    c.entityName.toLowerCase() === normalized
+  );
+  if (!client) return null;
+  if (client.integration === 'xero' || client.integration === 'quickbooks') {
+    return client.integration;
+  }
+  return null;
+}
 
 function Highlight({ text, query }: { text: string; query: string }) {
  if (!query.trim()) return <>{text}</>;
@@ -185,14 +199,9 @@ const IntegrationBadge = ({
  const [showPopover, setShowPopover] = React.useState(false);
   if (!type) {
     return (
-      <Button
-        variant="outline"
-        size="sm"
-        className="h-8 px-3 text-xs font-medium"
-        onClick={e => e.stopPropagation()}
-      >
-        Connect
-      </Button>
+      <span className="inline-flex items-center justify-center h-8 px-3 rounded-lg border border-border bg-muted text-xs font-medium text-foreground">
+        CSV
+      </span>
     );
   }
  const badgeClasses = "inline-flex items-center justify-center h-8 w-24 px-1 rounded-lg cursor-pointer hover:opacity-80 transition-opacity bg-white border border-border";
@@ -402,24 +411,17 @@ export default function Dashboard() {
  const [searchQuery, setSearchQuery] = useState("");
  const [expandedEngagement, setExpandedEngagement] = useState<string | null>(null);
  function toggleExpand(id: string) { setExpandedEngagement(prev => prev === id ? null : id); }
- const dashboardEngagements = allEngagements.map(e => {
- let integration: string | null = null;
- try {
- const stored = localStorage.getItem(`connectors-${e.id}`);
- if (stored) {
- const apps: string[] = JSON.parse(stored);
- integration = apps[0] ?? null;
- }
- } catch {}
- return {
- id: e.id,
- client: e.client,
- yearEnd: e.yearEnd,
- integration,
- status: e.status,
- statusVariant: e.status === "New" ? ("secondary" as const) : ("default" as const),
- };
- });
+  const dashboardEngagements = allEngagements.map(e => {
+  const integration = getClientSourceIntegration(e.client);
+  return {
+  id: e.id,
+  client: e.client,
+  yearEnd: e.yearEnd,
+  integration,
+  status: e.status,
+  statusVariant: e.status === "New" ? ("secondary" as const) : ("default" as const),
+  };
+  });
  const filteredDashboardEngagements = dashboardEngagements.filter(e =>
  !searchQuery.trim() ||
  e.id.toLowerCase().includes(searchQuery.toLowerCase()) ||

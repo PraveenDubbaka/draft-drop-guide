@@ -19,6 +19,7 @@ function Highlight({ text, query }: { text: string; query: string }) {
 }
 import { useNavigate } from "react-router-dom";
 import { useEngagements } from "@/store/EngagementsContext";
+import { clientsData as appClientsData } from "@/data/clientsData";
 import { toast } from "sonner";
 import { Search, ChevronDown, ChevronUp, Pencil, Trash2, Download, Briefcase, Loader, CheckCircle2, Archive, X, Mail, Phone } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,44 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Layout } from "@/components/Layout";
 import { StyledCard } from "@/components/ui/card";
+import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
+
+function getClientSourceIntegration(clientName: string): 'xero' | 'quickbooks' | null {
+  const normalized = clientName.trim().toLowerCase();
+  const client = appClientsData.find(c =>
+    c.legalEntityName.toLowerCase() === normalized ||
+    c.entityName.toLowerCase() === normalized
+  );
+  if (!client) return null;
+  if (client.integration === 'xero' || client.integration === 'quickbooks') {
+    return client.integration;
+  }
+  return null;
+}
+
+function SourceBadge({ type }: { type: 'xero' | 'quickbooks' | null }) {
+  if (!type) {
+    return (
+      <span className="inline-flex items-center justify-center h-8 px-3 rounded-lg border border-border bg-muted text-xs font-medium text-foreground">
+        CSV
+      </span>
+    );
+  }
+  const badgeClasses = "inline-flex items-center justify-center h-8 w-24 px-1 rounded-lg bg-white border border-border";
+  if (type === 'xero') {
+    return (
+      <div className={`${badgeClasses} gap-1.5`}>
+        <img src="https://upload.wikimedia.org/wikipedia/en/9/9f/Xero_software_logo.svg" alt="Xero" className="h-5" />
+        <span className="text-xs font-medium text-gray-900">Xero</span>
+      </div>
+    );
+  }
+  return (
+    <div className={badgeClasses}>
+      <img src={intuitQuickbooksLogo} alt="Intuit QuickBooks" className="h-5" />
+    </div>
+  );
+}
 
 type AssigneeEntry = { initials: string; name: string; role: string; email: string; phone: string; color: string };
 const ENGAGEMENT_ASSIGNEES: Record<string, { firmTeam: AssigneeEntry[]; clientTeam: AssigneeEntry[] }> = {
@@ -261,9 +300,10 @@ export default function Engagements() {
  <tr className="bg-muted border-b border-border">
  <th className="text-left px-6 py-4 text-xs font-semibold text-foreground uppercase tracking-wider whitespace-nowrap">Engagement ID</th>
  <th className="text-left px-6 py-4 text-xs font-semibold text-foreground uppercase tracking-wider whitespace-nowrap">Client Name</th>
- <th className="text-left px-6 py-4 text-xs font-semibold text-foreground uppercase tracking-wider whitespace-nowrap">Type</th>
- <th className="text-left px-6 py-4 text-xs font-semibold text-foreground uppercase tracking-wider whitespace-nowrap">Period/Year End Date</th>
- <th className="text-left px-6 py-4 text-xs font-semibold text-foreground uppercase tracking-wider whitespace-nowrap">Assigned Team</th>
+  <th className="text-left px-6 py-4 text-xs font-semibold text-foreground uppercase tracking-wider whitespace-nowrap">Type</th>
+  <th className="text-left px-6 py-4 text-xs font-semibold text-foreground uppercase tracking-wider whitespace-nowrap">Period/Year End Date</th>
+  <th className="text-left px-6 py-4 text-xs font-semibold text-foreground uppercase tracking-wider whitespace-nowrap">Source</th>
+  <th className="text-left px-6 py-4 text-xs font-semibold text-foreground uppercase tracking-wider whitespace-nowrap">Assigned Team</th>
  <th className="text-left px-6 py-4 text-xs font-semibold text-foreground uppercase tracking-wider whitespace-nowrap">Status</th>
  <th className="text-left px-6 py-4 text-xs font-semibold text-foreground uppercase tracking-wider whitespace-nowrap">Date Created</th>
  <th className="text-left px-6 py-4 text-xs font-semibold text-foreground uppercase tracking-wider whitespace-nowrap">Actions</th>
@@ -272,7 +312,7 @@ export default function Engagements() {
  <tbody className="divide-y divide-border">
  {filteredEngagements.length === 0 && searchQuery.trim() && (
  <tr>
- <td colSpan={8} className="px-6 py-16 text-center">
+ <td colSpan={9} className="px-6 py-16 text-center">
  <Search className="h-8 w-8 text-muted-foreground/40 mx-auto mb-3" />
  <p className="text-sm font-medium text-foreground">No results for &ldquo;{searchQuery}&rdquo;</p>
  <p className="text-xs text-muted-foreground mt-1">Try a different search term or clear the filter</p>
@@ -302,8 +342,11 @@ export default function Engagements() {
  </div>
  </td>
  <td className="px-6 py-2 text-sm text-foreground whitespace-nowrap">{engagement.type}</td>
- <td className="px-6 py-2 text-sm text-muted-foreground whitespace-nowrap">{engagement.yearEnd}</td>
- <td className="px-6 py-2 whitespace-nowrap">
+  <td className="px-6 py-2 text-sm text-muted-foreground whitespace-nowrap">{engagement.yearEnd}</td>
+  <td className="px-6 py-2 whitespace-nowrap">
+  <SourceBadge type={getClientSourceIntegration(engagement.client)} />
+  </td>
+  <td className="px-6 py-2 whitespace-nowrap">
  <button
  className="inline-flex items-center gap-1 text-sm text-link cursor-pointer hover:underline"
  onClick={(e) => { e.stopPropagation(); setExpandedId(isExpanded ? null : engagement.id); }}
@@ -337,7 +380,7 @@ export default function Engagements() {
  </tr>
  {isExpanded && assignees && (
  <tr className="bg-muted/30">
- <td colSpan={8} className="px-6 py-4">
+ <td colSpan={9} className="px-6 py-4">
  <div className="flex gap-10">
  <div className="flex-1">
  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Firm Team</p>
