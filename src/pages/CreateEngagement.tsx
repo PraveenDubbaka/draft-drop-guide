@@ -5,6 +5,7 @@ import { EngagementRecord, setEngagementMeta, getEngagementMeta, loadEngagements
 import { toast } from "sonner";
 import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
 import xeroLogo from "@/assets/xero-logo.png";
+import { clientsData as appClientsData } from "@/data/clientsData";
 import { getClientSourceIntegration, sourceLabel } from "@/lib/clientSource";
 import { ArrowLeft, Briefcase, Calendar, Users, ChevronDown, Plus, Pencil, Trash2, Search, ExternalLink, X, Building2, FileText, Settings2, Check, UserPlus, Link2, AlertTriangle, XCircle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -1107,7 +1108,7 @@ export default function CreateEngagement() {
  <Select value={clientName} onValueChange={setClientName}>
  <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select client..." /></SelectTrigger>
  <SelectContent>
- {Object.keys(CLIENT_DATA).map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}
+ {Array.from(new Set([...Object.keys(CLIENT_DATA), ...appClientsData.map(c => c.entityName), ...(clientName ? [clientName] : [])])).map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}
  </SelectContent>
  </Select>
  </InlineRow>
