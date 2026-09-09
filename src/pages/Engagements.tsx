@@ -19,6 +19,7 @@ function Highlight({ text, query }: { text: string; query: string }) {
 }
 import { useNavigate } from "react-router-dom";
 import { useEngagements } from "@/store/EngagementsContext";
+import { clientsData as appClientsData } from "@/data/clientsData";
 import { toast } from "sonner";
 import { Search, ChevronDown, ChevronUp, Pencil, Trash2, Download, Briefcase, Loader, CheckCircle2, Archive, X, Mail, Phone } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,55 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Layout } from "@/components/Layout";
 import { StyledCard } from "@/components/ui/card";
+import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
+import sageLogo from "@/assets/sage-logo.svg";
+
+function getClientSourceIntegration(clientName: string): 'xero' | 'quickbooks' | 'sage' | null {
+  const normalized = clientName.trim().toLowerCase();
+  const client = appClientsData.find(c =>
+    c.legalEntityName.toLowerCase() === normalized ||
+    c.entityName.toLowerCase() === normalized
+  );
+  if (!client) return null;
+  if (client.integration === 'xero' || client.integration === 'quickbooks' || client.integration === 'sage') {
+    return client.integration;
+  }
+  return null;
+}
+
+function SourceBadge({ type }: { type: 'xero' | 'quickbooks' | 'sage' | null }) {
+  if (!type) {
+    return (
+      <span className="inline-flex items-center justify-center h-8 px-3 rounded-lg border border-border bg-muted text-xs font-medium text-foreground">
+        CSV
+      </span>
+    );
+  }
+  const badgeClasses = "inline-flex items-center justify-center h-8 w-24 px-1 rounded-lg bg-white border border-border";
+  if (type === 'xero') {
+    return (
+      <div className={`${badgeClasses} gap-1.5`}>
+        <img src="https://upload.wikimedia.org/wikipedia/en/9/9f/Xero_software_logo.svg" alt="Xero" className="h-5" />
+        <span className="text-xs font-medium text-gray-900">Xero</span>
+      </div>
+    );
+  }
+  if (type === 'quickbooks') {
+    return (
+      <div className={badgeClasses}>
+        <img src={intuitQuickbooksLogo} alt="Intuit QuickBooks" className="h-5" />
+      </div>
+    );
+  }
+  return (
+    <div className={`${badgeClasses} gap-1.5`}>
+      <div className="h-5 w-5 rounded-full bg-black flex items-center justify-center p-1">
+        <img src={sageLogo} alt="Sage" className="h-3 w-auto" />
+      </div>
+      <span className="text-xs font-medium text-gray-900">Sage</span>
+    </div>
+  );
+}
 
 type AssigneeEntry = { initials: string; name: string; role: string; email: string; phone: string; color: string };
 const ENGAGEMENT_ASSIGNEES: Record<string, { firmTeam: AssigneeEntry[]; clientTeam: AssigneeEntry[] }> = {
