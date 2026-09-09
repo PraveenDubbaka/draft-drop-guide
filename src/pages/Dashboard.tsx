@@ -199,14 +199,9 @@ const IntegrationBadge = ({
  const [showPopover, setShowPopover] = React.useState(false);
   if (!type) {
     return (
-      <Button
-        variant="outline"
-        size="sm"
-        className="h-8 px-3 text-xs font-medium"
-        onClick={e => e.stopPropagation()}
-      >
-        Connect
-      </Button>
+      <span className="inline-flex items-center justify-center h-8 px-3 rounded-lg border border-border bg-muted text-xs font-medium text-foreground">
+        CSV
+      </span>
     );
   }
  const badgeClasses = "inline-flex items-center justify-center h-8 w-24 px-1 rounded-lg cursor-pointer hover:opacity-80 transition-opacity bg-white border border-border";
