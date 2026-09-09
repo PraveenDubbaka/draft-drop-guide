@@ -681,14 +681,14 @@ export default function CreateEngagement() {
  const [dataSource, setDataSource] = useState<"csv" | "source">("csv");
  const [sourceConnected, setSourceConnected] = useState(false);
 
- // Sync data source default when client selection changes based on source connection status
- useEffect(() => {
- if (clientInfo) {
- const hasSource = clientInfo.integrations.includes("quickbooks");
- setDataSource(hasSource ? "csv" : "source");
- if (!hasSource) setSourceConnected(false);
- }
- }, [clientInfo]);
+  // Sync data source default when client selection changes based on source connection status
+  useEffect(() => {
+    if (clientInfo) {
+      const hasSource = clientInfo.integrations.includes("quickbooks");
+      setDataSource("csv");
+      setSourceConnected(hasSource);
+    }
+  }, [clientInfo]);
 
  const [accountingStandards, setAccountingStandards] = useState(prefillIsAudit ? "ASPE — Canadian Accounting Standards for Private Enterprises" : "Section 2400 Review standards");
  const [additionalDisclosures, setAdditionalDisclosures] = useState(prefillIsAudit ? "Full financial statements" : "Statement of cash flows");
