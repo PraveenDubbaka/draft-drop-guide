@@ -171,14 +171,14 @@ const clientsData = [{
 // Recent activity data
 const recentActivity = [{
  time: "09:00 AM",
- title: "COM-CON-Dec312024",
+ title: "COM-QB-Jan142026",
  description: "Created an Engagement",
  path: "Engagement > Created an Engagement"
 }, {
  time: "05:35 AM",
  title: "FIN-1-Trial Balance.pdf",
  description: "Viewed and Edited",
- path: "Engagement > COM-PSP-Dec312023 > Financial Statements > Financial Statements Docs"
+ path: "Engagement > COM-HF-Dec312024 > Financial Statements > Financial Statements Docs"
 }];
 const IntegrationBadge = ({
  type
