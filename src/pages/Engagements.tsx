@@ -45,7 +45,7 @@ function getClientSourceIntegration(clientName: string): 'xero' | 'quickbooks' |
   return null;
 }
 
-function SourceBadge({ type }: { type: 'xero' | 'quickbooks' | 'sage' | null }) {
+function SourceBadge({ type }: { type: 'xero' | 'quickbooks' | null }) {
   if (!type) {
     return (
       <span className="inline-flex items-center justify-center h-8 px-3 rounded-lg border border-border bg-muted text-xs font-medium text-foreground">
@@ -62,19 +62,9 @@ function SourceBadge({ type }: { type: 'xero' | 'quickbooks' | 'sage' | null }) 
       </div>
     );
   }
-  if (type === 'quickbooks') {
-    return (
-      <div className={badgeClasses}>
-        <img src={intuitQuickbooksLogo} alt="Intuit QuickBooks" className="h-5" />
-      </div>
-    );
-  }
   return (
-    <div className={`${badgeClasses} gap-1.5`}>
-      <div className="h-5 w-5 rounded-full bg-black flex items-center justify-center p-1">
-        <img src={sageLogo} alt="Sage" className="h-3 w-auto" />
-      </div>
-      <span className="text-xs font-medium text-gray-900">Sage</span>
+    <div className={badgeClasses}>
+      <img src={intuitQuickbooksLogo} alt="Intuit QuickBooks" className="h-5" />
     </div>
   );
 }
