@@ -46,3 +46,18 @@ export function getEngagementSourceIntegration(
   if (dataSource !== "source" && dataSource !== undefined) return null;
   return getClientSourceIntegration(clientName);
 }
+
+/** The five scenario engagements shown on Dashboard and Engagements, in display order. */
+export const VISIBLE_ENGAGEMENT_IDS: readonly string[] = [
+  "COM-QB-Jan142026",
+  "COM-QB-Dec312024",
+  "COM-QB-Dec312025",
+  "COM-CHE-Dec252024",
+  "COM-HF-Dec312024",
+];
+
+/** Keep only the visible engagements, in the fixed scenario order. */
+export function filterVisibleEngagements<T extends { id: string }>(list: T[]): T[] {
+  const byId = new Map(list.map((e) => [e.id, e]));
+  return VISIBLE_ENGAGEMENT_IDS.map((id) => byId.get(id)).filter((e): e is T => !!e);
+}

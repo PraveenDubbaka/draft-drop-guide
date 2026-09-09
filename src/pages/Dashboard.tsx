@@ -13,7 +13,7 @@ import { StyledCard } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
 import sageLogo from "@/assets/sage-logo.svg";
-import { getEngagementSourceIntegration } from "@/lib/clientSource";
+import { getEngagementSourceIntegration, filterVisibleEngagements } from "@/lib/clientSource";
 
 
 function Highlight({ text, query }: { text: string; query: string }) {
@@ -51,92 +51,6 @@ const stats = [{
  value: "77"
 }];
 
-// Sample engagements data
-const engagements = [{
- id: "AUD-US-Dec312024",
- client: "Harbor Freight Logistics LLC",
- yearEnd: "Dec 31, 2024",
- integration: null,
- status: "In Progress",
- statusVariant: "default" as const
-}, {
- id: "AUD-SL-Mar312024",
- client: "Shipping Line Inc.",
- yearEnd: "Mar 31, 2024",
- integration: null,
- status: "In Progress",
- statusVariant: "default" as const
-}, {
- id: "COM-CON-Dec312024",
- client: "Shipping Line Inc.",
- yearEnd: "Dec 31, 2024",
- integration: "sage",
- status: "In Progress",
- statusVariant: "default" as const
-}, {
- id: "COM-PSP-Dec312023",
- client: "Source 40",
- yearEnd: "Dec 31, 2023",
- integration: "xero",
- status: "In Progress",
- statusVariant: "default" as const
-}, {
- id: "COM-QB-Dec312025",
- client: "Qb 40.1",
- yearEnd: "Dec 31, 2025",
- integration: "quickbooks",
- status: "In Progress",
- statusVariant: "default" as const
-}, {
- id: "COM-QB-Dec312024",
- client: "Qb 40.1",
- yearEnd: "Dec 31, 2024",
- integration: "quickbooks",
- status: "In Progress",
- statusVariant: "default" as const
-}, {
- id: "COM-CHE-Dec252024",
- client: "Check Add",
- yearEnd: "Dec 25, 2024",
- integration: "xero",
- status: "New",
- statusVariant: "secondary" as const
-}, {
- id: "COM-OTH-Dec312024",
- client: "Other Revenue",
- yearEnd: "Dec 31, 2024",
- integration: null,
- status: "In Progress",
- statusVariant: "default" as const
-}, {
- id: "T2-AUT-Dec312023",
- client: "Shipping Line Inc.",
- yearEnd: "Dec 31, 2023",
- integration: null,
- status: "In Progress",
- statusVariant: "default" as const
-}, {
- id: "COM-CAS-Dec312024",
- client: "Cash Flow Ls",
- yearEnd: "Dec 31, 2024",
- integration: null,
- status: "In Progress",
- statusVariant: "default" as const
-}, {
- id: "COM-QB-Jan142026",
- client: "Qb 40.1",
- yearEnd: "Jan 14, 2026",
- integration: "quickbooks",
- status: "New",
- statusVariant: "secondary" as const
-}, {
- id: "COM-SHR-Dec302023",
- client: "Shroll Forward",
- yearEnd: "Dec 30, 2023",
- integration: "xero",
- status: "In Progress",
- statusVariant: "default" as const
-}];
 
 // Team members pie chart data
 const teamData = [{
@@ -171,14 +85,14 @@ const clientsData = [{
 // Recent activity data
 const recentActivity = [{
  time: "09:00 AM",
- title: "COM-CON-Dec312024",
+ title: "COM-QB-Jan142026",
  description: "Created an Engagement",
  path: "Engagement > Created an Engagement"
 }, {
  time: "05:35 AM",
  title: "FIN-1-Trial Balance.pdf",
  description: "Viewed and Edited",
- path: "Engagement > COM-PSP-Dec312023 > Financial Statements > Financial Statements Docs"
+ path: "Engagement > COM-HF-Dec312024 > Financial Statements > Financial Statements Docs"
 }];
 const IntegrationBadge = ({
  type
@@ -400,7 +314,7 @@ export default function Dashboard() {
  const [searchQuery, setSearchQuery] = useState("");
  const [expandedEngagement, setExpandedEngagement] = useState<string | null>(null);
  function toggleExpand(id: string) { setExpandedEngagement(prev => prev === id ? null : id); }
-  const dashboardEngagements = allEngagements.map(e => {
+  const dashboardEngagements = filterVisibleEngagements(allEngagements).map(e => {
   const integration = getEngagementSourceIntegration(e.id, e.client);
   return {
   id: e.id,

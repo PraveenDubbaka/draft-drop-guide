@@ -31,7 +31,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Layout } from "@/components/Layout";
 import { StyledCard } from "@/components/ui/card";
 import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
-import { getEngagementSourceIntegration } from "@/lib/clientSource";
+import { getEngagementSourceIntegration, filterVisibleEngagements } from "@/lib/clientSource";
 
 
 function SourceBadge({ type }: { type: 'xero' | 'quickbooks' | null }) {
@@ -167,10 +167,10 @@ export default function Engagements() {
  };
 
  const filteredEngagements = (() => {
- const base = engagementList.filter(e =>
- e.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
- e.client.toLowerCase().includes(searchQuery.toLowerCase())
- );
+  const base = filterVisibleEngagements(engagementList).filter(e =>
+  e.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  e.client.toLowerCase().includes(searchQuery.toLowerCase())
+  );
  const demo = base.filter(e => e.id === 'AUD-NPM-Dec312025');
  const rest = base.filter(e => e.id !== 'AUD-NPM-Dec312025');
  return [...demo, ...rest];
