@@ -1057,7 +1057,7 @@ export default function CreateEngagement() {
  const [showDataHandlingModal, setShowDataHandlingModal] = useState(false);
 
   const handleCreate = () => {
-  if (isCsvToSourceSwitch || isSourceToCsvSwitch) {
+  if (isCsvToSourceSwitch || isSourceToCsvSwitch || isSourceProviderMismatch) {
   setShowDataHandlingModal(true);
   return;
   }
