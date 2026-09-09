@@ -1365,6 +1365,20 @@ export default function CreateEngagement() {
  </div>
  </div>
  )}
+ {isSourceProviderMismatch && (
+ <div className="flex items-start gap-4 pb-2.5">
+ <span className="w-32 shrink-0" />
+ <div className="flex-1 min-w-0 max-w-sm flex flex-col gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+ <div className="flex items-start gap-2">
+ <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+ <span className="text-sm text-amber-800 dark:text-amber-200">
+ Your client's source connection has changed. This engagement is still linked to {sourceLabel(savedSourceProvider ?? null)}. Update the engagement to pull data from {sourceLabel(clientSourceIntegration)}.
+ </span>
+ </div>
+ <button type="button" onClick={handleCreate} className="self-start text-sm text-[#1C63A6] hover:underline">Update Engagement →</button>
+ </div>
+ </div>
+ )}
   </SectionCard>
   )}
  </div>
