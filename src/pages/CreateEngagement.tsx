@@ -936,7 +936,7 @@ export default function CreateEngagement() {
  additionalDisclosures !== "" &&
  currentYearStart.trim() !== "" &&
  currentYearEnd.trim() !== "" &&
- teamMembers.length > 0;
+ (isEditMode || teamMembers.length > 0);
 
  const handleCreate = () => {
  const record: EngagementRecord = {
@@ -945,13 +945,17 @@ export default function CreateEngagement() {
  type: engagementType,
  yearEnd: formatYearEnd(currentYearEnd),
  team: "View Assignees",
- status: "New",
- statusVariant: "new",
- hasRF: false,
- dateCreated: formatDateCreated(),
+ status: editingRecord?.status ?? "New",
+ statusVariant: editingRecord?.statusVariant ?? "new",
+ hasRF: editingRecord?.hasRF ?? false,
+ dateCreated: editingRecord?.dateCreated ?? formatDateCreated(),
  firstYearAudit,
  };
+ if (isEditMode && editingRecord) {
+ updateEngagement(editingRecord.id, record);
+ } else {
  addEngagement(record);
+ }
  setEngagementMeta(engagementId, {
  firstYearAudit,
  firstYearOnPlatform: firstYearAudit ? firstYearOnPlatform : undefined,
