@@ -31,7 +31,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Layout } from "@/components/Layout";
 import { StyledCard } from "@/components/ui/card";
 import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
-import { getEngagementSourceIntegration } from "@/lib/clientSource";
+import { getEngagementSourceIntegration, filterVisibleEngagements } from "@/lib/clientSource";
 
 
 function SourceBadge({ type }: { type: 'xero' | 'quickbooks' | null }) {

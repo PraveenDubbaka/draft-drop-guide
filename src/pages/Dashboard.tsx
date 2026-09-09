@@ -13,7 +13,7 @@ import { StyledCard } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
 import sageLogo from "@/assets/sage-logo.svg";
-import { getEngagementSourceIntegration } from "@/lib/clientSource";
+import { getEngagementSourceIntegration, filterVisibleEngagements } from "@/lib/clientSource";
 
 
 function Highlight({ text, query }: { text: string; query: string }) {
