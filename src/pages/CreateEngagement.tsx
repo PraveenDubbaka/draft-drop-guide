@@ -942,7 +942,10 @@ export default function CreateEngagement() {
  currentYearEnd.trim() !== "" &&
  (isEditMode || teamMembers.length > 0);
 
- const handleCreate = () => {
+ // Edit-mode scenario: engagement was CSV, client has a source connection, user switched to Source
+ const isCsvToSourceSwitch = isEditMode && clientHasSourceConnection && originalDataSource === "csv" && dataSource === "source" && sourceConnected;
+
+ const performSave = () => {
  const record: EngagementRecord = {
  id: engagementId,
  client: clientName,
@@ -971,6 +974,7 @@ export default function CreateEngagement() {
  budget,
  periodStart: currentYearStart,
  periodEnd: currentYearEnd,
+ dataSource,
  auditPeriodType: isAudit ? periodType : undefined,
  annualizeInterim: isAudit && periodType === "Interim (6-month)" ? annualizeInterim : undefined,
  firstTimeAdoption: isAudit ? firstTimeAdoption : undefined,
