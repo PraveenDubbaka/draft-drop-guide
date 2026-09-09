@@ -41,6 +41,6 @@ export function getEngagementSourceIntegration(
     const raw = localStorage.getItem(`engagement-meta-${engagementId}`);
     if (raw) dataSource = JSON.parse(raw)?.dataSource;
   } catch {}
-  if (dataSource === "csv") return null;
+  if (dataSource !== "source") return null;
   return getClientSourceIntegration(clientName);
 }
