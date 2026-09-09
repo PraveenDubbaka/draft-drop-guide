@@ -1295,23 +1295,6 @@ export default function CreateEngagement() {
   </div>
   </div>
   )}
-  {clientHasSourceConnection && dataSource === "source" && sourceConnected && (
-  <>
-  <div className="flex items-center gap-4 pb-2.5">
-  <span className="w-32 shrink-0" />
-  <div className="flex-1 min-w-0 max-w-sm flex items-center gap-2 rounded-[10px] border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 px-3 py-2">
-  <Check className="h-4 w-4 text-emerald-600 shrink-0" />
-  <span className="text-sm text-emerald-800 dark:text-emerald-200">Connected: Xero · Vizhenbooks Inc.</span>
-  </div>
-  </div>
- <div className="flex items-center gap-4 py-2.5">
- <span className="text-sm text-foreground w-32 shrink-0 whitespace-nowrap">Entity name</span>
- <div className="flex-1 min-w-0 max-w-sm">
- <input type="text" value="Vizhenbooks Inc." readOnly className={ic + " bg-muted/40 cursor-default"} />
- </div>
- </div>
- </>
- )}
  {isCsvToSourceSwitch && (
  <div className="flex items-start gap-4 pb-2.5">
  <span className="w-32 shrink-0" />
