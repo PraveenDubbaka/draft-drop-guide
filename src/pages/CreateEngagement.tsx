@@ -1210,10 +1210,10 @@ export default function CreateEngagement() {
    <span className="text-sm text-red-800 dark:text-red-200">
    No source connection found for this client. Connect your accounting software to continue.
    </span>
-   <div className="flex items-center gap-4 text-sm">
-   <button type="button" onClick={() => navigate("/clients")} className="text-link hover:underline font-medium">Connect from client page →</button>
-   <button type="button" onClick={() => navigate("/clients")} className="text-link hover:underline font-medium">Connect here →</button>
-   </div>
+ <div className="flex items-center gap-4 text-sm">
+ <button type="button" onClick={() => navigate("/clients")} className="text-link hover:underline font-medium whitespace-nowrap">Connect from client page →</button>
+ <button type="button" onClick={() => navigate("/clients")} className="text-link hover:underline font-medium whitespace-nowrap">Connect here →</button>
+ </div>
    </div>
    </div>
    </div>
