@@ -798,7 +798,7 @@ export default function CreateEngagement() {
  });
 
  // Team members
- const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+ const [teamMembers, setTeamMembers] = useState<TeamMember[]>(editingMeta?.teamMembers ?? []);
  const [recommendedPending, setRecommendedPending] = useState<TeamMember[]>([]);
  const [pendingRow, setPendingRow] = useState<PendingRow | null>(null);
  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -1016,6 +1016,7 @@ export default function CreateEngagement() {
  periodStart: currentYearStart,
  periodEnd: currentYearEnd,
  dataSource,
+ teamMembers,
  sourceProvider: dataSource === "source" ? (clientSourceIntegration ?? undefined) : undefined,
  auditPeriodType: isAudit ? periodType : undefined,
  annualizeInterim: isAudit && periodType === "Interim (6-month)" ? annualizeInterim : undefined,
