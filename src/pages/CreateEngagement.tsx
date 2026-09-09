@@ -991,10 +991,12 @@ export default function CreateEngagement() {
  </div>
 
  <div className="flex flex-col gap-5">
- {/* Client Info Banner — full page width */}
- {clientInfo && (
+{/* Client Info Banner — full page width */}
  <div className="bg-card rounded-lg shadow-sm px-6 py-5 border border-border">
  <h2 className="text-sm font-semibold text-foreground mb-4">Client Info</h2>
+ {!clientInfo ? (
+ <p className="text-sm text-muted-foreground">Select a client in Engagement Details to view client information.</p>
+ ) : (
  <div className="grid grid-cols-7 gap-4">
  {[
  { label: "Entity legal name", value: clientInfo.entityLegalName },
@@ -1026,6 +1028,14 @@ export default function CreateEngagement() {
  <div className="flex flex-col gap-5 w-full">
  {/* Engagement Details — inline labels */}
  <SectionCard icon={<Briefcase className="h-5 w-5" />} title="Engagement Details">
+ <InlineRow label="Client" required>
+ <Select value={clientName} onValueChange={setClientName}>
+ <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select client..." /></SelectTrigger>
+ <SelectContent>
+ {Object.keys(CLIENT_DATA).map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}
+ </SelectContent>
+ </Select>
+ </InlineRow>
  <InlineRow label="Engagement ID" required>
  <div className="relative">
  <input type="text" value={engagementId} onChange={e => setEngagementId(e.target.value)} className={ic + " pr-10"} />
