@@ -575,7 +575,7 @@ const CLIENT_DATA: Record<string, {
  businessPhone: string;
  cellPhone: string;
 }> = {
- "Harbor Freight Logistics LLC": {
+ "Harbor Freight Logistics": {
  entityLegalName: "Harbor Freight Logistics LLC",
  entityType: "Corporation",
  contactPerson: "Michael Torres",
