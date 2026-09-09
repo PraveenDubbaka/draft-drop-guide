@@ -904,7 +904,7 @@ export default function CreateEngagement() {
  engagementTemplate.trim() !== "" &&
  engagementType !== "" &&
  budget.trim() !== "" &&
- (!isFullYearPeriod || dataSource === "csv" || sourceConnected) &&
+ (!isFullYearPeriod || clientHasSourceConnection || sourceConnected) &&
  accountingStandards !== "" &&
  additionalDisclosures !== "" &&
  currentYearStart.trim() !== "" &&
