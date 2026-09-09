@@ -682,10 +682,12 @@ export default function CreateEngagement() {
           || c.legalEntityName.toLowerCase().includes(n) || n.includes(c.entityName.toLowerCase());
       })
     : undefined;
-  const clientInfo = CLIENT_DATA[clientName]
+  const localClientInfo = CLIENT_DATA[clientName]
      ?? Object.entries(CLIENT_DATA).find(([key, c]) =>
           key === clientName || c.entityLegalName === clientName || key.includes(clientName) || clientName.includes(key)
         )?.[1]
+     ?? null;
+  const clientInfo = localClientInfo
      ?? (appClient ? {
           entityLegalName: appClient.legalEntityName,
           entityType: appClient.entityType,
