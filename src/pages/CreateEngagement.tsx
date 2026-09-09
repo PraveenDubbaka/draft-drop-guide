@@ -744,7 +744,8 @@ export default function CreateEngagement() {
  // Sync engagement details when type changes (skip initial render)
  const isFirstMount = useRef(true);
  useEffect(() => {
- if (isFirstMount.current) { isFirstMount.current = false; return; }
+  if (isFirstMount.current) { isFirstMount.current = false; return; }
+  if (isEditMode) return; // never overwrite saved values when editing
  if (isAudit) {
  setEngagementId("AUD-HFL-Mar312024");
  if (!templateId) {
@@ -971,8 +972,10 @@ export default function CreateEngagement() {
  currentYearEnd.trim() !== "" &&
  (isEditMode || teamMembers.length > 0);
 
- // Edit-mode scenario: engagement was CSV, client has a source connection, user switched to Source
- const isCsvToSourceSwitch = isEditMode && clientHasSourceConnection && originalDataSource === "csv" && dataSource === "source" && sourceConnected;
+  // Edit-mode scenario: engagement was CSV, client has a source connection, user switched to Source
+  const isCsvToSourceSwitch = isEditMode && clientHasSourceConnection && originalDataSource === "csv" && dataSource === "source" && sourceConnected;
+  // Edit-mode scenario 2: engagement was Source, user switched to CSV
+  const isSourceToCsvSwitch = isEditMode && clientHasSourceConnection && originalDataSource === "source" && dataSource === "csv";
 
  const performSave = () => {
  const record: EngagementRecord = {
@@ -1043,13 +1046,13 @@ export default function CreateEngagement() {
 
  const [showDataHandlingModal, setShowDataHandlingModal] = useState(false);
 
- const handleCreate = () => {
- if (isCsvToSourceSwitch) {
- setShowDataHandlingModal(true);
- return;
- }
- performSave();
- };
+  const handleCreate = () => {
+  if (isCsvToSourceSwitch || isSourceToCsvSwitch) {
+  setShowDataHandlingModal(true);
+  return;
+  }
+  performSave();
+  };
 
  return (
  <Layout title={isEditMode ? "Edit Engagement" : "Create Engagement"}>
@@ -1304,17 +1307,28 @@ export default function CreateEngagement() {
   </div>
   </div>
   )}
-   {clientHasSourceConnection && dataSource === "csv" && (
-   <div className="flex items-start gap-4 pb-2.5">
-   <span className="w-32 shrink-0" />
-   <div className="flex-1 min-w-0 max-w-sm flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
-   <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-   <span className="text-sm text-amber-800 dark:text-amber-200">
-   Your client is connected to {sourceLabel(clientSourceIntegration)}. This engagement will use manually imported CSV data. The source connection will remain active but won't be used for this engagement.
-   </span>
-   </div>
-   </div>
-   )}
+    {clientHasSourceConnection && dataSource === "csv" && !isSourceToCsvSwitch && (
+    <div className="flex items-start gap-4 pb-2.5">
+    <span className="w-32 shrink-0" />
+    <div className="flex-1 min-w-0 max-w-sm flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+    <span className="text-sm text-amber-800 dark:text-amber-200">
+    Your client is connected to {sourceLabel(clientSourceIntegration)}. This engagement will use manually imported CSV data. The source connection will remain active but won't be used for this engagement.
+    </span>
+    </div>
+    </div>
+    )}
+    {isSourceToCsvSwitch && (
+    <div className="flex items-start gap-4 pb-2.5">
+    <span className="w-32 shrink-0" />
+    <div className="flex-1 min-w-0 max-w-sm flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+    <span className="text-sm text-amber-800 dark:text-amber-200">
+    Switching to CSV means this engagement will no longer pull data from {sourceLabel(clientSourceIntegration)}. The source connection will stay active but won't be used. You will be asked how to handle existing data when you click Update Engagement.
+    </span>
+    </div>
+    </div>
+    )}
    {clientHasSourceConnection && dataSource === "source" && !sourceConnected && (
   <div className="flex items-center gap-4 pb-2.5">
   <span className="w-32 shrink-0" />
