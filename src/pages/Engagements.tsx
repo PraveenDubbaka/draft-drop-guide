@@ -167,10 +167,10 @@ export default function Engagements() {
  };
 
  const filteredEngagements = (() => {
- const base = engagementList.filter(e =>
- e.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
- e.client.toLowerCase().includes(searchQuery.toLowerCase())
- );
+  const base = filterVisibleEngagements(engagementList).filter(e =>
+  e.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  e.client.toLowerCase().includes(searchQuery.toLowerCase())
+  );
  const demo = base.filter(e => e.id === 'AUD-NPM-Dec312025');
  const rest = base.filter(e => e.id !== 'AUD-NPM-Dec312025');
  return [...demo, ...rest];

@@ -400,7 +400,7 @@ export default function Dashboard() {
  const [searchQuery, setSearchQuery] = useState("");
  const [expandedEngagement, setExpandedEngagement] = useState<string | null>(null);
  function toggleExpand(id: string) { setExpandedEngagement(prev => prev === id ? null : id); }
-  const dashboardEngagements = allEngagements.map(e => {
+  const dashboardEngagements = filterVisibleEngagements(allEngagements).map(e => {
   const integration = getEngagementSourceIntegration(e.id, e.client);
   return {
   id: e.id,
