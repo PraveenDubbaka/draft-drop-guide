@@ -1189,31 +1189,31 @@ export default function CreateEngagement() {
   )}
   </div>
   </div>
-  <div className="flex items-center gap-4 py-2.5">
-  <span className="text-sm text-foreground w-32 shrink-0 whitespace-nowrap">Data Source<span className="text-destructive ml-0.5">*</span></span>
-  <div className="flex-1 min-w-0 max-w-sm">
-  <Select value={dataSource} onValueChange={v => setDataSource(v as "csv" | "source")} disabled={!clientHasSourceConnection}>
-  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-  <SelectContent>
-  <SelectItem value="csv">CSV</SelectItem>
-  <SelectItem value="source">Source</SelectItem>
-  </SelectContent>
-  </Select>
+ <div className="flex items-center gap-4 py-2.5">
+ <span className="text-sm text-foreground w-32 shrink-0 whitespace-nowrap">Data Source<span className="text-destructive ml-0.5">*</span></span>
+ <div className="flex-1 min-w-0 max-w-sm">
+ <Select value={dataSource} onValueChange={v => setDataSource(v as "csv" | "source")}>
+ <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+ <SelectContent>
+ <SelectItem value="csv">CSV</SelectItem>
+ <SelectItem value="source">Source</SelectItem>
+ </SelectContent>
+ </Select>
+  </div>
+  </div>
+  {dataSource === "source" && !clientHasSourceConnection && (
+  <div className="flex items-start gap-4 pb-2.5">
+  <span className="w-32 shrink-0" />
+  <div className="flex-1 min-w-0 max-w-sm flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
+  <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
+   <div className="flex flex-col gap-2">
+   <span className="text-sm text-red-800 dark:text-red-200">
+   No source connection found for this client. Connect your accounting software to continue.
+   </span>
    </div>
-   </div>
-   {!clientHasSourceConnection && (
-   <div className="flex items-start gap-4 pb-2.5">
-   <span className="w-32 shrink-0" />
-   <div className="flex-1 min-w-0 max-w-sm flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
-   <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
-    <div className="flex flex-col gap-2">
-    <span className="text-sm text-red-800 dark:text-red-200">
-    No source connection found for this client. Connect your accounting software to continue.
-    </span>
-    </div>
-   </div>
-   </div>
-   )}
+  </div>
+  </div>
+  )}
    {clientHasSourceConnection && dataSource === "csv" && (
    <div className="flex items-start gap-4 pb-2.5">
    <span className="w-32 shrink-0" />
