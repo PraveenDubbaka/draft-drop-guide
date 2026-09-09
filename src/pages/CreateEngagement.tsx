@@ -653,8 +653,14 @@ function formatDateCreated(): string {
 export default function CreateEngagement() {
  const navigate = useNavigate();
  const location = useLocation();
- const { addEngagement } = useEngagements();
-  const prefill = (location.state as { clientName?: string; engagementType?: string } | null) ?? {};
+ const { addEngagement, updateEngagement } = useEngagements();
+  const { engagementId: routeEngagementId } = useParams();
+  const isEditMode = !!routeEngagementId;
+  const editingRecord = isEditMode ? loadEngagements().find(e => e.id === routeEngagementId) : undefined;
+  const editingMeta = isEditMode ? getEngagementMeta(routeEngagementId!) : undefined;
+  const prefill = isEditMode
+    ? { clientName: editingRecord?.client, engagementType: editingRecord?.type }
+    : ((location.state as { clientName?: string; engagementType?: string } | null) ?? {});
 
   const findClientKey = (name: string): string => {
     if (CLIENT_DATA[name]) return name;
