@@ -1451,6 +1451,32 @@ export default function CreateEngagement() {
  </div>
  </div>
  </div>
+ <Dialog open={showDataHandlingModal} onOpenChange={setShowDataHandlingModal}>
+ <DialogContent className="max-w-md">
+ <div className="flex flex-col items-center text-center gap-3 pt-2">
+ <div className="h-14 w-14 rounded-full bg-red-50 dark:bg-red-950/40 flex items-center justify-center">
+ <AlertTriangle className="h-7 w-7 text-red-500" />
+ </div>
+ <DialogHeader className="space-y-1">
+ <DialogTitle className="text-center text-lg">Engagement Update Warning</DialogTitle>
+ </DialogHeader>
+ <p className="text-sm text-foreground">Changing the source may impact your existing data.</p>
+ <p className="text-sm text-foreground">Proceeding will permanently delete all existing data, including:</p>
+ <div className="w-full rounded-[10px] border px-4 py-3 text-left">
+ <ul className="list-disc pl-5 space-y-1 text-sm text-foreground">
+ <li>Trial balance</li>
+ <li>Adjusting entries</li>
+ <li>Mapping and related work</li>
+ </ul>
+ </div>
+ <p className="text-sm text-red-600"><span className="font-semibold">Note:</span> This action cannot be undone.</p>
+ </div>
+ <DialogFooter className="sm:justify-stretch gap-3 pt-2">
+ <Button variant="outline" className="flex-1" onClick={() => setShowDataHandlingModal(false)}>Cancel</Button>
+ <Button className="flex-1 bg-red-600 hover:bg-red-700 text-white" onClick={() => { setShowDataHandlingModal(false); performSave(); }}>Proceed</Button>
+ </DialogFooter>
+ </DialogContent>
+ </Dialog>
  <Dialog open={showAddRoleModal} onOpenChange={setShowAddRoleModal}>
  <DialogContent className="max-w-sm">
  <DialogHeader>
