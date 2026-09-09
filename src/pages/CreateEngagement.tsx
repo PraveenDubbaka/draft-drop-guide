@@ -1145,7 +1145,59 @@ export default function CreateEngagement() {
  </div>
  </div>
  ))}
- </SectionCard>
+  </SectionCard>
+
+  {/* Engagement Source — only for full year periods */}
+  {isFullYearPeriod && (
+  <SectionCard icon={<Link2 className="h-5 w-5" />} title="Engagement Source">
+  <div className="flex items-center gap-4 py-2.5">
+  <span className="text-sm text-foreground w-32 shrink-0 whitespace-nowrap">Client Source Status<span className="text-destructive ml-0.5">*</span></span>
+  <div className="flex-1 min-w-0 max-w-sm">
+  <div className="inline-flex items-center rounded-[10px] border border-border bg-card px-3 py-1.5">
+  <img src={intuitQuickbooksLogo} alt="QuickBooks" className="h-5 object-contain" />
+  </div>
+  </div>
+  </div>
+  <div className="flex items-center gap-4 py-2.5">
+  <span className="text-sm text-foreground w-32 shrink-0 whitespace-nowrap">Data Source<span className="text-destructive ml-0.5">*</span></span>
+  <div className="flex-1 min-w-0 max-w-sm">
+  <Select value={dataSource} onValueChange={v => setDataSource(v as "csv" | "source")}>
+  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+  <SelectContent>
+  <SelectItem value="csv">CSV</SelectItem>
+  <SelectItem value="source">Source</SelectItem>
+  </SelectContent>
+  </Select>
+  </div>
+  </div>
+  {dataSource === "source" && !sourceConnected && (
+  <div className="flex items-center gap-4 pb-2.5">
+  <span className="w-32 shrink-0" />
+  <div className="flex-1 min-w-0 max-w-sm flex items-center justify-between gap-3 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+  <span className="text-sm text-amber-900 dark:text-amber-200">No source connection found for this client</span>
+  <Button size="sm" variant="outline" className="shrink-0" onClick={() => setSourceConnected(true)}>Connect source</Button>
+  </div>
+  </div>
+  )}
+  {dataSource === "source" && sourceConnected && (
+  <>
+  <div className="flex items-center gap-4 pb-2.5">
+  <span className="w-32 shrink-0" />
+  <div className="flex-1 min-w-0 max-w-sm flex items-center gap-2 rounded-[10px] border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 px-3 py-2">
+  <Check className="h-4 w-4 text-emerald-600 shrink-0" />
+  <span className="text-sm text-emerald-800 dark:text-emerald-200">Connected: Xero · Vizhenbooks Inc.</span>
+  </div>
+  </div>
+  <div className="flex items-center gap-4 py-2.5">
+  <span className="text-sm text-foreground w-32 shrink-0 whitespace-nowrap">Entity name</span>
+  <div className="flex-1 min-w-0 max-w-sm">
+  <input type="text" value="Vizhenbooks Inc." readOnly className={ic + " bg-muted/40 cursor-default"} />
+  </div>
+  </div>
+  </>
+  )}
+  </SectionCard>
+  )}
  </div>
 
  {/* Assigned Team — full page width, gated */}
