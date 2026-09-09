@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useEngagements } from "@/store/EngagementsContext";
+import { clientsData as appClientsData } from "@/data/clientsData";
 import { Search, ChevronDown, MessageSquare, Send, AlertCircle, Layers, Briefcase, Loader, CheckCircle2, Archive } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,19 @@ import { StyledCard } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
 import sageLogo from "@/assets/sage-logo.svg";
+
+function getClientSourceIntegration(clientName: string): 'xero' | 'quickbooks' | 'sage' | null {
+  const normalized = clientName.trim().toLowerCase();
+  const client = appClientsData.find(c =>
+    c.legalEntityName.toLowerCase() === normalized ||
+    c.entityName.toLowerCase() === normalized
+  );
+  if (!client) return null;
+  if (client.integration === 'xero' || client.integration === 'quickbooks' || client.integration === 'sage') {
+    return client.integration;
+  }
+  return null;
+}
 
 function Highlight({ text, query }: { text: string; query: string }) {
  if (!query.trim()) return <>{text}</>;
