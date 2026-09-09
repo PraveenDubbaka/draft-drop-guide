@@ -1416,8 +1416,8 @@ export default function CreateEngagement() {
  Cancel
  </Button>
  <Button disabled={!isFormValid} onClick={handleCreate}>
- <Plus className="h-4 w-4" />
- Create Engagement
+ {isEditMode ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+ {isEditMode ? "Update Engagement" : "Create Engagement"}
  </Button>
  </div>
  </div>
