@@ -33,14 +33,14 @@ import { StyledCard } from "@/components/ui/card";
 import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
 import sageLogo from "@/assets/sage-logo.svg";
 
-function getClientSourceIntegration(clientName: string): 'xero' | 'quickbooks' | 'sage' | null {
+function getClientSourceIntegration(clientName: string): 'xero' | 'quickbooks' | null {
   const normalized = clientName.trim().toLowerCase();
   const client = appClientsData.find(c =>
     c.legalEntityName.toLowerCase() === normalized ||
     c.entityName.toLowerCase() === normalized
   );
   if (!client) return null;
-  if (client.integration === 'xero' || client.integration === 'quickbooks' || client.integration === 'sage') {
+  if (client.integration === 'xero' || client.integration === 'quickbooks') {
     return client.integration;
   }
   return null;
