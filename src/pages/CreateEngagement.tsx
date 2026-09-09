@@ -1173,15 +1173,22 @@ export default function CreateEngagement() {
   <div className="flex items-center gap-4 py-2.5">
   <span className="text-sm text-foreground w-32 shrink-0">Client Source Status<span className="text-destructive ml-0.5">*</span></span>
   <div className="flex-1 min-w-0 max-w-sm">
+  {clientHasSourceConnection ? (
   <div className="inline-flex items-center rounded-[10px] border border-border bg-card px-3 py-1.5">
   <img src={intuitQuickbooksLogo} alt="QuickBooks" className="h-5 object-contain" />
   </div>
+  ) : (
+  <div className="inline-flex items-center gap-2 rounded-[10px] border border-border bg-card px-3 py-1.5">
+  <span className="h-2.5 w-2.5 rounded-full bg-gray-400" />
+  <span className="text-sm text-foreground">Not connected</span>
+  </div>
+  )}
   </div>
   </div>
   <div className="flex items-center gap-4 py-2.5">
   <span className="text-sm text-foreground w-32 shrink-0 whitespace-nowrap">Data Source<span className="text-destructive ml-0.5">*</span></span>
   <div className="flex-1 min-w-0 max-w-sm">
-  <Select value={dataSource} onValueChange={v => setDataSource(v as "csv" | "source")}>
+  <Select value={dataSource} onValueChange={v => setDataSource(v as "csv" | "source")} disabled={!clientHasSourceConnection}>
   <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
   <SelectContent>
   <SelectItem value="csv">CSV</SelectItem>
@@ -1190,7 +1197,24 @@ export default function CreateEngagement() {
   </Select>
    </div>
    </div>
-   {dataSource === "csv" && (
+   {!clientHasSourceConnection && (
+   <div className="flex items-start gap-4 pb-2.5">
+   <span className="w-32 shrink-0" />
+   <div className="flex-1 min-w-0 max-w-sm flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
+   <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
+   <div className="flex flex-col gap-2">
+   <span className="text-sm text-red-800 dark:text-red-200">
+   No source connection found for this client. Connect your accounting software to continue.
+   </span>
+   <div className="flex items-center gap-4 text-sm">
+   <button type="button" onClick={() => navigate("/clients")} className="text-link hover:underline font-medium">Connect from client page →</button>
+   <button type="button" onClick={() => navigate("/clients")} className="text-link hover:underline font-medium">Connect here →</button>
+   </div>
+   </div>
+   </div>
+   </div>
+   )}
+   {clientHasSourceConnection && dataSource === "csv" && (
    <div className="flex items-start gap-4 pb-2.5">
    <span className="w-32 shrink-0" />
    <div className="flex-1 min-w-0 max-w-sm flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
@@ -1201,7 +1225,7 @@ export default function CreateEngagement() {
    </div>
    </div>
    )}
-   {dataSource === "source" && !sourceConnected && (
+   {clientHasSourceConnection && dataSource === "source" && !sourceConnected && (
   <div className="flex items-center gap-4 pb-2.5">
   <span className="w-32 shrink-0" />
   <div className="flex-1 min-w-0 max-w-sm flex items-center justify-between gap-3 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
@@ -1210,7 +1234,7 @@ export default function CreateEngagement() {
   </div>
   </div>
   )}
-  {dataSource === "source" && sourceConnected && (
+  {clientHasSourceConnection && dataSource === "source" && sourceConnected && (
   <>
   <div className="flex items-center gap-4 pb-2.5">
   <span className="w-32 shrink-0" />
