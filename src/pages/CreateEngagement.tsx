@@ -1151,7 +1151,7 @@ export default function CreateEngagement() {
   {isFullYearPeriod && (
   <SectionCard icon={<Link2 className="h-5 w-5" />} title="Engagement Source">
   <div className="flex items-center gap-4 py-2.5">
-  <span className="text-sm text-foreground w-32 shrink-0 whitespace-nowrap">Client Source Status<span className="text-destructive ml-0.5">*</span></span>
+  <span className="text-sm text-foreground w-32 shrink-0">Client Source Status<span className="text-destructive ml-0.5">*</span></span>
   <div className="flex-1 min-w-0 max-w-sm">
   <div className="inline-flex items-center rounded-[10px] border border-border bg-card px-3 py-1.5">
   <img src={intuitQuickbooksLogo} alt="QuickBooks" className="h-5 object-contain" />
