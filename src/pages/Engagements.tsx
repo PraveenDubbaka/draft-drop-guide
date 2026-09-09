@@ -160,7 +160,7 @@ export default function Engagements() {
 
  const handleEdit = (id: string, e: React.MouseEvent) => {
  e.stopPropagation();
- navigate(`/engagements/${id}`);
+ navigate(`/engagements/${id}/edit`);
  };
 
  return (

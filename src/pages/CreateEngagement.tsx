@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useEngagements } from "@/store/EngagementsContext";
-import { EngagementRecord, setEngagementMeta } from "@/store/engagementsStore";
+import { EngagementRecord, setEngagementMeta, getEngagementMeta, loadEngagements } from "@/store/engagementsStore";
 import { toast } from "sonner";
 import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
 import { ArrowLeft, Briefcase, Calendar, Users, ChevronDown, Plus, Pencil, Trash2, Search, ExternalLink, X, Building2, FileText, Settings2, Check, UserPlus, Link2, AlertTriangle, XCircle } from "lucide-react";
@@ -653,8 +653,14 @@ function formatDateCreated(): string {
 export default function CreateEngagement() {
  const navigate = useNavigate();
  const location = useLocation();
- const { addEngagement } = useEngagements();
-  const prefill = (location.state as { clientName?: string; engagementType?: string } | null) ?? {};
+ const { addEngagement, updateEngagement } = useEngagements();
+  const { engagementId: routeEngagementId } = useParams();
+  const isEditMode = !!routeEngagementId;
+  const editingRecord = isEditMode ? loadEngagements().find(e => e.id === routeEngagementId) : undefined;
+  const editingMeta = isEditMode ? getEngagementMeta(routeEngagementId!) : undefined;
+  const prefill = isEditMode
+    ? { clientName: editingRecord?.client, engagementType: editingRecord?.type }
+    : ((location.state as { clientName?: string; engagementType?: string } | null) ?? {});
 
   const findClientKey = (name: string): string => {
     if (CLIENT_DATA[name]) return name;
@@ -673,30 +679,30 @@ export default function CreateEngagement() {
      ?? null;
  const [engagementType, setEngagementType] = useState(prefill.engagementType || "Review (REV)");
  const prefillIsAudit = (prefill.engagementType || "Review (REV)") === "Audit (AUD)";
- const [engagementId, setEngagementId] = useState(prefillIsAudit ? "AUD-HFL-Mar312024" : "REV-DEF-Nov302023");
+ const [engagementId, setEngagementId] = useState(editingRecord?.id ?? (prefillIsAudit ? "AUD-HFL-Mar312024" : "REV-DEF-Nov302023"));
  const [engagementTemplate, setEngagementTemplate] = useState(prefillIsAudit ? "CAS Audit" : "Review Section 2400");
- const [templateId, setTemplateId] = useState(prefillIsAudit ? "audit5100" : "");
+ const [templateId, setTemplateId] = useState(editingMeta?.templateId ?? (prefillIsAudit ? "audit5100" : ""));
  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
- const [budget, setBudget] = useState("10000.00");
+ const [budget, setBudget] = useState(editingMeta?.budget ?? "10000.00");
  const [dataSource, setDataSource] = useState<"csv" | "source">("csv");
  const [sourceConnected, setSourceConnected] = useState(false);
 
-  // Sync data source default when client selection changes based on source connection status
-  useEffect(() => {
-    if (clientInfo) {
-      const hasSource = clientInfo.integrations.includes("quickbooks");
-      setDataSource("csv");
-      setSourceConnected(hasSource);
-    }
-  }, [clientInfo]);
+   // Sync data source default when client selection changes based on source connection status
+   useEffect(() => {
+     if (clientInfo) {
+       const hasSource = clientInfo.integrations.includes("quickbooks");
+       setDataSource("csv");
+       setSourceConnected(hasSource);
+     }
+   }, [clientInfo]);
 
- const [accountingStandards, setAccountingStandards] = useState(prefillIsAudit ? "ASPE — Canadian Accounting Standards for Private Enterprises" : "Section 2400 Review standards");
+ const [accountingStandards, setAccountingStandards] = useState(editingMeta?.accountingStandards ?? (prefillIsAudit ? "ASPE — Canadian Accounting Standards for Private Enterprises" : "Section 2400 Review standards"));
  const [additionalDisclosures, setAdditionalDisclosures] = useState(prefillIsAudit ? "Full financial statements" : "Statement of cash flows");
 
  // Engagement Period state
- const [periodType, setPeriodType] = useState(prefillIsAudit ? "Full Year" : "Full year");
- const [currentYearStart, setCurrentYearStart] = useState("12/01/2022");
- const [currentYearEnd, setCurrentYearEnd] = useState("11/30/2023");
+ const [periodType, setPeriodType] = useState(editingMeta?.auditPeriodType ?? (prefillIsAudit ? "Full Year" : "Full year"));
+ const [currentYearStart, setCurrentYearStart] = useState(editingMeta?.periodStart ?? "12/01/2022");
+ const [currentYearEnd, setCurrentYearEnd] = useState(editingMeta?.periodEnd ?? "11/30/2023");
  const [priorYear1Start, setPriorYear1Start] = useState("12/01/2021");
  const [priorYear1End, setPriorYear1End] = useState("11/30/2022");
  const [priorYear2Start, setPriorYear2Start] = useState("12/01/2020");
@@ -930,7 +936,7 @@ export default function CreateEngagement() {
  additionalDisclosures !== "" &&
  currentYearStart.trim() !== "" &&
  currentYearEnd.trim() !== "" &&
- teamMembers.length > 0;
+ (isEditMode || teamMembers.length > 0);
 
  const handleCreate = () => {
  const record: EngagementRecord = {
@@ -939,13 +945,17 @@ export default function CreateEngagement() {
  type: engagementType,
  yearEnd: formatYearEnd(currentYearEnd),
  team: "View Assignees",
- status: "New",
- statusVariant: "new",
- hasRF: false,
- dateCreated: formatDateCreated(),
+ status: editingRecord?.status ?? "New",
+ statusVariant: editingRecord?.statusVariant ?? "new",
+ hasRF: editingRecord?.hasRF ?? false,
+ dateCreated: editingRecord?.dateCreated ?? formatDateCreated(),
  firstYearAudit,
  };
+ if (isEditMode && editingRecord) {
+ updateEngagement(editingRecord.id, record);
+ } else {
  addEngagement(record);
+ }
  setEngagementMeta(engagementId, {
  firstYearAudit,
  firstYearOnPlatform: firstYearAudit ? firstYearOnPlatform : undefined,
@@ -984,7 +994,9 @@ export default function CreateEngagement() {
  localStorage.setItem(`audit-team-rates-${engagementId}`, JSON.stringify(rateMap));
  }
  }
- if (isAudit && firstYearAudit) {
+ if (isEditMode) {
+ toast.success("Engagement updated successfully.");
+ } else if (isAudit && firstYearAudit) {
  toast.success("Engagement created — IE checklist and predecessor letter added.");
  } else {
  toast.success("Engagement created successfully.");
@@ -993,7 +1005,7 @@ export default function CreateEngagement() {
  };
 
  return (
- <Layout title="Create Engagement">
+ <Layout title={isEditMode ? "Edit Engagement" : "Create Engagement"}>
  <div className="flex-1 overflow-y-auto bg-background">
  <div className="p-6">
  {/* Header with back button */}
@@ -1404,8 +1416,8 @@ export default function CreateEngagement() {
  Cancel
  </Button>
  <Button disabled={!isFormValid} onClick={handleCreate}>
- <Plus className="h-4 w-4" />
- Create Engagement
+ {isEditMode ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+ {isEditMode ? "Update Engagement" : "Create Engagement"}
  </Button>
  </div>
  </div>
