@@ -41,6 +41,8 @@ export function getEngagementSourceIntegration(
     const raw = localStorage.getItem(`engagement-meta-${engagementId}`);
     if (raw) dataSource = JSON.parse(raw)?.dataSource;
   } catch {}
-  if (dataSource !== "source") return null;
+  if (dataSource === "csv") return null;
+  // No saved selection (legacy engagement): fall back to the client's connection.
+  if (dataSource !== "source" && dataSource !== undefined) return null;
   return getClientSourceIntegration(clientName);
 }
