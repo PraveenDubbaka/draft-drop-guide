@@ -411,24 +411,17 @@ export default function Dashboard() {
  const [searchQuery, setSearchQuery] = useState("");
  const [expandedEngagement, setExpandedEngagement] = useState<string | null>(null);
  function toggleExpand(id: string) { setExpandedEngagement(prev => prev === id ? null : id); }
- const dashboardEngagements = allEngagements.map(e => {
- let integration: string | null = null;
- try {
- const stored = localStorage.getItem(`connectors-${e.id}`);
- if (stored) {
- const apps: string[] = JSON.parse(stored);
- integration = apps[0] ?? null;
- }
- } catch {}
- return {
- id: e.id,
- client: e.client,
- yearEnd: e.yearEnd,
- integration,
- status: e.status,
- statusVariant: e.status === "New" ? ("secondary" as const) : ("default" as const),
- };
- });
+  const dashboardEngagements = allEngagements.map(e => {
+  const integration = getClientSourceIntegration(e.client);
+  return {
+  id: e.id,
+  client: e.client,
+  yearEnd: e.yearEnd,
+  integration,
+  status: e.status,
+  statusVariant: e.status === "New" ? ("secondary" as const) : ("default" as const),
+  };
+  });
  const filteredDashboardEngagements = dashboardEngagements.filter(e =>
  !searchQuery.trim() ||
  e.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
