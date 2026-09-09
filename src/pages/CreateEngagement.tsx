@@ -4,7 +4,7 @@ import { useEngagements } from "@/store/EngagementsContext";
 import { EngagementRecord, setEngagementMeta } from "@/store/engagementsStore";
 import { toast } from "sonner";
 import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
-import { ArrowLeft, Briefcase, Calendar, Users, ChevronDown, Plus, Pencil, Trash2, Search, ExternalLink, X, Building2, FileText, Settings2, Check, UserPlus, Link2, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Briefcase, Calendar, Users, ChevronDown, Plus, Pencil, Trash2, Search, ExternalLink, X, Building2, FileText, Settings2, Check, UserPlus, Link2, AlertTriangle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -575,7 +575,7 @@ const CLIENT_DATA: Record<string, {
  businessPhone: string;
  cellPhone: string;
 }> = {
- "Harbor Freight Logistics LLC": {
+ "Harbor Freight Logistics": {
  entityLegalName: "Harbor Freight Logistics LLC",
  entityType: "Corporation",
  contactPerson: "Michael Torres",
@@ -601,6 +601,15 @@ const CLIENT_DATA: Record<string, {
  integrations: ["quickbooks"],
  businessPhone: "-",
  cellPhone: "-",
+ },
+ "Maple Hill Farms": {
+ entityLegalName: "Maple Hill Farms",
+ entityType: "Corporation",
+ contactPerson: "Margaret Hill",
+ engagementPartner: "Ayesha Naaz",
+ integrations: [],
+ businessPhone: "(519) 555-0488",
+ cellPhone: "(519) 555-0489",
  },
 };
 
@@ -640,7 +649,11 @@ export default function CreateEngagement() {
 
  // Engagement Details state
  const [clientName, setClientName] = useState(prefill.clientName || "");
- const clientInfo = CLIENT_DATA[clientName] ?? null;
+ const clientInfo = CLIENT_DATA[clientName]
+    ?? Object.entries(CLIENT_DATA).find(([key, c]) =>
+         key === clientName || c.entityLegalName === clientName || key.includes(clientName) || clientName.includes(key)
+       )?.[1]
+    ?? null;
  const [engagementType, setEngagementType] = useState(prefill.engagementType || "Review (REV)");
  const prefillIsAudit = (prefill.engagementType || "Review (REV)") === "Audit (AUD)";
  const [engagementId, setEngagementId] = useState(prefillIsAudit ? "AUD-HFL-Mar312024" : "REV-DEF-Nov302023");
@@ -650,6 +663,16 @@ export default function CreateEngagement() {
  const [budget, setBudget] = useState("10000.00");
  const [dataSource, setDataSource] = useState<"csv" | "source">("csv");
  const [sourceConnected, setSourceConnected] = useState(false);
+
+ // Sync data source default when client selection changes based on source connection status
+ useEffect(() => {
+ if (clientInfo) {
+ const hasSource = clientInfo.integrations.includes("quickbooks");
+ setDataSource(hasSource ? "csv" : "source");
+ if (!hasSource) setSourceConnected(false);
+ }
+ }, [clientInfo]);
+
  const [accountingStandards, setAccountingStandards] = useState(prefillIsAudit ? "ASPE — Canadian Accounting Standards for Private Enterprises" : "Section 2400 Review standards");
  const [additionalDisclosures, setAdditionalDisclosures] = useState(prefillIsAudit ? "Full financial statements" : "Statement of cash flows");
 
@@ -837,6 +860,7 @@ export default function CreateEngagement() {
 
  const isFullYearPeriod = periodType === "Full Year" || periodType === "Full year";
  const isStubPeriod = periodType === "Stub Period" || periodType === "Stub period";
+ const clientHasSourceConnection = clientInfo?.integrations.includes("quickbooks") ?? false;
 
  const applyFullYearPriors = (cyStart: string, cyEnd: string) => {
  setPriorYear1Start(shiftYearStr(cyStart, -1));
@@ -884,7 +908,7 @@ export default function CreateEngagement() {
  engagementTemplate.trim() !== "" &&
  engagementType !== "" &&
  budget.trim() !== "" &&
- (!isFullYearPeriod || dataSource === "csv" || sourceConnected) &&
+ (!isFullYearPeriod || clientHasSourceConnection || sourceConnected) &&
  accountingStandards !== "" &&
  additionalDisclosures !== "" &&
  currentYearStart.trim() !== "" &&
@@ -1153,15 +1177,22 @@ export default function CreateEngagement() {
   <div className="flex items-center gap-4 py-2.5">
   <span className="text-sm text-foreground w-32 shrink-0">Client Source Status<span className="text-destructive ml-0.5">*</span></span>
   <div className="flex-1 min-w-0 max-w-sm">
+  {clientHasSourceConnection ? (
   <div className="inline-flex items-center rounded-[10px] border border-border bg-card px-3 py-1.5">
   <img src={intuitQuickbooksLogo} alt="QuickBooks" className="h-5 object-contain" />
   </div>
+  ) : (
+  <div className="inline-flex items-center gap-2 rounded-[10px] border border-border bg-card px-3 py-1.5">
+  <span className="h-2.5 w-2.5 rounded-full bg-gray-400" />
+  <span className="text-sm text-foreground">Not connected</span>
+  </div>
+  )}
   </div>
   </div>
   <div className="flex items-center gap-4 py-2.5">
   <span className="text-sm text-foreground w-32 shrink-0 whitespace-nowrap">Data Source<span className="text-destructive ml-0.5">*</span></span>
   <div className="flex-1 min-w-0 max-w-sm">
-  <Select value={dataSource} onValueChange={v => setDataSource(v as "csv" | "source")}>
+  <Select value={dataSource} onValueChange={v => setDataSource(v as "csv" | "source")} disabled={!clientHasSourceConnection}>
   <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
   <SelectContent>
   <SelectItem value="csv">CSV</SelectItem>
@@ -1170,7 +1201,24 @@ export default function CreateEngagement() {
   </Select>
    </div>
    </div>
-   {dataSource === "csv" && (
+   {!clientHasSourceConnection && (
+   <div className="flex items-start gap-4 pb-2.5">
+   <span className="w-32 shrink-0" />
+   <div className="flex-1 min-w-0 max-w-sm flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
+   <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
+   <div className="flex flex-col gap-2">
+   <span className="text-sm text-red-800 dark:text-red-200">
+   No source connection found for this client. Connect your accounting software to continue.
+   </span>
+ <div className="flex items-center gap-4 text-sm">
+ <button type="button" onClick={() => navigate("/clients")} className="text-link hover:underline font-medium whitespace-nowrap">Connect from client page →</button>
+ <button type="button" onClick={() => navigate("/clients")} className="text-link hover:underline font-medium whitespace-nowrap">Connect here →</button>
+ </div>
+   </div>
+   </div>
+   </div>
+   )}
+   {clientHasSourceConnection && dataSource === "csv" && (
    <div className="flex items-start gap-4 pb-2.5">
    <span className="w-32 shrink-0" />
    <div className="flex-1 min-w-0 max-w-sm flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
@@ -1181,7 +1229,7 @@ export default function CreateEngagement() {
    </div>
    </div>
    )}
-   {dataSource === "source" && !sourceConnected && (
+   {clientHasSourceConnection && dataSource === "source" && !sourceConnected && (
   <div className="flex items-center gap-4 pb-2.5">
   <span className="w-32 shrink-0" />
   <div className="flex-1 min-w-0 max-w-sm flex items-center justify-between gap-3 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
@@ -1190,7 +1238,7 @@ export default function CreateEngagement() {
   </div>
   </div>
   )}
-  {dataSource === "source" && sourceConnected && (
+  {clientHasSourceConnection && dataSource === "source" && sourceConnected && (
   <>
   <div className="flex items-center gap-4 pb-2.5">
   <span className="w-32 shrink-0" />
