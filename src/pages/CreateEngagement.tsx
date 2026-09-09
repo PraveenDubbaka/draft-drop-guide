@@ -602,6 +602,15 @@ const CLIENT_DATA: Record<string, {
  businessPhone: "-",
  cellPhone: "-",
  },
+ "Bayside Consulting Inc.": {
+ entityLegalName: "Bayside Consulting Inc.",
+ entityType: "Corporation",
+ contactPerson: "Priya Sharma",
+ engagementPartner: "Atin Gupta",
+ integrations: [],
+ businessPhone: "+1 (604) 555-0299",
+ cellPhone: "-",
+ },
 };
 
 function shiftYearStr(mmddyyyy: string, delta: number): string {
