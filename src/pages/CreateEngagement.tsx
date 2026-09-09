@@ -1147,7 +1147,7 @@ export default function CreateEngagement() {
  <div className="flex items-center gap-4 py-2.5">
  <span className="text-sm text-foreground w-32 shrink-0 whitespace-nowrap">Period Type<span className="text-destructive ml-0.5">*</span></span>
  <div className="flex-1 min-w-0 max-w-sm">
- <Select value={periodType} onValueChange={setPeriodType}>
+ <Select value={periodType} onValueChange={handlePeriodTypeChange}>
  <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select..." /></SelectTrigger>
  <SelectContent>
  {periodTypeOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
@@ -1155,9 +1155,17 @@ export default function CreateEngagement() {
  </Select>
  </div>
  </div>
+ {isStubPeriod && (
+ <div className="flex items-start gap-4 pb-2.5">
+ <span className="w-32 shrink-0" />
+ <p className="text-xs text-muted-foreground max-w-lg">
+ Stub period selected — enter the exact start and end dates for this shorter period. Dates are not auto-derived and comparatives are not annualized.
+ </p>
+ </div>
+ )}
  {/* Year rows */}
  {[
- { label: "Current Year", required: true, start: currentYearStart, setStart: setCurrentYearStart, end: currentYearEnd, setEnd: setCurrentYearEnd },
+ { label: "Current Year", required: true, start: currentYearStart, setStart: handleCurrentYearStartChange, end: currentYearEnd, setEnd: handleCurrentYearEndChange },
  { label: "Prior Year 1", required: false, start: priorYear1Start, setStart: setPriorYear1Start, end: priorYear1End, setEnd: setPriorYear1End },
  { label: "Prior Year 2", required: false, start: priorYear2Start, setStart: setPriorYear2Start, end: priorYear2End, setEnd: setPriorYear2End },
  ].map(row => (
