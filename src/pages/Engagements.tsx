@@ -353,8 +353,11 @@ export default function Engagements() {
  </div>
  </td>
  <td className="px-6 py-2 text-sm text-foreground whitespace-nowrap">{engagement.type}</td>
- <td className="px-6 py-2 text-sm text-muted-foreground whitespace-nowrap">{engagement.yearEnd}</td>
- <td className="px-6 py-2 whitespace-nowrap">
+  <td className="px-6 py-2 text-sm text-muted-foreground whitespace-nowrap">{engagement.yearEnd}</td>
+  <td className="px-6 py-2 whitespace-nowrap">
+  <SourceBadge type={getClientSourceIntegration(engagement.client)} />
+  </td>
+  <td className="px-6 py-2 whitespace-nowrap">
  <button
  className="inline-flex items-center gap-1 text-sm text-link cursor-pointer hover:underline"
  onClick={(e) => { e.stopPropagation(); setExpandedId(isExpanded ? null : engagement.id); }}
