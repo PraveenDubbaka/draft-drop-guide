@@ -49,8 +49,15 @@ function seedDemoEngagementMeta() {
  }
 
   // Deterministic demo data-source seeds for the edit-engagement scenarios.
- const SEED_FLAG = 'cds_engagement_datasource_seed_v3';
+ const SEED_FLAG = 'cds_engagement_datasource_seed_v4';
  if (localStorage.getItem(SEED_FLAG)) return;
+  const sampleTeam = (): EngagementMeta['teamMembers'] => ([
+    { id: 'tm-partner', role: 'Partner', name: 'Atin Gupta', email: 'atin@countable.co', title: 'Partner', hourlyRate: '200.00', timeAllocation: '15' },
+    { id: 'tm-manager', role: 'Manager', name: 'Kaushal Bhagat', email: 'kaushalb@countable.co', title: 'Manager', hourlyRate: '100.00', timeAllocation: '35' },
+    { id: 'tm-senior', role: 'Senior', name: 'Michael Torres', email: 'michaelt@countable.co', title: 'Senior Auditor', hourlyRate: '85.00', timeAllocation: '30' },
+    { id: 'tm-staff', role: 'Staff / Assistant', name: 'Sarah Chen', email: 'sarahc@countable.co', title: 'Staff Auditor', hourlyRate: '65.00', timeAllocation: '20' },
+  ]);
+
  const seeds: Record<string, { dataSource: 'csv' | 'source'; sourceProvider?: 'xero' | 'quickbooks' }> = {
    'COM-QB-Jan142026': { dataSource: 'source' }, // Scenario 1 — already Source, no change
    'COM-QB-Dec312024': { dataSource: 'csv' },     // Scenario 2 — CSV, switch to Source
@@ -64,6 +71,7 @@ function seedDemoEngagementMeta() {
      const meta: EngagementMeta = raw ? JSON.parse(raw) : { firstYearAudit: false };
      meta.dataSource = seed.dataSource;
      if (seed.sourceProvider) meta.sourceProvider = seed.sourceProvider;
+     if (!meta.teamMembers || meta.teamMembers.length === 0) meta.teamMembers = sampleTeam();
      localStorage.setItem(META_KEY(id), JSON.stringify(meta));
    } catch {}
  });
