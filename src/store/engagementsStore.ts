@@ -28,6 +28,7 @@ export const SEED_ENGAGEMENTS: EngagementRecord[] = [
  { id: "COM-CAS-Dec312024", client: "cash flow ls", type: "Compilation (COM)", yearEnd: "Dec 31, 2024", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: false, dateCreated: "Jan 13, 2026 09:21 AM", firstYearAudit: false },
  { id: "COM-QB-Jan142026", client: "qb 40.1", type: "Compilation (COM)", yearEnd: "Jan 14, 2026", team: "View Assignees", status: "New", statusVariant: "new", hasRF: false, dateCreated: "Jan 13, 2026 04:36 AM", firstYearAudit: false },
  { id: "COM-SHR-Dec302023", client: "ShRoll Forward", type: "Compilation (COM)", yearEnd: "Dec 30, 2023", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: true, dateCreated: "Jan 13, 2026 03:51 AM", firstYearAudit: false },
+ { id: "COM-HF-Dec312024", client: "Harbor Freight Logistics LLC", type: "Compilation (COM)", yearEnd: "Dec 31, 2024", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: false, dateCreated: "Jan 22, 2026 08:00 AM", firstYearAudit: false },
 ];
 
 function seedDemoEngagementMeta() {
@@ -48,14 +49,14 @@ function seedDemoEngagementMeta() {
  }
 
   // Deterministic demo data-source seeds for the edit-engagement scenarios.
- const SEED_FLAG = 'cds_engagement_datasource_seed_v2';
+ const SEED_FLAG = 'cds_engagement_datasource_seed_v3';
  if (localStorage.getItem(SEED_FLAG)) return;
  const seeds: Record<string, { dataSource: 'csv' | 'source'; sourceProvider?: 'xero' | 'quickbooks' }> = {
    'COM-QB-Jan142026': { dataSource: 'source' }, // Scenario 1 — already Source, no change
    'COM-QB-Dec312024': { dataSource: 'csv' },     // Scenario 2 — CSV, switch to Source
    'COM-QB-Dec312025': { dataSource: 'source' },  // Scenario 3 — Source, switch to CSV
    'COM-CHE-Dec252024': { dataSource: 'csv' },    // Scenario 4 — client not connected, switch to Source
-   'AUD-US-Dec312024': { dataSource: 'source', sourceProvider: 'xero' }, // Scenario 5 — provider mismatch
+   'COM-HF-Dec312024': { dataSource: 'source', sourceProvider: 'xero' }, // Scenario 5 — provider mismatch (Compilation)
  };
  Object.entries(seeds).forEach(([id, seed]) => {
    try {

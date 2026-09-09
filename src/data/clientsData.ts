@@ -317,10 +317,11 @@ export const clientsData: Client[] = [
  assignedTeam: null,
  businessPhone: '(310) 555-0188',
  cellPhone: null,
- engagements: [
- { id: 'AUD-US-Dec312024', type: 'Audit (AUD)', periodEnd: 'Dec 31, 2024', status: 'In Progress', dateCreated: 'Jan 20, 2025 08:00 AM' },
- { id: 'AUD-HF-Dec312023', type: 'Audit (AUD)', periodEnd: 'Dec 31, 2023', status: 'Completed', dateCreated: 'Jan 15, 2024 09:00 AM' },
- ],
+  engagements: [
+  { id: 'AUD-US-Dec312024', type: 'Audit (AUD)', periodEnd: 'Dec 31, 2024', status: 'In Progress', dateCreated: 'Jan 20, 2025 08:00 AM' },
+  { id: 'COM-HF-Dec312024', type: 'Compilation (COM)', periodEnd: 'Dec 31, 2024', status: 'In Progress', dateCreated: 'Jan 22, 2026 08:00 AM' },
+  { id: 'AUD-HF-Dec312023', type: 'Audit (AUD)', periodEnd: 'Dec 31, 2023', status: 'Completed', dateCreated: 'Jan 15, 2024 09:00 AM' },
+  ],
  },
  {
  id: 'QB001',
