@@ -679,24 +679,24 @@ export default function CreateEngagement() {
      ?? null;
  const [engagementType, setEngagementType] = useState(prefill.engagementType || "Review (REV)");
  const prefillIsAudit = (prefill.engagementType || "Review (REV)") === "Audit (AUD)";
- const [engagementId, setEngagementId] = useState(prefillIsAudit ? "AUD-HFL-Mar312024" : "REV-DEF-Nov302023");
+ const [engagementId, setEngagementId] = useState(editingRecord?.id ?? (prefillIsAudit ? "AUD-HFL-Mar312024" : "REV-DEF-Nov302023"));
  const [engagementTemplate, setEngagementTemplate] = useState(prefillIsAudit ? "CAS Audit" : "Review Section 2400");
- const [templateId, setTemplateId] = useState(prefillIsAudit ? "audit5100" : "");
+ const [templateId, setTemplateId] = useState(editingMeta?.templateId ?? (prefillIsAudit ? "audit5100" : ""));
  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
- const [budget, setBudget] = useState("10000.00");
+ const [budget, setBudget] = useState(editingMeta?.budget ?? "10000.00");
  const [dataSource, setDataSource] = useState<"csv" | "source">("csv");
  const [sourceConnected, setSourceConnected] = useState(false);
 
-  // Sync data source default when client selection changes based on source connection status
-  useEffect(() => {
-    if (clientInfo) {
-      const hasSource = clientInfo.integrations.includes("quickbooks");
-      setDataSource("csv");
-      setSourceConnected(hasSource);
-    }
-  }, [clientInfo]);
+   // Sync data source default when client selection changes based on source connection status
+   useEffect(() => {
+     if (clientInfo) {
+       const hasSource = clientInfo.integrations.includes("quickbooks");
+       setDataSource("csv");
+       setSourceConnected(hasSource);
+     }
+   }, [clientInfo]);
 
- const [accountingStandards, setAccountingStandards] = useState(prefillIsAudit ? "ASPE — Canadian Accounting Standards for Private Enterprises" : "Section 2400 Review standards");
+ const [accountingStandards, setAccountingStandards] = useState(editingMeta?.accountingStandards ?? (prefillIsAudit ? "ASPE — Canadian Accounting Standards for Private Enterprises" : "Section 2400 Review standards"));
  const [additionalDisclosures, setAdditionalDisclosures] = useState(prefillIsAudit ? "Full financial statements" : "Statement of cash flows");
 
  // Engagement Period state
