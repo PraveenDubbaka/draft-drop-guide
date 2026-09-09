@@ -700,9 +700,9 @@ export default function CreateEngagement() {
  const [additionalDisclosures, setAdditionalDisclosures] = useState(prefillIsAudit ? "Full financial statements" : "Statement of cash flows");
 
  // Engagement Period state
- const [periodType, setPeriodType] = useState(prefillIsAudit ? "Full Year" : "Full year");
- const [currentYearStart, setCurrentYearStart] = useState("12/01/2022");
- const [currentYearEnd, setCurrentYearEnd] = useState("11/30/2023");
+ const [periodType, setPeriodType] = useState(editingMeta?.auditPeriodType ?? (prefillIsAudit ? "Full Year" : "Full year"));
+ const [currentYearStart, setCurrentYearStart] = useState(editingMeta?.periodStart ?? "12/01/2022");
+ const [currentYearEnd, setCurrentYearEnd] = useState(editingMeta?.periodEnd ?? "11/30/2023");
  const [priorYear1Start, setPriorYear1Start] = useState("12/01/2021");
  const [priorYear1End, setPriorYear1End] = useState("11/30/2022");
  const [priorYear2Start, setPriorYear2Start] = useState("12/01/2020");
