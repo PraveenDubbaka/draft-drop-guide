@@ -978,8 +978,13 @@ export default function CreateEngagement() {
 
   // Edit-mode scenario: engagement was CSV, client has a source connection, user switched to Source
   const isCsvToSourceSwitch = isEditMode && clientHasSourceConnection && originalDataSource === "csv" && dataSource === "source" && sourceConnected;
-  // Edit-mode scenario 2: engagement was Source, user switched to CSV
-  const isSourceToCsvSwitch = isEditMode && clientHasSourceConnection && originalDataSource === "source" && dataSource === "csv";
+   // Edit-mode scenario 2: engagement was Source, user switched to CSV
+   const isSourceToCsvSwitch = isEditMode && clientHasSourceConnection && originalDataSource === "source" && dataSource === "csv";
+   // Edit-mode scenario 5: the client's source connection changed since the engagement was set up
+   const savedSourceProvider = editingMeta?.sourceProvider;
+   const isSourceProviderMismatch = isEditMode && clientHasSourceConnection
+     && originalDataSource === "source" && dataSource === "source"
+     && !!savedSourceProvider && savedSourceProvider !== clientSourceIntegration;
 
  const performSave = () => {
  const record: EngagementRecord = {
@@ -1011,6 +1016,7 @@ export default function CreateEngagement() {
  periodStart: currentYearStart,
  periodEnd: currentYearEnd,
  dataSource,
+ sourceProvider: dataSource === "source" ? (clientSourceIntegration ?? undefined) : undefined,
  auditPeriodType: isAudit ? periodType : undefined,
  annualizeInterim: isAudit && periodType === "Interim (6-month)" ? annualizeInterim : undefined,
  firstTimeAdoption: isAudit ? firstTimeAdoption : undefined,
