@@ -1018,15 +1018,19 @@ export default function CreateEngagement() {
  ].map((col) => (
  <div key={col.label} className="flex flex-col gap-1">
  <span className="text-xs font-semibold text-primary">{col.label}</span>
- {Array.isArray(col.value) ? (
- <div className="flex items-center gap-1.5">
- {col.value.includes("quickbooks") && <img src={intuitQuickbooksLogo} alt="QuickBooks" className="h-5 object-contain" />}
- </div>
- ) : (col as any).isLink ? (
- <span className="text-sm text-link font-medium cursor-pointer hover:underline">{col.value as string}</span>
- ) : (
- <span className="text-sm text-foreground">{col.value as string}</span>
- )}
+              {Array.isArray(col.value) ? (
+                <div className="flex items-center gap-1.5">
+                  {col.value.includes("quickbooks") ? (
+                    <img src={intuitQuickbooksLogo} alt="QuickBooks" className="h-5 object-contain" />
+                  ) : (
+                    <span className="text-sm text-foreground">—</span>
+                  )}
+                </div>
+              ) : (col as any).isLink ? (
+                <span className="text-sm text-link font-medium cursor-pointer hover:underline">{col.value as string}</span>
+              ) : (
+                <span className="text-sm text-foreground">{(col.value as string) || "—"}</span>
+              )}
  </div>
  ))}
  </div>
