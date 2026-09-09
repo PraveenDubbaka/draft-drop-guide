@@ -31,7 +31,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Layout } from "@/components/Layout";
 import { StyledCard } from "@/components/ui/card";
 import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
-import { getClientSourceIntegration } from "@/lib/clientSource";
+import { getEngagementSourceIntegration } from "@/lib/clientSource";
 
 
 function SourceBadge({ type }: { type: 'xero' | 'quickbooks' | null }) {
@@ -333,7 +333,7 @@ export default function Engagements() {
  <td className="px-6 py-2 text-sm text-foreground whitespace-nowrap">{engagement.type}</td>
   <td className="px-6 py-2 text-sm text-muted-foreground whitespace-nowrap">{engagement.yearEnd}</td>
   <td className="px-6 py-2 whitespace-nowrap">
-  <SourceBadge type={getClientSourceIntegration(engagement.client)} />
+  <SourceBadge type={getEngagementSourceIntegration(engagement.id, engagement.client)} />
   </td>
   <td className="px-6 py-2 whitespace-nowrap">
  <button

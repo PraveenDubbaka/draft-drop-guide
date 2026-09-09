@@ -13,7 +13,7 @@ import { StyledCard } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
 import sageLogo from "@/assets/sage-logo.svg";
-import { getClientSourceIntegration } from "@/lib/clientSource";
+import { getEngagementSourceIntegration } from "@/lib/clientSource";
 
 
 function Highlight({ text, query }: { text: string; query: string }) {
@@ -401,7 +401,7 @@ export default function Dashboard() {
  const [expandedEngagement, setExpandedEngagement] = useState<string | null>(null);
  function toggleExpand(id: string) { setExpandedEngagement(prev => prev === id ? null : id); }
   const dashboardEngagements = allEngagements.map(e => {
-  const integration = getClientSourceIntegration(e.client);
+  const integration = getEngagementSourceIntegration(e.id, e.client);
   return {
   id: e.id,
   client: e.client,

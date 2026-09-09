@@ -26,3 +26,21 @@ export function getClientSourceIntegration(clientName: string): ClientSourceInte
 
 export const sourceLabel = (t: ClientSourceIntegration) =>
   t === "xero" ? "Xero" : t === "quickbooks" ? "QuickBooks Online" : "CSV";
+
+/**
+ * Resolve the source shown for an engagement: it reflects the Data Source the
+ * user picked when creating/editing the engagement. CSV engagements always show
+ * CSV even when the client has a live source connection.
+ */
+export function getEngagementSourceIntegration(
+  engagementId: string,
+  clientName: string
+): ClientSourceIntegration {
+  let dataSource: "csv" | "source" | undefined;
+  try {
+    const raw = localStorage.getItem(`engagement-meta-${engagementId}`);
+    if (raw) dataSource = JSON.parse(raw)?.dataSource;
+  } catch {}
+  if (dataSource === "csv") return null;
+  return getClientSourceIntegration(clientName);
+}
