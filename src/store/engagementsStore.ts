@@ -49,14 +49,14 @@ function seedDemoEngagementMeta() {
  }
 
   // Deterministic demo data-source seeds for the edit-engagement scenarios.
- const SEED_FLAG = 'cds_engagement_datasource_seed_v2';
+ const SEED_FLAG = 'cds_engagement_datasource_seed_v3';
  if (localStorage.getItem(SEED_FLAG)) return;
  const seeds: Record<string, { dataSource: 'csv' | 'source'; sourceProvider?: 'xero' | 'quickbooks' }> = {
    'COM-QB-Jan142026': { dataSource: 'source' }, // Scenario 1 — already Source, no change
    'COM-QB-Dec312024': { dataSource: 'csv' },     // Scenario 2 — CSV, switch to Source
    'COM-QB-Dec312025': { dataSource: 'source' },  // Scenario 3 — Source, switch to CSV
    'COM-CHE-Dec252024': { dataSource: 'csv' },    // Scenario 4 — client not connected, switch to Source
-   'AUD-US-Dec312024': { dataSource: 'source', sourceProvider: 'xero' }, // Scenario 5 — provider mismatch
+   'COM-HF-Dec312024': { dataSource: 'source', sourceProvider: 'xero' }, // Scenario 5 — provider mismatch (Compilation)
  };
  Object.entries(seeds).forEach(([id, seed]) => {
    try {
