@@ -1067,7 +1067,7 @@ export default function CreateEngagement() {
  <span className="text-xs font-semibold text-primary">{col.label}</span>
               {Array.isArray(col.value) ? (
                 <div className="flex items-center gap-1.5">
-                  {col.value.includes("quickbooks") ? (
+                  {clientSourceIntegration ? (
                     <img src={clientSourceIntegration === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={sourceLabel(clientSourceIntegration)} className="h-5 object-contain" />
                   ) : (
                     <span className="text-sm text-foreground">—</span>
@@ -1249,7 +1249,7 @@ export default function CreateEngagement() {
   <div className="flex-1 min-w-0 max-w-sm">
   {clientHasSourceConnection ? (
   <div className="inline-flex items-center rounded-[10px] border border-border bg-card px-3 py-1.5">
-  <img src={intuitQuickbooksLogo} alt="QuickBooks" className="h-5 object-contain" />
+  <img src={clientSourceIntegration === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={sourceLabel(clientSourceIntegration)} className="h-5 object-contain" />
   </div>
   ) : (
   <div className="inline-flex items-center gap-2 rounded-[10px] border border-border bg-card px-3 py-1.5">
