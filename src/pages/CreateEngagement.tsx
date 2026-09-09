@@ -674,11 +674,26 @@ export default function CreateEngagement() {
 
   // Engagement Details state
   const [clientName, setClientName] = useState(findClientKey(prefill.clientName || ""));
+  const appClient = clientName
+    ? appClientsData.find(c => {
+        const n = clientName.trim().toLowerCase();
+        return c.legalEntityName.toLowerCase() === n || c.entityName.toLowerCase() === n
+          || c.legalEntityName.toLowerCase().includes(n) || n.includes(c.entityName.toLowerCase());
+      })
+    : undefined;
   const clientInfo = CLIENT_DATA[clientName]
      ?? Object.entries(CLIENT_DATA).find(([key, c]) =>
           key === clientName || c.entityLegalName === clientName || key.includes(clientName) || clientName.includes(key)
         )?.[1]
-     ?? null;
+     ?? (appClient ? {
+          entityLegalName: appClient.legalEntityName,
+          entityType: appClient.entityType,
+          contactPerson: appClient.contactPerson,
+          engagementPartner: appClient.engagementPartner,
+          integrations: appClient.integration === "xero" || appClient.integration === "quickbooks" ? [appClient.integration] : [],
+          businessPhone: appClient.businessPhone || "",
+          cellPhone: appClient.cellPhone || "",
+        } : null);
  const [engagementType, setEngagementType] = useState(prefill.engagementType || "Review (REV)");
  const prefillIsAudit = (prefill.engagementType || "Review (REV)") === "Audit (AUD)";
  const [engagementId, setEngagementId] = useState(editingRecord?.id ?? (prefillIsAudit ? "AUD-HFL-Mar312024" : "REV-DEF-Nov302023"));
