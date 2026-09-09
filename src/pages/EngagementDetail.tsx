@@ -278,7 +278,7 @@ const engagementsData: Record<string, {
  },
  "COM-QB-Dec312025": {
  id: "COM-QB-Dec312025",
- client: "qb 40.1",
+ client: "Riverstone Capital",
  type: "Compilation (COM)",
  yearEnd: "Dec 31, 2025",
  status: "In Progress"
