@@ -978,8 +978,13 @@ export default function CreateEngagement() {
 
   // Edit-mode scenario: engagement was CSV, client has a source connection, user switched to Source
   const isCsvToSourceSwitch = isEditMode && clientHasSourceConnection && originalDataSource === "csv" && dataSource === "source" && sourceConnected;
-  // Edit-mode scenario 2: engagement was Source, user switched to CSV
-  const isSourceToCsvSwitch = isEditMode && clientHasSourceConnection && originalDataSource === "source" && dataSource === "csv";
+   // Edit-mode scenario 2: engagement was Source, user switched to CSV
+   const isSourceToCsvSwitch = isEditMode && clientHasSourceConnection && originalDataSource === "source" && dataSource === "csv";
+   // Edit-mode scenario 5: the client's source connection changed since the engagement was set up
+   const savedSourceProvider = editingMeta?.sourceProvider;
+   const isSourceProviderMismatch = isEditMode && clientHasSourceConnection
+     && originalDataSource === "source" && dataSource === "source"
+     && !!savedSourceProvider && savedSourceProvider !== clientSourceIntegration;
 
  const performSave = () => {
  const record: EngagementRecord = {
@@ -1011,6 +1016,7 @@ export default function CreateEngagement() {
  periodStart: currentYearStart,
  periodEnd: currentYearEnd,
  dataSource,
+ sourceProvider: dataSource === "source" ? (clientSourceIntegration ?? undefined) : undefined,
  auditPeriodType: isAudit ? periodType : undefined,
  annualizeInterim: isAudit && periodType === "Interim (6-month)" ? annualizeInterim : undefined,
  firstTimeAdoption: isAudit ? firstTimeAdoption : undefined,
@@ -1051,7 +1057,7 @@ export default function CreateEngagement() {
  const [showDataHandlingModal, setShowDataHandlingModal] = useState(false);
 
   const handleCreate = () => {
-  if (isCsvToSourceSwitch || isSourceToCsvSwitch) {
+  if (isCsvToSourceSwitch || isSourceToCsvSwitch || isSourceProviderMismatch) {
   setShowDataHandlingModal(true);
   return;
   }
@@ -1305,8 +1311,14 @@ export default function CreateEngagement() {
   <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
    <div className="flex flex-col gap-2">
    <span className="text-sm text-red-800 dark:text-red-200">
-   No source connection found for this client. Connect your accounting software to continue.
+   No source connection found for this client. Connect your accounting software {isEditMode ? "before updating." : "to continue."}
    </span>
+   {isEditMode && (
+   <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+   <button type="button" onClick={() => navigate("/clients")} className="text-sm text-[#1C63A6] hover:underline">Connect from client page →</button>
+   <button type="button" onClick={() => setSourceConnected(true)} className="text-sm text-[#1C63A6] hover:underline">Connect here →</button>
+   </div>
+   )}
    </div>
   </div>
   </div>
@@ -1350,6 +1362,20 @@ export default function CreateEngagement() {
  <span className="text-sm text-amber-800 dark:text-amber-200">
  Switching to Source will replace your existing CSV trial balance data. You will be asked how to handle existing data when you click Update Engagement.
  </span>
+ </div>
+ </div>
+ )}
+ {isSourceProviderMismatch && (
+ <div className="flex items-start gap-4 pb-2.5">
+ <span className="w-32 shrink-0" />
+ <div className="flex-1 min-w-0 max-w-sm flex flex-col gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+ <div className="flex items-start gap-2">
+ <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+ <span className="text-sm text-amber-800 dark:text-amber-200">
+ Your client's source connection has changed. This engagement is still linked to {sourceLabel(savedSourceProvider ?? null)}. Update the engagement to pull data from {sourceLabel(clientSourceIntegration)}.
+ </span>
+ </div>
+ <button type="button" onClick={handleCreate} className="self-start text-sm text-[#1C63A6] hover:underline">Update Engagement →</button>
  </div>
  </div>
  )}

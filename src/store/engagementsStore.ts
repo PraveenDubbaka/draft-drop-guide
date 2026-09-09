@@ -47,19 +47,22 @@ function seedDemoEngagementMeta() {
    localStorage.setItem(key, JSON.stringify(meta));
  }
 
- // Deterministic demo data-source seeds for the edit-engagement scenarios.
- const SEED_FLAG = 'cds_engagement_datasource_seed_v1';
+  // Deterministic demo data-source seeds for the edit-engagement scenarios.
+ const SEED_FLAG = 'cds_engagement_datasource_seed_v2';
  if (localStorage.getItem(SEED_FLAG)) return;
- const seeds: Record<string, 'csv' | 'source'> = {
-   'COM-QB-Jan142026': 'source', // Scenario 1 — already Source, no change
-   'COM-QB-Dec312024': 'csv',     // Scenario 2 — CSV, switch to Source
-   'COM-QB-Dec312025': 'source',  // Scenario 3 — Source, switch to CSV
+ const seeds: Record<string, { dataSource: 'csv' | 'source'; sourceProvider?: 'xero' | 'quickbooks' }> = {
+   'COM-QB-Jan142026': { dataSource: 'source' }, // Scenario 1 — already Source, no change
+   'COM-QB-Dec312024': { dataSource: 'csv' },     // Scenario 2 — CSV, switch to Source
+   'COM-QB-Dec312025': { dataSource: 'source' },  // Scenario 3 — Source, switch to CSV
+   'COM-CHE-Dec252024': { dataSource: 'csv' },    // Scenario 4 — client not connected, switch to Source
+   'AUD-US-Dec312024': { dataSource: 'source', sourceProvider: 'xero' }, // Scenario 5 — provider mismatch
  };
- Object.entries(seeds).forEach(([id, dataSource]) => {
+ Object.entries(seeds).forEach(([id, seed]) => {
    try {
      const raw = localStorage.getItem(META_KEY(id));
      const meta: EngagementMeta = raw ? JSON.parse(raw) : { firstYearAudit: false };
-     meta.dataSource = dataSource;
+     meta.dataSource = seed.dataSource;
+     if (seed.sourceProvider) meta.sourceProvider = seed.sourceProvider;
      localStorage.setItem(META_KEY(id), JSON.stringify(meta));
    } catch {}
  });
@@ -102,6 +105,7 @@ export type EngagementMeta = {
  annualizeInterim?: boolean; // true by default when auditPeriodType === "Interim (6-month)"
  firstTimeAdoption?: boolean; // first-time adoption of accounting standard
  dataSource?: "csv" | "source";
+ sourceProvider?: "xero" | "quickbooks"; // which accounting source the engagement is linked to
 };
 
 export function getEngagementMeta(id: string): EngagementMeta {
