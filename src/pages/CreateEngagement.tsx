@@ -684,17 +684,21 @@ export default function CreateEngagement() {
  const [templateId, setTemplateId] = useState(editingMeta?.templateId ?? (prefillIsAudit ? "audit5100" : ""));
  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
  const [budget, setBudget] = useState(editingMeta?.budget ?? "10000.00");
- const [dataSource, setDataSource] = useState<"csv" | "source">("csv");
+ const [dataSource, setDataSource] = useState<"csv" | "source">(editingMeta?.dataSource ?? "csv");
  const [sourceConnected, setSourceConnected] = useState(false);
+ const originalDataSource = editingMeta?.dataSource ?? "csv";
+ const initialClientRef = useRef(clientName);
 
-   // Sync data source default when client selection changes based on source connection status
-   useEffect(() => {
-     if (clientInfo) {
-       const hasSource = clientInfo.integrations.includes("quickbooks");
-       setDataSource("csv");
-       setSourceConnected(hasSource);
-     }
-   }, [clientInfo]);
+    // Sync data source default when client selection changes based on source connection status
+    useEffect(() => {
+      if (clientInfo) {
+        const hasSource = clientInfo.integrations.includes("quickbooks");
+        setSourceConnected(hasSource);
+        // In edit mode keep the saved data source until the user picks a different client
+        if (isEditMode && clientName === initialClientRef.current) return;
+        setDataSource("csv");
+      }
+    }, [clientInfo]);
 
  const [accountingStandards, setAccountingStandards] = useState(editingMeta?.accountingStandards ?? (prefillIsAudit ? "ASPE — Canadian Accounting Standards for Private Enterprises" : "Section 2400 Review standards"));
  const [additionalDisclosures, setAdditionalDisclosures] = useState(prefillIsAudit ? "Full financial statements" : "Statement of cash flows");
