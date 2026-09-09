@@ -604,6 +604,20 @@ const CLIENT_DATA: Record<string, {
  },
 };
 
+function shiftYearStr(mmddyyyy: string, delta: number): string {
+  const p = mmddyyyy.split("/");
+  if (p.length !== 3) return mmddyyyy;
+  return `${p[0]}/${p[1]}/${String(parseInt(p[2]) + delta)}`;
+}
+
+function addDaysStr(mmddyyyy: string, days: number): string {
+  const p = mmddyyyy.split("/");
+  if (p.length !== 3) return mmddyyyy;
+  const d = new Date(parseInt(p[2]), parseInt(p[0]) - 1, parseInt(p[1]));
+  d.setDate(d.getDate() + days);
+  return `${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}/${d.getFullYear()}`;
+}
+
 function formatYearEnd(dateStr: string): string {
  const parts = dateStr.split("/");
  if (parts.length !== 3) return dateStr;
