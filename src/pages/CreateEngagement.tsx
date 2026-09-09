@@ -994,7 +994,9 @@ export default function CreateEngagement() {
  localStorage.setItem(`audit-team-rates-${engagementId}`, JSON.stringify(rateMap));
  }
  }
- if (isAudit && firstYearAudit) {
+ if (isEditMode) {
+ toast.success("Engagement updated successfully.");
+ } else if (isAudit && firstYearAudit) {
  toast.success("Engagement created — IE checklist and predecessor letter added.");
  } else {
  toast.success("Engagement created successfully.");
@@ -1003,7 +1005,7 @@ export default function CreateEngagement() {
  };
 
  return (
- <Layout title="Create Engagement">
+ <Layout title={isEditMode ? "Edit Engagement" : "Create Engagement"}>
  <div className="flex-1 overflow-y-auto bg-background">
  <div className="p-6">
  {/* Header with back button */}
