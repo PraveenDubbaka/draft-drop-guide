@@ -31,7 +31,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Layout } from "@/components/Layout";
 import { StyledCard } from "@/components/ui/card";
 import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
-import sageLogo from "@/assets/sage-logo.svg";
 
 function getClientSourceIntegration(clientName: string): 'xero' | 'quickbooks' | null {
   const normalized = clientName.trim().toLowerCase();
