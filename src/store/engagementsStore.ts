@@ -43,7 +43,6 @@ function seedDemoEngagementMeta() {
      auditPeriodType: 'Full Year',
      firstTimeAdoption: false,
      budget: '138',
-     dataSource: 'source',
    };
    localStorage.setItem(key, JSON.stringify(meta));
  }
@@ -52,7 +51,7 @@ function seedDemoEngagementMeta() {
  const SEED_FLAG = 'cds_engagement_datasource_seed_v1';
  if (localStorage.getItem(SEED_FLAG)) return;
  const seeds: Record<string, 'csv' | 'source'> = {
-   'AUD-NPM-Dec312025': 'source', // Scenario 1 — already Source, no change
+   'COM-QB-Jan142026': 'source', // Scenario 1 — already Source, no change
    'COM-QB-Dec312024': 'csv',     // Scenario 2 — CSV, switch to Source
    'COM-QB-Dec312025': 'source',  // Scenario 3 — Source, switch to CSV
  };
