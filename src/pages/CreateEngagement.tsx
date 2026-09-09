@@ -602,14 +602,14 @@ const CLIENT_DATA: Record<string, {
  businessPhone: "-",
  cellPhone: "-",
  },
- "Bayside Consulting Inc.": {
- entityLegalName: "Bayside Consulting Inc.",
+ "Maple Hill Farms": {
+ entityLegalName: "Maple Hill Farms",
  entityType: "Corporation",
- contactPerson: "Priya Sharma",
- engagementPartner: "Atin Gupta",
+ contactPerson: "Margaret Hill",
+ engagementPartner: "Ayesha Naaz",
  integrations: [],
- businessPhone: "+1 (604) 555-0299",
- cellPhone: "-",
+ businessPhone: "(519) 555-0488",
+ cellPhone: "(519) 555-0489",
  },
 };
 
