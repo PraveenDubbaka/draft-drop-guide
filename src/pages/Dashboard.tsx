@@ -384,19 +384,18 @@ export default function Dashboard() {
  <table className="w-full">
  <thead className="sticky top-0 z-10">
  <tr className="bg-muted">
- <th className="text-left px-6 py-4 text-xs font-semibold text-foreground uppercase tracking-wider">Engagement ID</th>
- <th className="text-left px-6 py-4 text-xs font-semibold text-foreground uppercase tracking-wider">Client Name</th>
- <th className="text-left px-6 py-4 text-xs font-semibold text-foreground uppercase tracking-wider">Year End</th>
- <th className="text-left px-6 py-4 text-xs font-semibold text-foreground uppercase tracking-wider">Source</th>
- <th className="text-left px-6 py-4 text-xs font-semibold text-foreground uppercase tracking-wider">Status</th>
- <th className="text-left px-4 py-4 text-xs font-semibold text-foreground uppercase tracking-wider">Progress</th>
- <th className="text-left px-6 py-4 text-xs font-semibold text-foreground uppercase tracking-wider">Actions</th>
+  <th className="text-left px-6 py-4 text-xs font-semibold text-foreground uppercase tracking-wider">Engagement ID</th>
+  <th className="text-left px-6 py-4 text-xs font-semibold text-foreground uppercase tracking-wider">Client Name</th>
+  <th className="text-left px-6 py-4 text-xs font-semibold text-foreground uppercase tracking-wider">Year End</th>
+  <th className="text-left px-6 py-4 text-xs font-semibold text-foreground uppercase tracking-wider">Source</th>
+  <th className="text-left px-6 py-4 text-xs font-semibold text-foreground uppercase tracking-wider">Status</th>
+  <th className="text-left px-6 py-4 text-xs font-semibold text-foreground uppercase tracking-wider">Actions</th>
  </tr>
  </thead>
  <tbody className="divide-y divide-border">
- {filteredDashboardEngagements.length === 0 && searchQuery.trim() && (
- <tr>
- <td colSpan={7} className="px-6 py-16 text-center">
+  {filteredDashboardEngagements.length === 0 && searchQuery.trim() && (
+  <tr>
+  <td colSpan={6} className="px-6 py-16 text-center">
  <Search className="h-8 w-8 text-muted-foreground/40 mx-auto mb-3" />
  <p className="text-sm font-medium text-foreground">No results for &ldquo;{searchQuery}&rdquo;</p>
  <p className="text-xs text-muted-foreground mt-1">Try a different search term or clear the filter</p>
@@ -419,22 +418,6 @@ export default function Dashboard() {
  <Badge variant={engagement.status === "New" ? "new" : "inProgress"}>
  {engagement.status}
  </Badge>
- </td>
- <td className="px-4 py-2 whitespace-nowrap">
- {(() => {
- const p = calcEngagementProgress(engagement.id);
- return (
- <div className="flex items-center gap-2">
- <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden">
- <div className="h-full rounded-full bg-violet-500 transition-all duration-700" style={{ width: `${p.overall}%` }} />
- </div>
- <span className="text-xs font-semibold text-violet-600 tabular-nums w-8">{p.overall}%</span>
- {p.pendingRequests > 0 && (
- <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" title={`${p.pendingRequests} requests pending`} />
- )}
- </div>
- );
- })()}
  </td>
  <td className="px-6 py-2 whitespace-nowrap">
  <div className="flex items-center gap-2">
