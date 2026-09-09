@@ -391,7 +391,7 @@ export default function Engagements() {
  </tr>
  {isExpanded && assignees && (
  <tr className="bg-muted/30">
- <td colSpan={8} className="px-6 py-4">
+ <td colSpan={9} className="px-6 py-4">
  <div className="flex gap-10">
  <div className="flex-1">
  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Firm Team</p>
