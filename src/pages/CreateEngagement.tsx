@@ -1023,7 +1023,7 @@ export default function CreateEngagement() {
  };
 
  return (
- <Layout title={isEditMode ? "Edit Engagement" : "Create Engagement"} hideSidebar={isEditMode}>
+ <Layout title={isEditMode ? "Edit Engagement" : "Create Engagement"}>
  <div className="flex-1 overflow-y-auto bg-background">
  <div className="p-6">
  {/* Header with back button */}
