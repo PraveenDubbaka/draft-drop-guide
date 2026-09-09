@@ -1021,8 +1021,8 @@ export default function CreateEngagement() {
  </div>
  ))}
  </div>
- </div>
  )}
+ </div>
 
  {/* Two-column grid: forms (left) + audit config panel (right) */}
  <div className="flex flex-col gap-5 w-full">
