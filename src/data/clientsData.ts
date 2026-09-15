@@ -60,7 +60,7 @@ export const clientsData: Client[] = [
  legalEntityName: 'CR Tickets Inc.',
  entityType: 'Corporation',
  status: 'Accepted',
- integration: 'xero',
+  integration: 'quickbooks',
  contactName: 'Cr Tickets',
  contactPerson: 'Chris Roberts',
  engagementPartner: 'Ayesha Naaz',
