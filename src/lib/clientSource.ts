@@ -2,6 +2,14 @@ import { clientsData } from "@/data/clientsData";
 
 export type ClientSourceIntegration = "xero" | "quickbooks" | null;
 
+const DEMO_DATA_SOURCES: Readonly<Record<string, "csv" | "source">> = {
+  "COM-QB-Jan142026": "source",
+  "COM-QB-Dec312024": "csv",
+  "COM-QB-Dec312025": "source",
+  "COM-CHE-Dec252024": "csv",
+  "COM-HF-Dec312024": "source",
+};
+
 /**
  * Resolve which accounting source a client is connected to.
  * Matches on legal entity name or short entity name (case/whitespace insensitive).
@@ -41,6 +49,7 @@ export function getEngagementSourceIntegration(
     const raw = localStorage.getItem(`engagement-meta-${engagementId}`);
     if (raw) dataSource = JSON.parse(raw)?.dataSource;
   } catch {}
+  dataSource ??= DEMO_DATA_SOURCES[engagementId];
   if (dataSource === "csv") return null;
   // No saved selection (legacy engagement): fall back to the client's connection.
   if (dataSource !== "source" && dataSource !== undefined) return null;
