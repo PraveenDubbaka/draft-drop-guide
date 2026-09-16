@@ -1412,6 +1412,35 @@ export default function CreateEngagement() {
   </div>
   </div>
   )}
+  {/* Edit mode follow-up questions — only when the Engagement Data Type changed from the saved value */}
+  {isEditMode && dataSource !== originalDataSource && (
+  <div className="flex items-start gap-4 py-2.5">
+  <span className="w-44 shrink-0" />
+  <div className="flex-1 min-w-0 space-y-3">
+  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">What would you like to do with the following?</p>
+  {[
+  { label: "Adjusting entries", desc: "Entries where both accounts match will be retained. All others will be deleted.", value: fuAdjustingEntries, set: setFuAdjustingEntries },
+  { label: "New added accounts", desc: "Any manually created accounts will be retained.", value: fuNewAccounts, set: setFuNewAccounts },
+  { label: "Documents", desc: "Documents will be packed and retained.", value: fuDocuments, set: setFuDocuments },
+  ].map(row => (
+  <div key={row.label} className="flex items-start justify-between gap-3">
+  <div className="min-w-0">
+  <p className="text-sm text-foreground leading-snug">{row.label}</p>
+  <p className="text-xs text-muted-foreground mt-0.5">{row.desc}</p>
+  </div>
+  <BoolToggle value={row.value} onChange={row.set} />
+  </div>
+  ))}
+  <div className="flex items-start justify-between gap-3">
+  <div className="min-w-0">
+  <p className="text-sm text-foreground leading-snug">Procedure comments</p>
+  <p className="text-xs text-muted-foreground mt-0.5">Will be deleted.</p>
+  </div>
+  </div>
+  <p className="text-xs italic text-muted-foreground">All issues, comments and document requests will be deleted regardless of the above selections.</p>
+  </div>
+  </div>
+  )}
   </SectionCard>
   )}
  </div>
