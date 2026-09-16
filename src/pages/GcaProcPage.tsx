@@ -10,7 +10,7 @@ import { LukaIcon } from "@/components/LukaIcon";
 import { AuditCashWorksheet, AuditCashBankRecWorksheet, AuditCashCountWorksheet } from "@/components/AuditCashWorksheet";
 import { AuditARWorksheet, AuditARConfirmationWorksheet } from "@/components/AuditARWorksheet";
 import { loadEngagements } from "@/store/engagementsStore";
-import xeroLogo from "@/assets/xero-logo.png";
+import xeroLogo from "@/assets/xero-logo.svg";
 import quickbooksLogo from "@/assets/quickbooks-intuit-logo.png";
 
 const TBCheckIcon = ({ className }: { className?: string }) => (

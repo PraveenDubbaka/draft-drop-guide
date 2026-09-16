@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X, CheckCircle2, Circle, Zap, Cloud, MessageSquare, Mail, FolderOpen, BarChart3, RefreshCw } from "lucide-react";
 import quickbooksLogo from "@/assets/quickbooks-logo.png";
-import xeroLogo from "@/assets/xero-logo.png";
+import xeroLogo from "@/assets/xero-logo.svg";
 
 interface Bolt {
  id: string;

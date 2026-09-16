@@ -33,7 +33,7 @@ import {
  Bookmark,
  Send,
 } from "lucide-react";
-import xeroLogo from "@/assets/xero-logo.png";
+import xeroLogo from "@/assets/xero-logo.svg";
 import quickbooksLogo from "@/assets/quickbooks-intuit-logo.png";
 import { getAccountsForProcedure } from "@/lib/tbGroups";
 
