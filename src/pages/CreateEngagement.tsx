@@ -1257,7 +1257,7 @@ export default function CreateEngagement() {
  <SectionCard icon={<Calendar className="h-5 w-5" />} title="Engagement Period">
  {/* Period Type */}
  <div className="flex items-center gap-4 py-2.5">
- <span className="text-sm text-foreground w-32 shrink-0 whitespace-nowrap">Period Type<span className="text-destructive ml-0.5">*</span></span>
+ <span className="text-sm text-foreground w-44 shrink-0 whitespace-nowrap">Period Type<span className="text-destructive ml-0.5">*</span></span>
  <div className="flex-1 min-w-0 max-w-sm">
  <Select value={periodType} onValueChange={handlePeriodTypeChange}>
  <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select..." /></SelectTrigger>
@@ -1269,7 +1269,7 @@ export default function CreateEngagement() {
  </div>
  {isStubPeriod && (
  <div className="flex items-start gap-4 pb-2.5">
- <span className="w-32 shrink-0" />
+ <span className="w-44 shrink-0" />
  <p className="text-xs text-muted-foreground max-w-lg">
  Stub period selected — enter the exact start and end dates for this shorter period. Dates are not auto-derived and comparatives are not annualized.
  </p>
@@ -1282,7 +1282,7 @@ export default function CreateEngagement() {
  { label: "Prior Year 2", required: false, start: priorYear2Start, setStart: setPriorYear2Start, end: priorYear2End, setEnd: setPriorYear2End },
  ].map(row => (
  <div key={row.label} className="flex items-start gap-4 py-2.5">
- <span className="text-sm text-foreground w-32 shrink-0 whitespace-nowrap pt-5">
+ <span className="text-sm text-foreground w-44 shrink-0 whitespace-nowrap pt-5">
  {row.label}{row.required && <span className="text-destructive ml-0.5">*</span>}
  </span>
  <div className="flex gap-3 flex-1 min-w-0">
@@ -1297,7 +1297,7 @@ export default function CreateEngagement() {
   {isFullYearPeriod && (
   <SectionCard icon={<Link2 className="h-5 w-5" />} title="Engagement Source">
   <div className="flex items-center gap-4 py-2.5">
-  <span className="text-sm text-foreground w-32 shrink-0">Client Connection Status<span className="text-destructive ml-0.5">*</span></span>
+  <span className="text-sm text-foreground w-44 shrink-0">Client Connection Status<span className="text-destructive ml-0.5">*</span></span>
   <div className="flex-1 min-w-0 max-w-sm">
   {clientHasSourceConnection ? (
   <div className="inline-flex items-center rounded-[10px] border border-border bg-card px-3 py-1.5">
@@ -1312,7 +1312,7 @@ export default function CreateEngagement() {
   </div>
   </div>
  <div className="flex items-center gap-4 py-2.5">
- <span className="text-sm text-foreground w-32 shrink-0 whitespace-nowrap">Engagement Data Type</span>
+ <span className="text-sm text-foreground w-44 shrink-0 whitespace-nowrap">Engagement Data Type</span>
  <div className="flex-1 min-w-0 max-w-sm">
  <Select value={dataSource} onValueChange={v => setDataSource(v as "csv" | "source")}>
  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
@@ -1325,7 +1325,7 @@ export default function CreateEngagement() {
   </div>
   {dataSource === "source" && !clientHasSourceConnection && (
   <div className="flex items-start gap-4 pb-2.5">
-  <span className="w-32 shrink-0" />
+  <span className="w-44 shrink-0" />
   <div className="flex-1 min-w-0 max-w-sm flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
   <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
    <div className="flex flex-col gap-2">
@@ -1338,7 +1338,7 @@ export default function CreateEngagement() {
   )}
     {clientHasSourceConnection && dataSource === "csv" && !isSourceToCsvSwitch && (
     <div className="flex items-start gap-4 pb-2.5">
-    <span className="w-32 shrink-0" />
+    <span className="w-44 shrink-0" />
     <div className="flex-1 min-w-0 max-w-sm flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">
@@ -1349,7 +1349,7 @@ export default function CreateEngagement() {
     )}
     {isSourceToCsvSwitch && (
     <div className="flex items-start gap-4 pb-2.5">
-    <span className="w-32 shrink-0" />
+    <span className="w-44 shrink-0" />
     <div className="flex-1 min-w-0 max-w-sm flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">
@@ -1360,7 +1360,7 @@ export default function CreateEngagement() {
     )}
    {clientHasSourceConnection && dataSource === "source" && !sourceConnected && (
   <div className="flex items-center gap-4 pb-2.5">
-  <span className="w-32 shrink-0" />
+  <span className="w-44 shrink-0" />
   <div className="flex-1 min-w-0 max-w-sm flex items-center justify-between gap-3 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
   <span className="text-sm text-amber-900 dark:text-amber-200">No source connection found for this client</span>
   <Button size="sm" variant="outline" className="shrink-0" onClick={() => setSourceConnected(true)}>Connect source</Button>
@@ -1369,7 +1369,7 @@ export default function CreateEngagement() {
   )}
  {isCsvToSourceSwitch && (
  <div className="flex items-start gap-4 pb-2.5">
- <span className="w-32 shrink-0" />
+ <span className="w-44 shrink-0" />
  <div className="flex-1 min-w-0 max-w-sm flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
  <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
  <span className="text-sm text-amber-800 dark:text-amber-200">
@@ -1380,7 +1380,7 @@ export default function CreateEngagement() {
  )}
   {isSourceProviderMismatch && (
   <div className="flex items-start gap-4 pb-2.5">
-  <span className="w-32 shrink-0" />
+  <span className="w-44 shrink-0" />
   <div className="flex-1 min-w-0 max-w-sm flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
   <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
   <span className="text-sm text-amber-800 dark:text-amber-200">
