@@ -1311,8 +1311,8 @@ export default function CreateEngagement() {
  ))}
   </SectionCard>
 
-  {/* Engagement Source — only for full year periods */}
-  {isFullYearPeriod && (
+   {/* Engagement Source — full year: editable; stub period: locked to CSV */}
+   {(isFullYearPeriod || isStubPeriod) && (
   <SectionCard icon={<Link2 className="h-5 w-5" />} title="Engagement Source">
   <div className="flex items-center gap-4 py-2.5">
   <span className="text-sm text-foreground w-44 shrink-0">Client Connection Status<span className="text-destructive ml-0.5">*</span></span>
@@ -1361,19 +1361,28 @@ export default function CreateEngagement() {
   </div>
  <div className="flex items-center gap-4 py-2.5">
  <span className="text-sm text-foreground w-44 shrink-0 whitespace-nowrap">Engagement Data Type</span>
- <div className="flex-1 min-w-0 max-w-sm">
+   <div className="flex-1 min-w-0 max-w-sm">
+   {isStubPeriod ? (
+   <Select value="csv" disabled>
+   <SelectTrigger className="h-9 text-sm opacity-70 cursor-not-allowed">
+   <SelectValue />
+   </SelectTrigger>
+   </Select>
+   ) : (
    <Select value={dataSource} onValueChange={v => setDataSource(v as "csv" | "source")}>
    <SelectTrigger className="h-9 text-sm">
    <SelectValue />
    </SelectTrigger>
- <SelectContent>
- <SelectItem value="csv">CSV</SelectItem>
- <SelectItem value="source">Source</SelectItem>
- </SelectContent>
- </Select>
+   <SelectContent>
+   <SelectItem value="csv">CSV</SelectItem>
+   <SelectItem value="source">Source</SelectItem>
+   </SelectContent>
+   </Select>
+   )}
+   </div>
   </div>
-  </div>
-  {dataSource === "source" && !clientHasSourceConnection && (
+   {!isStubPeriod && (<>
+   {dataSource === "source" && !clientHasSourceConnection && (
   <div className="flex items-start gap-4 pb-2.5">
   <span className="w-44 shrink-0" />
   <div className="flex-1 min-w-0 flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
@@ -1458,11 +1467,12 @@ export default function CreateEngagement() {
   <BoolToggle value={row.value} onChange={row.set} />
   </div>
   ))}
-  <p className="text-xs italic text-muted-foreground">All issues, comments and document requests, and LHS Procedure document references will be deleted regardless of the above selections.</p>
-  </div>
-  </div>
-  )}
-  </SectionCard>
+   <p className="text-xs italic text-muted-foreground">All issues, comments and document requests, and LHS Procedure document references will be deleted regardless of the above selections.</p>
+   </div>
+   </div>
+   )}
+   </>)}
+   </SectionCard>
   )}
  </div>
 
