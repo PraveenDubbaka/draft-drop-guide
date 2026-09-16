@@ -1362,22 +1362,10 @@ export default function CreateEngagement() {
  <div className="flex items-center gap-4 py-2.5">
  <span className="text-sm text-foreground w-44 shrink-0 whitespace-nowrap">Engagement Data Type</span>
  <div className="flex-1 min-w-0 max-w-sm">
-  <Select value={dataSource} onValueChange={v => setDataSource(v as "csv" | "source")}>
-  <SelectTrigger className="h-9 text-sm">
-  {dataSource === "source" && clientHasSourceConnection && isSourceProviderMismatch ? (
-  <span className="inline-flex items-center gap-2.5 min-w-0">
-  <span className="text-sm shrink-0">Source</span>
-  <img src={(hasSelectedActiveConnection ? clientSourceIntegration : savedSourceProvider) === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={sourceLabel(hasSelectedActiveConnection ? clientSourceIntegration : (savedSourceProvider ?? null))} className="h-5 object-contain shrink-0" />
-  {hasSelectedActiveConnection ? (
-  <span className="inline-flex items-center rounded-full border border-[#2E7D52]/30 bg-[#EAF4EE] px-2 py-0.5 text-[11px] font-medium text-[#2E7D52] shrink-0">Connected</span>
-  ) : (
-  <span className="inline-flex items-center rounded-full border border-[#B4720A]/30 bg-[#FEF6E7] px-2 py-0.5 text-[11px] font-medium text-[#B4720A] shrink-0">Disconnected</span>
-  )}
-  </span>
-  ) : (
-  <SelectValue />
-  )}
-  </SelectTrigger>
+   <Select value={dataSource} onValueChange={v => setDataSource(v as "csv" | "source")}>
+   <SelectTrigger className="h-9 text-sm">
+   <SelectValue />
+   </SelectTrigger>
  <SelectContent>
  <SelectItem value="csv">CSV</SelectItem>
  <SelectItem value="source">Source</SelectItem>
