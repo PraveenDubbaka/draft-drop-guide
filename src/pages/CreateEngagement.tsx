@@ -1319,7 +1319,7 @@ export default function CreateEngagement() {
   <div className="flex-1 min-w-0 max-w-sm">
   {clientHasSourceConnection ? (
   isSourceProviderMismatch ? (
-  <Select value="active" onValueChange={v => { if (v === "active") setHasSelectedActiveConnection(true); }}>
+  <Select value={hasSelectedActiveConnection ? "active" : "saved"} onValueChange={v => { if (v === "active") setHasSelectedActiveConnection(true); }}>
   <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
   <SelectContent>
   <SelectItem value="saved" disabled className="text-muted-foreground">
