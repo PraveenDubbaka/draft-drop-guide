@@ -1300,8 +1300,15 @@ export default function CreateEngagement() {
   <span className="text-sm text-foreground w-44 shrink-0">Client Connection Status<span className="text-destructive ml-0.5">*</span></span>
   <div className="flex-1 min-w-0 max-w-sm">
   {clientHasSourceConnection ? (
-  <div className="inline-flex items-center rounded-[10px] border border-border bg-card px-3 py-1.5">
-  <img src={clientSourceIntegration === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={sourceLabel(clientSourceIntegration)} className="h-5 object-contain" />
+  <div className={`inline-flex items-center gap-2.5 rounded-[10px] border bg-card px-3 py-1.5 ${isConnectionDisconnected ? "border-amber-300" : "border-border"}`}>
+  <img src={clientSourceIntegration === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={sourceLabel(clientSourceIntegration)} className="h-5 object-contain shrink-0" />
+  <span className="text-sm text-foreground whitespace-nowrap">{sourceLabel(clientSourceIntegration)} · {clientInfo?.entityLegalName || clientName}</span>
+  {isConnectionDisconnected && (
+  <>
+  <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
+  <span className="text-xs font-medium text-amber-700 dark:text-amber-300 whitespace-nowrap">Disconnected</span>
+  </>
+  )}
   </div>
   ) : (
   <div className="inline-flex items-center gap-2 rounded-[10px] border border-border bg-card px-3 py-1.5">
