@@ -938,17 +938,17 @@ export default function CreateEngagement() {
 
  const periodTypeOptions = isAudit
  ? [
- { value: "Full Year", label: "Full Year" },
- { value: "Stub Period", label: "Stub Period" },
- { value: "Other", label: "Other" },
- ]
- : [
- { value: "Full year", label: "Full year" },
- { value: "Stub period", label: "Stub period" },
- ];
+  { value: "Full Year", label: "Full Year" },
+  { value: "Partial Year", label: "Partial Year" },
+  { value: "Other", label: "Other" },
+  ]
+  : [
+  { value: "Full year", label: "Full year" },
+  { value: "Partial year", label: "Partial year" },
+  ];
 
- const isFullYearPeriod = periodType === "Full Year" || periodType === "Full year";
- const isStubPeriod = periodType === "Stub Period" || periodType === "Stub period";
+  const isFullYearPeriod = periodType === "Full Year" || periodType === "Full year";
+  const isStubPeriod = periodType === "Partial Year" || periodType === "Partial year";
  const clientSourceIntegration = localClientInfo
    ? (localClientInfo.integrations.includes("xero") ? "xero" as const
      : localClientInfo.integrations.includes("quickbooks") ? "quickbooks" as const
@@ -1289,7 +1289,7 @@ export default function CreateEngagement() {
  <div className="flex items-start gap-4 pb-2.5">
  <span className="w-44 shrink-0" />
  <p className="text-xs text-muted-foreground max-w-lg">
- Stub period selected — enter the exact start and end dates for this shorter period. Dates are not auto-derived and comparatives are not annualized.
+ Partial year selected — enter the exact start and end dates for this shorter period. Dates are not auto-derived and comparatives are not annualized.
  </p>
  </div>
  )}
