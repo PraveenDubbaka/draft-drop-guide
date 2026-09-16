@@ -733,6 +733,8 @@ export default function CreateEngagement() {
   const [fuAdjustingEntries, setFuAdjustingEntries] = useState(false);
   const [fuNewAccounts, setFuNewAccounts] = useState(false);
   const [fuDocuments, setFuDocuments] = useState(false);
+  // Source-to-source (external provider change): set when the user picks the active connection in the dropdown
+  const [hasSelectedActiveConnection, setHasSelectedActiveConnection] = useState(false);
   const initialClientRef = useRef(clientName);
 
     // Sync data source default when client selection changes based on source connection status
@@ -1316,6 +1318,27 @@ export default function CreateEngagement() {
   <span className="text-sm text-foreground w-44 shrink-0">Client Connection Status<span className="text-destructive ml-0.5">*</span></span>
   <div className="flex-1 min-w-0 max-w-sm">
   {clientHasSourceConnection ? (
+  isSourceProviderMismatch ? (
+  <Select value="active" onValueChange={v => { if (v === "active") setHasSelectedActiveConnection(true); }}>
+  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+  <SelectContent>
+  <SelectItem value="saved" disabled className="text-muted-foreground">
+  <span className="inline-flex items-center gap-2.5">
+  <img src={savedSourceProvider === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={sourceLabel(savedSourceProvider ?? null)} className="h-5 object-contain shrink-0" />
+  <span className="whitespace-nowrap">{sourceLabel(savedSourceProvider ?? null)} · {clientInfo?.entityLegalName || clientName}</span>
+  <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
+  <span className="text-xs font-medium text-amber-700 dark:text-amber-300 whitespace-nowrap">Disconnected</span>
+  </span>
+  </SelectItem>
+  <SelectItem value="active" onPointerUp={() => setHasSelectedActiveConnection(true)} onKeyDown={() => setHasSelectedActiveConnection(true)}>
+  <span className="inline-flex items-center gap-2.5">
+  <img src={clientSourceIntegration === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={sourceLabel(clientSourceIntegration)} className="h-5 object-contain shrink-0" />
+  <span className="whitespace-nowrap">{sourceLabel(clientSourceIntegration)} · {clientInfo?.entityLegalName || clientName}</span>
+  </span>
+  </SelectItem>
+  </SelectContent>
+  </Select>
+  ) : (
   <div className={`inline-flex items-center gap-2.5 rounded-[10px] border bg-card px-3 py-1.5 ${isConnectionDisconnected ? "border-amber-300" : "border-border"}`}>
   <img src={clientSourceIntegration === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={sourceLabel(clientSourceIntegration)} className="h-5 object-contain shrink-0" />
   <span className="text-sm text-foreground whitespace-nowrap">{sourceLabel(clientSourceIntegration)} · {clientInfo?.entityLegalName || clientName}</span>
@@ -1326,6 +1349,7 @@ export default function CreateEngagement() {
   </>
   )}
   </div>
+  )
   ) : (
   <div className="inline-flex items-center gap-2 rounded-[10px] border border-border bg-card px-3 py-1.5">
   <span className="h-2.5 w-2.5 rounded-full bg-gray-400" />
@@ -1412,8 +1436,8 @@ export default function CreateEngagement() {
   </div>
   </div>
   )}
-  {/* Edit mode follow-up questions — only when the Engagement Data Type changed and a source connection exists */}
-  {isEditMode && clientHasSourceConnection && dataSource !== originalDataSource && (
+  {/* Edit mode follow-up questions — when the Engagement Data Type changed, or when the active connection is picked after an external source change */}
+  {isEditMode && clientHasSourceConnection && (dataSource !== originalDataSource || (isSourceProviderMismatch && hasSelectedActiveConnection)) && (
   <div className="flex items-start gap-4 py-2.5">
   <span className="w-44 shrink-0" />
   <div className="flex-1 min-w-0 space-y-3">
