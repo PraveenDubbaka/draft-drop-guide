@@ -750,6 +750,15 @@ export default function CreateEngagement() {
       }
     }, [clientName, clientInfo, localClientInfo]);
 
+    // Reset follow-up toggles to their "No" defaults whenever the data type returns to the original value
+    useEffect(() => {
+      if (isEditMode && dataSource === originalDataSource) {
+        setFuAdjustingEntries(false);
+        setFuNewAccounts(false);
+        setFuDocuments(false);
+      }
+    }, [dataSource, originalDataSource, isEditMode]);
+
  const [accountingStandards, setAccountingStandards] = useState(editingMeta?.accountingStandards ?? (prefillIsAudit ? "ASPE — Canadian Accounting Standards for Private Enterprises" : "Section 2400 Review standards"));
  const [additionalDisclosures, setAdditionalDisclosures] = useState(prefillIsAudit ? "Full financial statements" : "Statement of cash flows");
 
