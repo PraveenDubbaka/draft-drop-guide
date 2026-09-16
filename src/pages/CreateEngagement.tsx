@@ -1419,7 +1419,7 @@ export default function CreateEngagement() {
   <div className="flex-1 min-w-0 space-y-3">
   <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">Please confirm which items you want to retain</p>
   {[
-  { label: "Adjusting entries", desc: "Entries where both accounts match will be retained. All others will be deleted.", value: fuAdjustingEntries, set: setFuAdjustingEntries },
+  { label: "Adjusting entries", desc: "Entries where both accounts are the same (or identical) will be retained. All other entries will be deleted.", value: fuAdjustingEntries, set: setFuAdjustingEntries },
   { label: "New added accounts", desc: "Any manually created accounts will be retained.", value: fuNewAccounts, set: setFuNewAccounts },
   { label: "Documents", desc: "Documents will be packed and retained.", value: fuDocuments, set: setFuDocuments },
   ].map(row => (
