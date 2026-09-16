@@ -6,7 +6,7 @@ import { loadEngagements } from "@/store/engagementsStore";
 import LukaActivityPanel, { type ActivityEntry } from "@/components/luka/LukaActivityPanel";
 import { LukaIcon as LukaHeaderIcon } from "@/components/LukaIcon";
 import quickbooksLogo from "@/assets/quickbooks-intuit-logo.png";
-import xeroLogo from "@/assets/xero-logo.svg";
+import xeroLogo from "@/assets/xero-logo-full.svg";
 import { motion, AnimatePresence } from "framer-motion";
 import {
  Tooltip,
