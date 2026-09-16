@@ -1316,7 +1316,7 @@ export default function CreateEngagement() {
   <SectionCard icon={<Link2 className="h-5 w-5" />} title="Engagement Source">
   <div className="flex items-center gap-4 py-2.5">
   <span className="text-sm text-foreground w-44 shrink-0">Client Connection Status<span className="text-destructive ml-0.5">*</span></span>
-  <div className="flex-1 min-w-0 max-w-sm">
+  <div className="flex-1 min-w-0">
   {clientHasSourceConnection ? (
   isSourceProviderMismatch ? (
   <Select value={hasSelectedActiveConnection ? "active" : "saved"} onValueChange={v => { if (v === "active") setHasSelectedActiveConnection(true); }}>
@@ -1325,29 +1325,31 @@ export default function CreateEngagement() {
   <SelectItem value="saved" disabled className="text-muted-foreground">
   <span className="inline-flex items-center gap-2.5">
   <img src={savedSourceProvider === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={sourceLabel(savedSourceProvider ?? null)} className="h-5 object-contain shrink-0" />
-  <span className="inline-flex items-center rounded-full border border-[#B4720A]/30 bg-[#FEF6E7] px-2 py-0.5 text-[11px] font-medium text-[#B4720A] shrink-0">Disconnected</span>
-  <span className="whitespace-nowrap">{clientInfo?.entityLegalName || clientName}</span>
+   <span className="inline-flex items-center rounded-full border border-[#B4720A]/30 bg-[#FEF6E7] px-2 py-0.5 text-[11px] font-medium text-[#B4720A] shrink-0">Disconnected</span>
+   <span className="whitespace-nowrap shrink-0">{clientInfo?.entityLegalName || clientName}</span>
   </span>
   </SelectItem>
   <SelectItem value="active" onPointerUp={() => setHasSelectedActiveConnection(true)} onKeyDown={() => setHasSelectedActiveConnection(true)}>
   <span className="inline-flex items-center gap-2.5">
   <img src={clientSourceIntegration === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={sourceLabel(clientSourceIntegration)} className="h-5 object-contain shrink-0" />
-  <span className="inline-flex items-center rounded-full border border-[#2E7D52]/30 bg-[#EAF4EE] px-2 py-0.5 text-[11px] font-medium text-[#2E7D52] shrink-0">Connected</span>
-  <span className="whitespace-nowrap">{clientInfo?.entityLegalName || clientName}</span>
+   <span className="inline-flex items-center rounded-full border border-[#2E7D52]/30 bg-[#EAF4EE] px-2 py-0.5 text-[11px] font-medium text-[#2E7D52] shrink-0">Connected</span>
+   <span className="whitespace-nowrap shrink-0">{clientInfo?.entityLegalName || clientName}</span>
   </span>
   </SelectItem>
   </SelectContent>
   </Select>
   ) : (
-  <div className={`inline-flex items-center gap-2.5 rounded-[10px] border bg-card px-3 py-1.5 ${isConnectionDisconnected ? "border-amber-300" : "border-border"}`}>
-  <img src={clientSourceIntegration === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={sourceLabel(clientSourceIntegration)} className="h-5 object-contain shrink-0" />
-  {isConnectionDisconnected ? (
-  <span className="inline-flex items-center rounded-full border border-[#B4720A]/30 bg-[#FEF6E7] px-2 py-0.5 text-[11px] font-medium text-[#B4720A] shrink-0">Disconnected</span>
-  ) : (
-  <span className="inline-flex items-center rounded-full border border-[#2E7D52]/30 bg-[#EAF4EE] px-2 py-0.5 text-[11px] font-medium text-[#2E7D52] shrink-0">Connected</span>
-  )}
-  <span className="text-sm text-foreground whitespace-nowrap">{clientInfo?.entityLegalName || clientName}</span>
-  </div>
+   <div className="flex items-center gap-2.5 min-w-0">
+   <div className={`inline-flex items-center gap-2.5 rounded-[10px] border bg-card px-3 py-1.5 shrink-0 ${isConnectionDisconnected ? "border-amber-300" : "border-border"}`}>
+   <img src={clientSourceIntegration === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={sourceLabel(clientSourceIntegration)} className="h-5 object-contain shrink-0" />
+   {isConnectionDisconnected ? (
+   <span className="inline-flex items-center rounded-full border border-[#B4720A]/30 bg-[#FEF6E7] px-2 py-0.5 text-[11px] font-medium text-[#B4720A] shrink-0">Disconnected</span>
+   ) : (
+   <span className="inline-flex items-center rounded-full border border-[#2E7D52]/30 bg-[#EAF4EE] px-2 py-0.5 text-[11px] font-medium text-[#2E7D52] shrink-0">Connected</span>
+   )}
+   </div>
+   <span className="text-sm text-foreground whitespace-nowrap shrink-0">{clientInfo?.entityLegalName || clientName}</span>
+   </div>
   )
   ) : (
   <div className="inline-flex items-center gap-2 rounded-[10px] border border-border bg-card px-3 py-1.5">
