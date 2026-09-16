@@ -1003,6 +1003,9 @@ export default function CreateEngagement() {
    const isSourceProviderMismatch = isEditMode && clientHasSourceConnection
      && originalDataSource === "source" && dataSource === "source"
      && !!savedSourceProvider && savedSourceProvider !== clientSourceIntegration;
+   // The client's connection can't be used by this engagement right now:
+   // either the connection isn't active or the engagement is linked to a different source.
+   const isConnectionDisconnected = clientHasSourceConnection && (!sourceConnected || isSourceProviderMismatch);
 
  const performSave = () => {
  const record: EngagementRecord = {
