@@ -748,7 +748,8 @@ export default function CreateEngagement() {
         setSourceConnected(integ !== null);
         // In edit mode keep the saved data source until the user picks a different client
         if (isEditMode && clientName === initialClientRef.current) return;
-        setDataSource("csv");
+        // Default: connected client → Source, not connected → CSV
+        setDataSource(integ ? "source" : "csv");
       }
     }, [clientName, clientInfo, localClientInfo]);
 
@@ -1022,7 +1023,9 @@ export default function CreateEngagement() {
    // either the connection isn't active or the engagement is linked to a different source.
    const isConnectionDisconnected = clientHasSourceConnection && (!sourceConnected || isSourceProviderMismatch);
 
- const performSave = () => {
+  const performSave = () => {
+  // Partial Year locks Engagement Data Type to CSV — always save CSV in that state
+  const savedDataSource: "csv" | "source" = isStubPeriod ? "csv" : dataSource;
  const record: EngagementRecord = {
  id: engagementId,
  client: clientName,
