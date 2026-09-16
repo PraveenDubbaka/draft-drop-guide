@@ -1365,7 +1365,7 @@ export default function CreateEngagement() {
    {isStubPeriod ? (
    <Select value="csv" disabled>
    <SelectTrigger className="h-9 text-sm opacity-70 cursor-not-allowed">
-   <SelectValue />
+   <span>CSV</span>
    </SelectTrigger>
    </Select>
    ) : (
