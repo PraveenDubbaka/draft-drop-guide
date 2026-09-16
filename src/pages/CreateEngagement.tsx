@@ -1431,7 +1431,7 @@ export default function CreateEngagement() {
   <BoolToggle value={row.value} onChange={row.set} />
   </div>
   ))}
-  <p className="text-xs italic text-muted-foreground">All issues, comments and document requests will be deleted regardless of the above selections.</p>
+  <p className="text-xs italic text-muted-foreground">All issues, comments and document requests, and LHS Procedure document references will be deleted regardless of the above selections.</p>
   </div>
   </div>
   )}
