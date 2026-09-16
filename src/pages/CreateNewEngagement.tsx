@@ -467,7 +467,7 @@ export default function CreateNewEngagement() {
   ];
 
   const periodTypeOptions = isAudit
-    ? [{ value: "Full Year", label: "Full Year" }, { value: "Stub Period", label: "Stub Period" }, { value: "Other", label: "Other" }]
+    ? [{ value: "Full Year", label: "Full Year" }, { value: "Partial Year", label: "Partial Year" }, { value: "Other", label: "Other" }]
     : [{ value: "Full year", label: "Full year" }];
 
   // Section 2 gate

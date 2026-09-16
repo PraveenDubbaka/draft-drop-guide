@@ -119,7 +119,7 @@ export type EngagementMeta = {
  budget?: string;
  periodStart?: string;
  periodEnd?: string;
- auditPeriodType?: string; // "Full Year" | "Interim (6-month)" | "Stub Period" | "Other"
+ auditPeriodType?: string; // "Full Year" | "Interim (6-month)" | "Partial Year" | "Other"
  annualizeInterim?: boolean; // true by default when auditPeriodType === "Interim (6-month)"
  firstTimeAdoption?: boolean; // first-time adoption of accounting standard
  dataSource?: "csv" | "source";
