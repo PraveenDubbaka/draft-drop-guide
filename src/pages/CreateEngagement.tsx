@@ -1376,7 +1376,7 @@ export default function CreateEngagement() {
     <div className="flex-1 min-w-0 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">
-    Switching to CSV means this engagement will no longer pull data from {sourceLabel(clientSourceIntegration)}. The source connection will stay active but won't be used. You will be asked how to handle existing data when you click Update Engagement.
+    Switching to CSV means this engagement will no longer pull data from {sourceLabel(clientSourceIntegration)}. The source connection will stay active but won't be used.
     </span>
     </div>
     </div>
@@ -1396,7 +1396,7 @@ export default function CreateEngagement() {
  <div className="flex-1 min-w-0 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
  <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
  <span className="text-sm text-amber-800 dark:text-amber-200">
- Switching to Source will replace your existing CSV trial balance data. You will be asked how to handle existing data when you click Update Engagement.
+ Switching to Source will replace your existing CSV trial balance data.
  </span>
  </div>
  </div>
