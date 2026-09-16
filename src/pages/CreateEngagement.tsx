@@ -1431,12 +1431,6 @@ export default function CreateEngagement() {
   <BoolToggle value={row.value} onChange={row.set} />
   </div>
   ))}
-  <div className="flex items-start justify-between gap-3">
-  <div className="min-w-0">
-  <p className="text-sm text-foreground leading-snug">Procedure comments</p>
-  <p className="text-xs text-muted-foreground mt-0.5">Will be deleted.</p>
-  </div>
-  </div>
   <p className="text-xs italic text-muted-foreground">All issues, comments and document requests will be deleted regardless of the above selections.</p>
   </div>
   </div>
