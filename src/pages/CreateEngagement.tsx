@@ -726,10 +726,14 @@ export default function CreateEngagement() {
  // client's live connection so Source-based engagements keep showing as Source.
  const inferredEditDataSource: "csv" | "source" =
    isEditMode && getClientSourceIntegration(clientName) !== null ? "source" : "csv";
- const [dataSource, setDataSource] = useState<"csv" | "source">(editingMeta?.dataSource ?? inferredEditDataSource);
- const [sourceConnected, setSourceConnected] = useState(false);
- const originalDataSource = editingMeta?.dataSource ?? inferredEditDataSource;
- const initialClientRef = useRef(clientName);
+  const [dataSource, setDataSource] = useState<"csv" | "source">(editingMeta?.dataSource ?? inferredEditDataSource);
+  const [sourceConnected, setSourceConnected] = useState(false);
+  const originalDataSource = editingMeta?.dataSource ?? inferredEditDataSource;
+  // Follow-up questions shown in edit mode when the Engagement Data Type is changed
+  const [fuAdjustingEntries, setFuAdjustingEntries] = useState(false);
+  const [fuNewAccounts, setFuNewAccounts] = useState(false);
+  const [fuDocuments, setFuDocuments] = useState(false);
+  const initialClientRef = useRef(clientName);
 
     // Sync data source default when client selection changes based on source connection status
     useEffect(() => {
