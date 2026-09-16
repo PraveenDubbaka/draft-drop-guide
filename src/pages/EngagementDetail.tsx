@@ -2250,8 +2250,14 @@ export default function EngagementDetail() {
  }
  );
  };
- // No early return — empty state shown inline when checklist is null
- const engagementBreadcrumb = (
+  // No early return — empty state shown inline when checklist is null
+  // Engagement source connection status (header badge)
+  const headerMeta = getEngagementMeta(engagementId ?? '');
+  const headerSavedProvider = headerMeta.sourceProvider;
+  const headerClientSource = getClientSourceIntegration(clientName);
+  const headerSourceProvider = headerMeta.dataSource === 'source' ? (headerSavedProvider ?? headerClientSource) : null;
+  const isHeaderSourceDisconnected = !!headerSavedProvider && headerSavedProvider !== headerClientSource;
+  const engagementBreadcrumb = (
  <div className="flex items-center gap-1 whitespace-nowrap flex-shrink-0 text-sidebar-foreground">
  {/* Client Name (read-only) */}
  <div className="flex items-center gap-1.5 px-2 py-1">
@@ -2299,13 +2305,17 @@ export default function EngagementDetail() {
  {status}
  </Badge>
 
- {/* Xero Integration Badge — shown when Xero is connected */}
- {connectedApps.has("xero") && (
- <div className="ml-1 inline-flex items-center justify-center h-7 w-20 px-1 bg-card border border-border rounded-sm gap-1">
- <img src="https://upload.wikimedia.org/wikipedia/en/9/9f/Xero_software_logo.svg" alt="Xero" className="h-4" />
- <span className="text-xs font-medium text-foreground">Xero</span>
- </div>
- )}
+  {/* Engagement source badge — shows the linked source and its connection status */}
+  {headerSourceProvider && (
+  <div className={`ml-1 inline-flex items-center gap-1.5 h-7 px-1.5 bg-card border rounded-sm ${isHeaderSourceDisconnected ? "border-amber-300" : "border-border"}`}>
+  <img src={headerSourceProvider === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={headerSourceProvider === "xero" ? "Xero" : "QuickBooks Online"} className="h-4 shrink-0" />
+  {isHeaderSourceDisconnected ? (
+  <span className="inline-flex items-center rounded-full border border-[#B4720A]/30 bg-[#FEF6E7] px-1.5 py-0.5 text-[10px] font-medium text-[#B4720A] whitespace-nowrap">Disconnected</span>
+  ) : (
+  <span className="inline-flex items-center rounded-full border border-[#2E7D52]/30 bg-[#EAF4EE] px-1.5 py-0.5 text-[10px] font-medium text-[#2E7D52] whitespace-nowrap">Connected</span>
+  )}
+  </div>
+  )}
 
  {/* First-time adoption badge */}
  {getEngagementMeta(engagementId ?? '').firstTimeAdoption && (
