@@ -1417,7 +1417,7 @@ export default function CreateEngagement() {
   <div className="flex items-start gap-4 py-2.5">
   <span className="w-44 shrink-0" />
   <div className="flex-1 min-w-0 space-y-3">
-  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">What would you like to do with the following?</p>
+  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">Please confirm which items you want to retain</p>
   {[
   { label: "Adjusting entries", desc: "Entries where both accounts match will be retained. All others will be deleted.", value: fuAdjustingEntries, set: setFuAdjustingEntries },
   { label: "New added accounts", desc: "Any manually created accounts will be retained.", value: fuNewAccounts, set: setFuNewAccounts },
