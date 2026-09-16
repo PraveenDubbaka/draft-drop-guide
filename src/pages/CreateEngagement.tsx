@@ -1412,8 +1412,8 @@ export default function CreateEngagement() {
   </div>
   </div>
   )}
-  {/* Edit mode follow-up questions — only when the Engagement Data Type changed from the saved value */}
-  {isEditMode && dataSource !== originalDataSource && (
+  {/* Edit mode follow-up questions — only when the Engagement Data Type changed and a source connection exists */}
+  {isEditMode && clientHasSourceConnection && dataSource !== originalDataSource && (
   <div className="flex items-start gap-4 py-2.5">
   <span className="w-44 shrink-0" />
   <div className="flex-1 min-w-0 space-y-3">
