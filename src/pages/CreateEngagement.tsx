@@ -4,7 +4,7 @@ import { useEngagements } from "@/store/EngagementsContext";
 import { EngagementRecord, setEngagementMeta, getEngagementMeta, loadEngagements } from "@/store/engagementsStore";
 import { toast } from "sonner";
 import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
-import xeroLogo from "@/assets/xero-logo.png";
+import xeroLogo from "@/assets/xero-logo.svg";
 import { clientsData as appClientsData } from "@/data/clientsData";
 import { getClientSourceIntegration, sourceLabel } from "@/lib/clientSource";
 import { ArrowLeft, Briefcase, Calendar, Users, ChevronDown, Plus, Pencil, Trash2, Search, ExternalLink, X, Building2, FileText, Settings2, Check, UserPlus, Link2, AlertTriangle, XCircle } from "lucide-react";

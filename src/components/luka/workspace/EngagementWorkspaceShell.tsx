@@ -18,7 +18,7 @@ import {
  AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 import quickbooksLogo from "@/assets/quickbooks-intuit-logo.png";
-import xeroLogo from "@/assets/xero-logo.png";
+import xeroLogo from "@/assets/xero-logo.svg";
 import EngagementVerificationMessage from "./EngagementVerificationMessage";
 import EngagementAutomationView from "./EngagementAutomationView";
 
