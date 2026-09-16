@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Search, Building2, Plus } from "lucide-react";
 import quickbooksLogo from "@/assets/quickbooks-intuit-logo.png";
-import xeroLogo from "@/assets/xero-logo.svg";
+import xeroLogo from "@/assets/xero-logo-full.svg";
 
 export interface EngagementOption {
  id: string;
