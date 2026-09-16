@@ -1297,7 +1297,7 @@ export default function CreateEngagement() {
   {isFullYearPeriod && (
   <SectionCard icon={<Link2 className="h-5 w-5" />} title="Engagement Source">
   <div className="flex items-center gap-4 py-2.5">
-  <span className="text-sm text-foreground w-32 shrink-0">Client Source Status<span className="text-destructive ml-0.5">*</span></span>
+  <span className="text-sm text-foreground w-32 shrink-0">Client Connection Status<span className="text-destructive ml-0.5">*</span></span>
   <div className="flex-1 min-w-0 max-w-sm">
   {clientHasSourceConnection ? (
   <div className="inline-flex items-center rounded-[10px] border border-border bg-card px-3 py-1.5">
@@ -1312,7 +1312,7 @@ export default function CreateEngagement() {
   </div>
   </div>
  <div className="flex items-center gap-4 py-2.5">
- <span className="text-sm text-foreground w-32 shrink-0 whitespace-nowrap">Data</span>
+ <span className="text-sm text-foreground w-32 shrink-0 whitespace-nowrap">Engagement Data Type</span>
  <div className="flex-1 min-w-0 max-w-sm">
  <Select value={dataSource} onValueChange={v => setDataSource(v as "csv" | "source")}>
  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
