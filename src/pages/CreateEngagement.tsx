@@ -1162,8 +1162,8 @@ export default function CreateEngagement() {
  {/* Engagement Details — inline labels */}
  <SectionCard icon={<Briefcase className="h-5 w-5" />} title="Engagement Details">
  <InlineRow label="Client" required>
- <Select value={clientName} onValueChange={setClientName}>
- <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select client..." /></SelectTrigger>
+ <Select value={clientName} onValueChange={setClientName} disabled={isEditMode}>
+ <SelectTrigger className="h-9 text-sm opacity-70 cursor-not-allowed"><SelectValue placeholder="Select client..." /></SelectTrigger>
  <SelectContent>
  {Array.from(new Set([...Object.keys(CLIENT_DATA), ...appClientsData.map(c => c.entityName), ...(clientName ? [clientName] : [])])).map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}
  </SelectContent>
