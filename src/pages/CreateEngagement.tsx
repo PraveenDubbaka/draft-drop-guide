@@ -1316,7 +1316,7 @@ export default function CreateEngagement() {
   <SectionCard icon={<Link2 className="h-5 w-5" />} title="Engagement Source">
   <div className="flex items-center gap-4 py-2.5">
   <span className="text-sm text-foreground w-44 shrink-0">Client Connection Status<span className="text-destructive ml-0.5">*</span></span>
-  <div className="flex-1 min-w-0">
+  <div className="flex-1 min-w-0 max-w-sm">
   {clientHasSourceConnection ? (
   isSourceProviderMismatch ? (
   <Select value={hasSelectedActiveConnection ? "active" : "saved"} onValueChange={v => { if (v === "active") setHasSelectedActiveConnection(true); }}>
