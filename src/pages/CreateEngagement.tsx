@@ -1325,15 +1325,15 @@ export default function CreateEngagement() {
   <SelectItem value="saved" disabled className="text-muted-foreground">
   <span className="inline-flex items-center gap-2.5">
   <img src={savedSourceProvider === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={sourceLabel(savedSourceProvider ?? null)} className="h-5 object-contain shrink-0" />
-  <span className="whitespace-nowrap">{sourceLabel(savedSourceProvider ?? null)} · {clientInfo?.entityLegalName || clientName}</span>
-  <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
-  <span className="text-xs font-medium text-amber-700 dark:text-amber-300 whitespace-nowrap">Disconnected</span>
+  <span className="inline-flex items-center rounded-full border border-[#B4720A]/30 bg-[#FEF6E7] px-2 py-0.5 text-[11px] font-medium text-[#B4720A] shrink-0">Disconnected</span>
+  <span className="whitespace-nowrap">{clientInfo?.entityLegalName || clientName}</span>
   </span>
   </SelectItem>
   <SelectItem value="active" onPointerUp={() => setHasSelectedActiveConnection(true)} onKeyDown={() => setHasSelectedActiveConnection(true)}>
   <span className="inline-flex items-center gap-2.5">
   <img src={clientSourceIntegration === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={sourceLabel(clientSourceIntegration)} className="h-5 object-contain shrink-0" />
-  <span className="whitespace-nowrap">{sourceLabel(clientSourceIntegration)} · {clientInfo?.entityLegalName || clientName}</span>
+  <span className="inline-flex items-center rounded-full border border-[#2E7D52]/30 bg-[#EAF4EE] px-2 py-0.5 text-[11px] font-medium text-[#2E7D52] shrink-0">Connected</span>
+  <span className="whitespace-nowrap">{clientInfo?.entityLegalName || clientName}</span>
   </span>
   </SelectItem>
   </SelectContent>
@@ -1341,13 +1341,12 @@ export default function CreateEngagement() {
   ) : (
   <div className={`inline-flex items-center gap-2.5 rounded-[10px] border bg-card px-3 py-1.5 ${isConnectionDisconnected ? "border-amber-300" : "border-border"}`}>
   <img src={clientSourceIntegration === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={sourceLabel(clientSourceIntegration)} className="h-5 object-contain shrink-0" />
-  <span className="text-sm text-foreground whitespace-nowrap">{sourceLabel(clientSourceIntegration)} · {clientInfo?.entityLegalName || clientName}</span>
-  {isConnectionDisconnected && (
-  <>
-  <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
-  <span className="text-xs font-medium text-amber-700 dark:text-amber-300 whitespace-nowrap">Disconnected</span>
-  </>
+  {isConnectionDisconnected ? (
+  <span className="inline-flex items-center rounded-full border border-[#B4720A]/30 bg-[#FEF6E7] px-2 py-0.5 text-[11px] font-medium text-[#B4720A] shrink-0">Disconnected</span>
+  ) : (
+  <span className="inline-flex items-center rounded-full border border-[#2E7D52]/30 bg-[#EAF4EE] px-2 py-0.5 text-[11px] font-medium text-[#2E7D52] shrink-0">Connected</span>
   )}
+  <span className="text-sm text-foreground whitespace-nowrap">{clientInfo?.entityLegalName || clientName}</span>
   </div>
   )
   ) : (
