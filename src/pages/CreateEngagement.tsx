@@ -1330,7 +1330,7 @@ export default function CreateEngagement() {
   <span className="text-xs font-medium text-amber-700 dark:text-amber-300 whitespace-nowrap">Disconnected</span>
   </span>
   </SelectItem>
-  <SelectItem value="active" onClick={() => setHasSelectedActiveConnection(true)} onKeyDown={() => setHasSelectedActiveConnection(true)}>
+  <SelectItem value="active" onClick={() => { console.log("ACTIVE_CLICKED"); setHasSelectedActiveConnection(true); }} onKeyDown={() => setHasSelectedActiveConnection(true)}>
   <span className="inline-flex items-center gap-2.5">
   <img src={clientSourceIntegration === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={sourceLabel(clientSourceIntegration)} className="h-5 object-contain shrink-0" />
   <span className="whitespace-nowrap">{sourceLabel(clientSourceIntegration)} · {clientInfo?.entityLegalName || clientName}</span>
