@@ -726,10 +726,14 @@ export default function CreateEngagement() {
  // client's live connection so Source-based engagements keep showing as Source.
  const inferredEditDataSource: "csv" | "source" =
    isEditMode && getClientSourceIntegration(clientName) !== null ? "source" : "csv";
- const [dataSource, setDataSource] = useState<"csv" | "source">(editingMeta?.dataSource ?? inferredEditDataSource);
- const [sourceConnected, setSourceConnected] = useState(false);
- const originalDataSource = editingMeta?.dataSource ?? inferredEditDataSource;
- const initialClientRef = useRef(clientName);
+  const [dataSource, setDataSource] = useState<"csv" | "source">(editingMeta?.dataSource ?? inferredEditDataSource);
+  const [sourceConnected, setSourceConnected] = useState(false);
+  const originalDataSource = editingMeta?.dataSource ?? inferredEditDataSource;
+  // Follow-up questions shown in edit mode when the Engagement Data Type is changed
+  const [fuAdjustingEntries, setFuAdjustingEntries] = useState(false);
+  const [fuNewAccounts, setFuNewAccounts] = useState(false);
+  const [fuDocuments, setFuDocuments] = useState(false);
+  const initialClientRef = useRef(clientName);
 
     // Sync data source default when client selection changes based on source connection status
     useEffect(() => {
@@ -745,6 +749,15 @@ export default function CreateEngagement() {
         setDataSource("csv");
       }
     }, [clientName, clientInfo, localClientInfo]);
+
+    // Reset follow-up toggles to their "No" defaults whenever the data type returns to the original value
+    useEffect(() => {
+      if (isEditMode && dataSource === originalDataSource) {
+        setFuAdjustingEntries(false);
+        setFuNewAccounts(false);
+        setFuDocuments(false);
+      }
+    }, [dataSource, originalDataSource, isEditMode]);
 
  const [accountingStandards, setAccountingStandards] = useState(editingMeta?.accountingStandards ?? (prefillIsAudit ? "ASPE — Canadian Accounting Standards for Private Enterprises" : "Section 2400 Review standards"));
  const [additionalDisclosures, setAdditionalDisclosures] = useState(prefillIsAudit ? "Full financial statements" : "Statement of cash flows");
@@ -1396,6 +1409,35 @@ export default function CreateEngagement() {
   <span className="text-sm text-amber-800 dark:text-amber-200">
   Your client's source connection has changed. This engagement is still linked to {sourceLabel(savedSourceProvider ?? null)}. To start pulling data from {sourceLabel(clientSourceIntegration)}, click the Update Engagement button at the bottom of the page.
   </span>
+  </div>
+  </div>
+  )}
+  {/* Edit mode follow-up questions — only when the Engagement Data Type changed from the saved value */}
+  {isEditMode && dataSource !== originalDataSource && (
+  <div className="flex items-start gap-4 py-2.5">
+  <span className="w-44 shrink-0" />
+  <div className="flex-1 min-w-0 space-y-3">
+  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">What would you like to do with the following?</p>
+  {[
+  { label: "Adjusting entries", desc: "Entries where both accounts match will be retained. All others will be deleted.", value: fuAdjustingEntries, set: setFuAdjustingEntries },
+  { label: "New added accounts", desc: "Any manually created accounts will be retained.", value: fuNewAccounts, set: setFuNewAccounts },
+  { label: "Documents", desc: "Documents will be packed and retained.", value: fuDocuments, set: setFuDocuments },
+  ].map(row => (
+  <div key={row.label} className="flex items-start justify-between gap-3">
+  <div className="min-w-0">
+  <p className="text-sm text-foreground leading-snug">{row.label}</p>
+  <p className="text-xs text-muted-foreground mt-0.5">{row.desc}</p>
+  </div>
+  <BoolToggle value={row.value} onChange={row.set} />
+  </div>
+  ))}
+  <div className="flex items-start justify-between gap-3">
+  <div className="min-w-0">
+  <p className="text-sm text-foreground leading-snug">Procedure comments</p>
+  <p className="text-xs text-muted-foreground mt-0.5">Will be deleted.</p>
+  </div>
+  </div>
+  <p className="text-xs italic text-muted-foreground">All issues, comments and document requests will be deleted regardless of the above selections.</p>
   </div>
   </div>
   )}
