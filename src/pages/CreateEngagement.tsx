@@ -785,7 +785,7 @@ export default function CreateEngagement() {
 
     // Clear the picked connection when the user switches the data type back
     useEffect(() => {
-      if (isEditMode && dataSource === originalDataSource && !editingMeta?.sourceProvider) setHasSelectedActiveConnection(false);
+      if (isEditMode && originalDataSource === "csv" && dataSource === "csv") setHasSelectedActiveConnection(false);
     }, [dataSource]);
 
     // Reset follow-up togglesto their "No" defaults whenever the data type returns to the original value
