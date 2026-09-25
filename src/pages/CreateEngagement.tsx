@@ -6,8 +6,8 @@ import { toast } from "sonner";
 import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
 import xeroLogo from "@/assets/xero-logo-full.svg";
 import { clientsData as appClientsData } from "@/data/clientsData";
-import { getClientSourceIntegration, sourceLabel } from "@/lib/clientSource";
-import { ArrowLeft, Briefcase, Calendar, Users, ChevronDown, Plus, Pencil, Trash2, Search, ExternalLink, X, Building2, FileText, Settings2, Check, UserPlus, Link2, AlertTriangle, XCircle } from "lucide-react";
+import { getClientSourceIntegration, sourceLabel, getClientConnectionOverride, connectClientSource, CLIENT_CONNECTION_EVENT } from "@/lib/clientSource";
+import { ArrowLeft, Briefcase, Calendar, Users, ChevronDown, Plus, Pencil, Trash2, Search, ExternalLink, X, Building2, FileText, Settings2, Check, UserPlus, Link2, AlertTriangle, XCircle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -726,7 +726,37 @@ export default function CreateEngagement() {
  // client's live connection so Source-based engagements keep showing as Source.
  const inferredEditDataSource: "csv" | "source" =
    isEditMode && getClientSourceIntegration(clientName) !== null ? "source" : "csv";
-  const [dataSource, setDataSource] = useState<"csv" | "source">(editingMeta?.dataSource ?? inferredEditDataSource);
+  const [dataSource, setDataSource] = useState<"csv" | "source">(() => {
+    // Restore an in-progress switch after the user went to the Clients page to connect a source
+    if (isEditMode) {
+      try {
+        const draftKey = `edit-draft-${routeEngagementId}`;
+        const draft = sessionStorage.getItem(draftKey);
+        if (draft) {
+          sessionStorage.removeItem(draftKey);
+          const parsed = JSON.parse(draft);
+          if (parsed?.dataSource === "csv" || parsed?.dataSource === "source") return parsed.dataSource;
+        }
+      } catch {}
+    }
+    return editingMeta?.dataSource ?? inferredEditDataSource;
+  });
+  // Bumped whenever a client connection may have changed (e.g. user connected on the Clients page)
+  const [connVersion, setConnVersion] = useState(0);
+  useEffect(() => {
+    const bump = () => setConnVersion(v => v + 1);
+    const onVisible = () => { if (document.visibilityState === "visible") bump(); };
+    window.addEventListener("focus", bump);
+    window.addEventListener("storage", bump);
+    window.addEventListener(CLIENT_CONNECTION_EVENT, bump);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener("focus", bump);
+      window.removeEventListener("storage", bump);
+      window.removeEventListener(CLIENT_CONNECTION_EVENT, bump);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, []);
   const [sourceConnected, setSourceConnected] = useState(false);
   const originalDataSource = editingMeta?.dataSource ?? inferredEditDataSource;
   // Follow-up questions shown in edit mode when the Engagement Data Type is changed
@@ -740,20 +770,25 @@ export default function CreateEngagement() {
     // Sync data source default when client selection changes based on source connection status
     useEffect(() => {
       {
-        const integ = localClientInfo
+        const integ = getClientConnectionOverride(clientName, localClientInfo?.entityLegalName) ?? (localClientInfo
           ? (localClientInfo.integrations.includes("xero") ? "xero"
             : localClientInfo.integrations.includes("quickbooks") ? "quickbooks"
             : null)
-          : getClientSourceIntegration(clientName);
+          : getClientSourceIntegration(clientName));
         setSourceConnected(integ !== null);
         // In edit mode keep the saved data source until the user picks a different client
         if (isEditMode && clientName === initialClientRef.current) return;
         // Default: connected client → Source, not connected → CSV
         setDataSource(integ ? "source" : "csv");
       }
-    }, [clientName, clientInfo, localClientInfo]);
+    }, [clientName, clientInfo, localClientInfo, connVersion]);
 
-    // Reset follow-up toggles to their "No" defaults whenever the data type returns to the original value
+    // Clear the picked connection when the user switches the data type back
+    useEffect(() => {
+      if (isEditMode && originalDataSource === "csv" && dataSource === "csv") setHasSelectedActiveConnection(false);
+    }, [dataSource]);
+
+    // Reset follow-up togglesto their "No" defaults whenever the data type returns to the original value
     useEffect(() => {
       if (isEditMode && dataSource === originalDataSource) {
         setFuAdjustingEntries(false);
@@ -950,12 +985,17 @@ export default function CreateEngagement() {
 
   const isFullYearPeriod = periodType === "Full Year" || periodType === "Full year";
   const isStubPeriod = periodType === "Partial Year" || periodType === "Partial year";
- const clientSourceIntegration = localClientInfo
+ const clientSourceIntegration = getClientConnectionOverride(clientName, clientInfo?.entityLegalName) ?? (localClientInfo
    ? (localClientInfo.integrations.includes("xero") ? "xero" as const
      : localClientInfo.integrations.includes("quickbooks") ? "quickbooks" as const
      : null)
-   : getClientSourceIntegration(clientName);
+   : getClientSourceIntegration(clientName));
  const clientHasSourceConnection = clientSourceIntegration !== null;
+ // Engagement was disconnected from its source by a CSV import; switching back to Source reconnects it
+ const savedDisconnectedFrom = editingMeta?.sourceDisconnectedFrom;
+ const isReconnectFlow = isEditMode && clientHasSourceConnection && originalDataSource === "csv" && dataSource === "source" && !!savedDisconnectedFrom;
+ // Roll forward: Current Year pulls from source, prior years stay CSV
+ const isRollForwardSource = isEditMode && !!editingMeta?.sourceRollForward;
 
  const applyFullYearPriors = (cyStart: string, cyEnd: string) => {
  setPriorYear1Start(shiftYearStr(cyStart, -1));
@@ -1008,10 +1048,11 @@ export default function CreateEngagement() {
  additionalDisclosures !== "" &&
  currentYearStart.trim() !== "" &&
  currentYearEnd.trim() !== "" &&
- (isEditMode || teamMembers.length > 0);
+ (isEditMode || teamMembers.length > 0) &&
+ (!isReconnectFlow || hasSelectedActiveConnection);
 
   // Edit-mode scenario: engagement was CSV, client has a source connection, user switched to Source
-  const isCsvToSourceSwitch = isEditMode && clientHasSourceConnection && originalDataSource === "csv" && dataSource === "source" && sourceConnected;
+  const isCsvToSourceSwitch = isEditMode && clientHasSourceConnection && originalDataSource === "csv" && dataSource === "source" && sourceConnected && !savedDisconnectedFrom;
    // Edit-mode scenario 2: engagement was Source, user switched to CSV
    const isSourceToCsvSwitch = isEditMode && clientHasSourceConnection && originalDataSource === "source" && dataSource === "csv";
    // Edit-mode scenario 5: the client's source connection changed since the engagement was set up
@@ -1021,7 +1062,9 @@ export default function CreateEngagement() {
      && !!savedSourceProvider && savedSourceProvider !== clientSourceIntegration;
    // The client's connection can't be used by this engagement right now:
    // either the connection isn't active or the engagement is linked to a different source.
-   const isConnectionDisconnected = clientHasSourceConnection && (!sourceConnected || isSourceProviderMismatch);
+   const showConnectionDropdown = isSourceProviderMismatch || isReconnectFlow;
+   const dropdownSavedProvider = isReconnectFlow ? savedDisconnectedFrom : savedSourceProvider;
+   const isConnectionDisconnected = clientHasSourceConnection&& (!sourceConnected || isSourceProviderMismatch);
 
   const performSave = () => {
   // Partial Year locks Engagement Data Type to CSV — always save CSV in that state
@@ -1056,7 +1099,11 @@ export default function CreateEngagement() {
  periodEnd: currentYearEnd,
  dataSource: savedDataSource,
  teamMembers,
- sourceProvider: savedDataSource === "source" ? (clientSourceIntegration ?? undefined) : undefined,
+ sourceProvider: savedDataSource === "source" ? (clientSourceIntegration ?? undefined) : (editingMeta?.sourceDisconnectedFrom ? editingMeta.sourceProvider : undefined),
+ sourceDisconnectedFrom: savedDataSource === "csv" ? editingMeta?.sourceDisconnectedFrom : undefined,
+ sourceRollForward: editingMeta?.sourceRollForward,
+ sourceYearsAvailable: editingMeta?.sourceYearsAvailable,
+ refreshYears: savedDataSource === originalDataSource && !isSourceProviderMismatch ? editingMeta?.refreshYears : undefined,
  auditPeriodType: isAudit ? periodType : undefined,
  annualizeInterim: isAudit && periodType === "Interim (6-month)" ? annualizeInterim : undefined,
  firstTimeAdoption: isAudit ? firstTimeAdoption : undefined,
@@ -1315,13 +1362,13 @@ export default function CreateEngagement() {
   <span className="text-sm text-foreground w-44 shrink-0">Client Connection Status<span className="text-destructive ml-0.5">*</span></span>
   <div className="w-fit max-w-full min-w-0">
   {clientHasSourceConnection ? (
-  isSourceProviderMismatch ? (
-  <Select value={hasSelectedActiveConnection ? "active" : "saved"} onValueChange={v => { if (v === "active") setHasSelectedActiveConnection(true); }}>
+  showConnectionDropdown ? (
+  <Select value={hasSelectedActiveConnection? "active" : "saved"} onValueChange={v => { if (v === "active") setHasSelectedActiveConnection(true); }}>
   <SelectTrigger className="h-9 w-fit min-w-max text-sm gap-3">
   <span className="inline-flex items-center gap-2.5 pr-1">
   <img
-  src={(hasSelectedActiveConnection ? clientSourceIntegration : savedSourceProvider) === "xero" ? xeroLogo : intuitQuickbooksLogo}
-  alt={sourceLabel(hasSelectedActiveConnection ? clientSourceIntegration : savedSourceProvider ?? null)}
+  src={(hasSelectedActiveConnection ? clientSourceIntegration : dropdownSavedProvider) === "xero" ? xeroLogo : intuitQuickbooksLogo}
+  alt={sourceLabel(hasSelectedActiveConnection ? clientSourceIntegration : dropdownSavedProvider ?? null)}
   className="h-5 object-contain shrink-0"
   />
   <span className="whitespace-nowrap shrink-0">{clientInfo?.entityLegalName || clientName}</span>
@@ -1333,7 +1380,7 @@ export default function CreateEngagement() {
   <SelectContent>
   <SelectItem value="saved" disabled className="text-muted-foreground">
   <span className="inline-flex items-center gap-2.5">
-  <img src={savedSourceProvider === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={sourceLabel(savedSourceProvider ?? null)} className="h-5 object-contain shrink-0" />
+  <img src={dropdownSavedProvider === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={sourceLabel(dropdownSavedProvider ?? null)} className="h-5 object-contain shrink-0" />
   <span className="whitespace-nowrap shrink-0">{clientInfo?.entityLegalName || clientName}</span>
   <span className="inline-flex items-center rounded-full border border-[#B4720A]/30 bg-[#FEF6E7] px-2 py-0.5 text-[11px] font-medium text-[#B4720A] shrink-0">Disconnected</span>
   </span>
@@ -1408,8 +1455,32 @@ export default function CreateEngagement() {
   <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
    <div className="flex flex-col gap-2">
    <span className="text-sm text-red-800 dark:text-red-200">
-   No source connection found for this client. Connect your accounting software {isEditMode ? "before updating." : "to continue."}
-   </span>
+    No source connection found for this client. Connect your accounting software before switching to source.
+    </span>
+    <div className="flex flex-wrap items-center gap-4">
+    {isEditMode && (
+    <button
+    type="button"
+    className="text-sm font-medium text-[#1C63A6] hover:underline"
+    onClick={() => {
+    try { sessionStorage.setItem(`edit-draft-${routeEngagementId}`, JSON.stringify({ dataSource: "source" })); } catch {}
+    navigate(`/clients?returnTo=${encodeURIComponent(location.pathname)}`);
+    }}
+    >
+    Connect from client page →
+    </button>
+    )}
+    <button
+    type="button"
+    className="text-sm font-medium text-[#1C63A6] hover:underline"
+    onClick={() => {
+    connectClientSource(clientInfo?.entityLegalName || clientName, "quickbooks");
+    toast.success(`${clientInfo?.entityLegalName || clientName} connected to QuickBooks Online`);
+    }}
+    >
+    Connect here →
+    </button>
+    </div>
    </div>
   </div>
   </div>
@@ -1431,7 +1502,9 @@ export default function CreateEngagement() {
     <div className="flex-1 min-w-0 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">
-    Switching to CSV means this engagement will no longer pull data from {sourceLabel(clientSourceIntegration)}. The source connection will stay active but won't be used.
+    {isRollForwardSource
+    ? <>Switching to CSV will disconnect all years from {sourceLabel(clientSourceIntegration)}, including Prior Year 1 and Prior Year 2. You will need to import CSV files for all years.</>
+    : <>Switching to CSV means this engagement will no longer pull data from {sourceLabel(clientSourceIntegration)}. The source connection will stay active but won't be used.</>}
     </span>
     </div>
     </div>
@@ -1445,13 +1518,49 @@ export default function CreateEngagement() {
   </div>
   </div>
   )}
- {isCsvToSourceSwitch && (
+ {isCsvToSourceSwitch && !isRollForwardSource && (
+ <div className="flex items-start gap-4 pb-2.5">
+ <span className="w-44 shrink-0" />
+ <div className="flex-1 min-w-0 flex items-start gap-2 rounded-[10px] border border-blue-300 bg-blue-50 dark:bg-blue-950/30 px-3 py-2">
+ <Info className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+ <span className="text-sm text-blue-900 dark:text-blue-200">
+ Switching to Source will replace your existing CSV trial balance data based on what years are available in {sourceLabel(clientSourceIntegration)}.
+ </span>
+ </div>
+ </div>
+ )}
+ {isCsvToSourceSwitch && isRollForwardSource && (
+ <div className="flex items-start gap-4 pb-2.5">
+ <span className="w-44 shrink-0" />
+ <div className="flex-1 min-w-0 space-y-3">
+ <div className="flex items-start gap-2 rounded-[10px] border border-border bg-muted/50 px-3 py-2">
+ <Info className="h-4 w-4 text-foreground shrink-0 mt-0.5" />
+ <span className="text-sm text-foreground">
+ Current Year will pull from {sourceLabel(clientSourceIntegration)}. Prior Year 1 and Prior Year 2 will remain as CSV data.
+ </span>
+ </div>
+ <div className="rounded-[10px] border border-border divide-y divide-border">
+ {[
+ { label: `Current Year (${(parseInt(currentYearEnd.split("/")[2]) || 0)})`, value: `Source — ${sourceLabel(clientSourceIntegration)}` },
+ { label: `Prior Year 1 (${(parseInt(currentYearEnd.split("/")[2]) || 0) - 1})`, value: "CSV" },
+ { label: `Prior Year 2 (${(parseInt(currentYearEnd.split("/")[2]) || 0) - 2})`, value: "CSV" },
+ ].map(y => (
+ <div key={y.label} className="flex items-center justify-between px-3 py-2 text-sm">
+ <span className="text-foreground">{y.label}</span>
+ <span className="text-foreground font-medium">{y.value}</span>
+ </div>
+ ))}
+ </div>
+ </div>
+ </div>
+ )}
+ {isReconnectFlow && hasSelectedActiveConnection && (
  <div className="flex items-start gap-4 pb-2.5">
  <span className="w-44 shrink-0" />
  <div className="flex-1 min-w-0 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
  <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
  <span className="text-sm text-amber-800 dark:text-amber-200">
- Switching to Source will replace your existing CSV trial balance data.
+ Switching back to Source will replace your current CSV trial balance data. Years available from {sourceLabel(clientSourceIntegration)} will be refreshed.
  </span>
  </div>
  </div>
@@ -1468,23 +1577,19 @@ export default function CreateEngagement() {
   </div>
   )}
   {/* Edit mode follow-up questions — when the Engagement Data Type changed, or when the active connection is picked after an external source change */}
-  {isEditMode && clientHasSourceConnection && (dataSource !== originalDataSource || (isSourceProviderMismatch && hasSelectedActiveConnection)) && (
+  {isEditMode && clientHasSourceConnection && ((dataSource !== originalDataSource && (!isReconnectFlow || hasSelectedActiveConnection)) || (isSourceProviderMismatch && hasSelectedActiveConnection)) && (
   <div className="flex items-start gap-4 py-2.5">
   <span className="w-44 shrink-0" />
-  <div className="flex-1 min-w-0 space-y-3">
-  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">Please confirm which items you want to retain</p>
+  <div className="flex-1 min-w-0 space-y-2">
+  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">What would you like to do with the following?</p>
   {[
-  { label: "Adjusting entries", desc: "Entries where both accounts are the same (or identical) will be retained. All other entries will be deleted.", value: fuAdjustingEntries, set: setFuAdjustingEntries },
-  { label: "New added accounts", desc: "Any manually created accounts will be retained.", value: fuNewAccounts, set: setFuNewAccounts },
-  { label: "Documents", desc: "Documents will be packed and retained.", value: fuDocuments, set: setFuDocuments },
+  { label: "Adjusting entries", desc: "Will not be retained." },
+  ...(isRollForwardSource || isReconnectFlow ? [] : [{ label: "New added accounts", desc: "Will not be retained." }]),
+  { label: "Documents", desc: "Will be moved to the documents section automatically." },
   ].map(row => (
-  <div key={row.label} className="flex items-start justify-between gap-3">
-  <div className="min-w-0">
-  <p className="text-sm text-foreground leading-snug">{row.label}</p>
-  <p className="text-xs text-muted-foreground mt-0.5">{row.desc}</p>
-  </div>
-  <BoolToggle value={row.value} onChange={row.set} />
-  </div>
+  <p key={row.label} className="text-sm text-muted-foreground">
+  <span className="text-foreground">{row.label}</span> — {row.desc}
+  </p>
   ))}
    <p className="text-xs italic text-muted-foreground">All issues, comments and document requests, and LHS Procedure document references will be deleted regardless of the above selections.</p>
    </div>

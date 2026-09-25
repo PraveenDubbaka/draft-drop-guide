@@ -8,6 +8,7 @@ const DEMO_DATA_SOURCES: Readonly<Record<string, "csv" | "source">> = {
   "COM-QB-Dec312025": "source",
   "COM-CHE-Dec252024": "csv",
   "COM-HF-Dec312024": "source",
+  "COM-HFRF-Dec312024": "csv",
 };
 
 /**
@@ -18,6 +19,8 @@ const DEMO_DATA_SOURCES: Readonly<Record<string, "csv" | "source">> = {
 export function getClientSourceIntegration(clientName: string): ClientSourceIntegration {
   const normalized = (clientName || "").trim().toLowerCase();
   if (!normalized) return null;
+  const override = getClientConnectionOverride(normalized);
+  if (override) return override;
   const client = clientsData.find(
     (c) =>
       c.legalEntityName.toLowerCase() === normalized ||
@@ -26,6 +29,8 @@ export function getClientSourceIntegration(clientName: string): ClientSourceInte
       normalized.includes(c.entityName.toLowerCase())
   );
   if (!client) return null;
+  const clientOverride = getClientConnectionOverride(client.legalEntityName, client.entityName);
+  if (clientOverride) return clientOverride;
   if (client.integration === "xero" || client.integration === "quickbooks") {
     return client.integration;
   }
@@ -63,10 +68,43 @@ export const VISIBLE_ENGAGEMENT_IDS: readonly string[] = [
   "COM-QB-Dec312025",
   "COM-CHE-Dec252024",
   "COM-HF-Dec312024",
+  "COM-HFRF-Dec312024",
 ];
 
 /** Keep only the visible engagements, in the fixed scenario order. */
 export function filterVisibleEngagements<T extends { id: string }>(list: T[]): T[] {
   const byId = new Map(list.map((e) => [e.id, e]));
   return VISIBLE_ENGAGEMENT_IDS.map((id) => byId.get(id)).filter((e): e is T => !!e);
+}
+
+// ── Client connection overrides (connections made after the demo was seeded) ──
+const CONN_OVERRIDE_KEY = "client-connection-overrides";
+export const CLIENT_CONNECTION_EVENT = "client-connection-changed";
+
+function readOverrides(): Record<string, "xero" | "quickbooks"> {
+  try {
+    return JSON.parse(localStorage.getItem(CONN_OVERRIDE_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+/** Connection the user made from the Clients page or inline on Edit Engagement. */
+export function getClientConnectionOverride(...names: (string | undefined | null)[]): "xero" | "quickbooks" | null {
+  const overrides = readOverrides();
+  for (const raw of names) {
+    const n = (raw || "").trim().toLowerCase();
+    if (!n) continue;
+    for (const [key, val] of Object.entries(overrides)) {
+      if (key === n || key.includes(n) || n.includes(key)) return val;
+    }
+  }
+  return null;
+}
+
+export function connectClientSource(clientName: string, provider: "xero" | "quickbooks" = "quickbooks") {
+  const overrides = readOverrides();
+  overrides[clientName.trim().toLowerCase()] = provider;
+  localStorage.setItem(CONN_OVERRIDE_KEY, JSON.stringify(overrides));
+  window.dispatchEvent(new Event(CLIENT_CONNECTION_EVENT));
 }

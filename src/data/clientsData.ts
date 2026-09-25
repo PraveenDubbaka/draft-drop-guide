@@ -28,6 +28,26 @@ export interface Client {
 
 export const clientsData: Client[] = [
  {
+ id: 'DEMO-CPL',
+ entityName: 'Cedar Point Logistics',
+ legalEntityName: 'Cedar Point Logistics Inc.',
+ entityType: 'Corporation',
+ status: 'Accepted',
+ integration: 'connect',
+ contactName: 'Daniel Reyes',
+ contactPerson: 'Daniel Reyes',
+ engagementPartner: 'Atin Gupta',
+ email: 'daniel@cedarpointlogistics.ca',
+ repository: 'Cedar Point Logistics',
+ assignedPartner: 'Atin Gupta',
+ assignedTeam: null,
+ businessPhone: '+1 (416) 555-0288',
+ cellPhone: '+1 (416) 555-0289',
+ engagements: [
+ { id: 'COM-CHE-Dec252024', type: 'Compilation (COM)', periodEnd: 'Dec 25, 2024', status: 'New', dateCreated: 'Jan 16, 2026 08:20 AM' },
+ ],
+ },
+ {
  id: 'DEMO-NPM',
  entityName: 'Northline Precision',
  legalEntityName: 'Northline Precision Manufacturing Inc.',
