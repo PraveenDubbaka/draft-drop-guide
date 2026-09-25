@@ -32,6 +32,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ScrollArea } from "@/components/ui/scroll-area";
 import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
 import { clientsData } from "@/data/clientsData";
+import { connectClientSource, getClientConnectionOverride } from "@/lib/clientSource";
+import { useSearchParams } from "react-router-dom";
 
 // Sample partners data for the dropdown
 const partners = [
@@ -74,10 +76,10 @@ const StatusBadge = ({ status }: { status: string }) => {
  );
 };
 
-const IntegrationCell = ({ type }: { type: string }) => {
+const IntegrationCell = ({ type, onConnect }: { type: string; onConnect?: () => void }) => {
  if (type === "connect") {
  return (
- <Button variant="outline" size="sm" className="h-7 text-xs font-medium">
+ <Button variant="outline" size="sm" className="h-7 text-xs font-medium" onClick={(e) => { e.stopPropagation(); onConnect?.(); }}>
  Connect
  </Button>
  );
@@ -112,6 +114,9 @@ export default function Clients() {
  const [activeTab, setActiveTab] = useState("my-clients");
  const [selectedClient, setSelectedClient] = useState<string | null>(null);
  const [clientList, setClientList] = useState(clientsData);
+ const [, setConnVersion] = useState(0);
+ const [searchParams] = useSearchParams();
+ const returnTo = searchParams.get("returnTo");
 
  const filteredClients = clientList.filter(c =>
  c.entityName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -150,6 +155,12 @@ export default function Clients() {
  <div className="flex h-full overflow-hidden bg-background">
  {/* Main Content */}
  <div className="flex-1 p-6 overflow-hidden flex flex-col min-w-0">
+ {returnTo && (
+ <div className="mb-4 flex items-center justify-between gap-3 rounded-[10px] border border-blue-300 bg-blue-50 px-3 py-2">
+ <span className="text-sm text-blue-900">Connect the client's accounting software, then return to finish editing the engagement.</span>
+ <Button size="sm" variant="outline" onClick={() => navigate(returnTo)}>Back to Edit Engagement</Button>
+ </div>
+ )}
  <div className="flex flex-col flex-1 gap-5 min-h-0">
  {/* Stats Cards */}
  <div className="flex items-center gap-3 flex-shrink-0">
@@ -368,7 +379,14 @@ export default function Clients() {
  <StatusBadge status={client.status} />
  </td>
  <td className="px-6 py-2 whitespace-nowrap">
- <IntegrationCell type={client.integration} />
+ <IntegrationCell
+ type={getClientConnectionOverride(client.legalEntityName, client.entityName) ?? client.integration}
+ onConnect={() => {
+ connectClientSource(client.legalEntityName, "quickbooks");
+ setConnVersion(v => v + 1);
+ toast.success(`${client.entityName} connected to QuickBooks Online`);
+ }}
+ />
  </td>
  <td className="px-6 py-2 text-sm text-foreground whitespace-nowrap">{client.contactName}</td>
  <td className="px-6 py-2 text-sm text-link cursor-pointer hover:underline whitespace-nowrap"><Highlight text={client.email} query={searchQuery} /></td>
