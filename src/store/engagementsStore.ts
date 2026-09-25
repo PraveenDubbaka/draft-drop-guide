@@ -29,6 +29,7 @@ export const SEED_ENGAGEMENTS: EngagementRecord[] = [
  { id: "COM-QB-Jan142026", client: "Riverstone Capital", type: "Compilation (COM)", yearEnd: "Jan 14, 2026", team: "View Assignees", status: "New", statusVariant: "new", hasRF: false, dateCreated: "Jan 13, 2026 04:36 AM", firstYearAudit: false },
  { id: "COM-SHR-Dec302023", client: "ShRoll Forward", type: "Compilation (COM)", yearEnd: "Dec 30, 2023", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: true, dateCreated: "Jan 13, 2026 03:51 AM", firstYearAudit: false },
  { id: "COM-HF-Dec312024", client: "Harbor Freight Logistics LLC", type: "Compilation (COM)", yearEnd: "Dec 31, 2024", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: false, dateCreated: "Jan 22, 2026 08:00 AM", firstYearAudit: false },
+ { id: "COM-HFRF-Dec312024", client: "Harbor Freight Logistics LLC", type: "Compilation (COM)", yearEnd: "Dec 31, 2024", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: true, dateCreated: "Jan 23, 2026 09:00 AM", firstYearAudit: false },
 ];
 
 function seedDemoEngagementMeta() {
@@ -49,7 +50,7 @@ function seedDemoEngagementMeta() {
  }
 
   // Deterministic demo data-source seeds for the edit-engagement scenarios.
-  const SEED_FLAG = 'cds_engagement_datasource_seed_v5';
+  const SEED_FLAG = 'cds_engagement_datasource_seed_v6';
  if (localStorage.getItem(SEED_FLAG)) return;
   const sampleTeam = (): EngagementMeta['teamMembers'] => ([
     { id: 'tm-partner', role: 'Partner', name: 'Atin Gupta', email: 'atin@countable.co', title: 'Partner', hourlyRate: '200.00', timeAllocation: '15' },
@@ -58,12 +59,13 @@ function seedDemoEngagementMeta() {
     { id: 'tm-staff', role: 'Staff / Assistant', name: 'Sarah Chen', email: 'sarahc@countable.co', title: 'Staff Auditor', hourlyRate: '65.00', timeAllocation: '20' },
   ]);
 
- const seeds: Record<string, { dataSource: 'csv' | 'source'; sourceProvider?: 'xero' | 'quickbooks' }> = {
+ const seeds: Record<string, { dataSource: 'csv' | 'source'; sourceProvider?: 'xero' | 'quickbooks'; sourceYearsAvailable?: number; sourceRollForward?: boolean }> = {
    'COM-QB-Jan142026': { dataSource: 'source' }, // Scenario 1 — already Source, no change
-   'COM-QB-Dec312024': { dataSource: 'csv' },     // Scenario 2 — CSV, switch to Source
+   'COM-QB-Dec312024': { dataSource: 'csv', sourceYearsAvailable: 1 },     // Scenario 2 — CSV, switch to Source
    'COM-QB-Dec312025': { dataSource: 'source' },  // Scenario 3 — Source, switch to CSV
    'COM-CHE-Dec252024': { dataSource: 'csv' },    // Scenario 4 — client not connected, switch to Source
    'COM-HF-Dec312024': { dataSource: 'source', sourceProvider: 'xero' }, // Scenario 5 — provider mismatch (Compilation)
+   'COM-HFRF-Dec312024': { dataSource: 'csv', sourceRollForward: true }, // Scenario 6 — roll forward (CY source, PY CSV)
  };
  Object.entries(seeds).forEach(([id, seed]) => {
    try {
@@ -71,6 +73,10 @@ function seedDemoEngagementMeta() {
      const meta: EngagementMeta = raw ? JSON.parse(raw) : { firstYearAudit: false };
      meta.dataSource = seed.dataSource;
      if (seed.sourceProvider) meta.sourceProvider = seed.sourceProvider;
+     delete meta.sourceDisconnectedFrom;
+     delete meta.refreshYears;
+     meta.sourceYearsAvailable = seed.sourceYearsAvailable ?? 3;
+     if (seed.sourceRollForward) meta.sourceRollForward = true;
      if (!meta.teamMembers || meta.teamMembers.length === 0) meta.teamMembers = sampleTeam();
      localStorage.setItem(META_KEY(id), JSON.stringify(meta));
    } catch {}
@@ -123,6 +129,10 @@ export type EngagementMeta = {
  annualizeInterim?: boolean; // true by default when auditPeriodType === "Interim (6-month)"
  firstTimeAdoption?: boolean; // first-time adoption of accounting standard
  dataSource?: "csv" | "source";
+ sourceDisconnectedFrom?: "xero" | "quickbooks"; // set when a CSV import disconnected a source engagement
+ sourceRollForward?: boolean; // roll forward: CY from source, prior years stay CSV
+ sourceYearsAvailable?: number; // years of data available in the source (demo)
+ refreshYears?: "cy" | "cy-py1" | "all"; // locked refresh selection
  sourceProvider?: "xero" | "quickbooks"; // which accounting source the engagement is linked to
  teamMembers?: {
    id: string;

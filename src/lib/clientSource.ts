@@ -8,6 +8,7 @@ const DEMO_DATA_SOURCES: Readonly<Record<string, "csv" | "source">> = {
   "COM-QB-Dec312025": "source",
   "COM-CHE-Dec252024": "csv",
   "COM-HF-Dec312024": "source",
+  "COM-HFRF-Dec312024": "csv",
 };
 
 /**
@@ -67,6 +68,7 @@ export const VISIBLE_ENGAGEMENT_IDS: readonly string[] = [
   "COM-QB-Dec312025",
   "COM-CHE-Dec252024",
   "COM-HF-Dec312024",
+  "COM-HFRF-Dec312024",
 ];
 
 /** Keep only the visible engagements, in the fixed scenario order. */
