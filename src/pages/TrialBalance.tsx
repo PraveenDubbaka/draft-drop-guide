@@ -24,6 +24,12 @@ import {
  TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { StyledCard } from "@/components/ui/card";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { getEngagementMeta, setEngagementMeta } from "@/store/engagementsStore";
+import { sourceLabel, getClientSourceIntegration as getClientSourceIntegrationSafe } from "@/lib/clientSource";
+import xeroLogoFull from "@/assets/xero-logo-full.svg";
+import intuitQbLogo from "@/assets/intuit-quickbooks-logo.svg";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { NewAdjEntryModal, type AdjLine, type AdjEntryMeta } from "@/components/NewAdjEntryModal";
 import { readJsonFromLocalStorage, writeJsonToLocalStorage } from "@/lib/safeJson";
@@ -219,6 +225,12 @@ export default function TrialBalance() {
  const [py1File, setPy1File] = useState<File | null>(null);
  const [py2File, setPy2File] = useState<File | null>(null);
  const [isUploading, setIsUploading] = useState(false);
+ // Source ↔ CSV state for source-linked engagements
+ const [metaVersion, setMetaVersion] = useState(0);
+ const [switchToCsvOpen, setSwitchToCsvOpen] = useState(false);
+ const [pendingCsvSwitch, setPendingCsvSwitch] = useState(false);
+ const [refreshOpen, setRefreshOpen] = useState(false);
+ const [refreshChoice, setRefreshChoice] = useState<"cy" | "cy-py1" | "all">("cy");
  const cyInputRef = useRef<HTMLInputElement>(null);
  const py1InputRef = useRef<HTMLInputElement>(null);
  const py2InputRef = useRef<HTMLInputElement>(null);
@@ -242,6 +254,14 @@ export default function TrialBalance() {
  setTimeout(() => {
  localStorage.setItem(TB_LOADED_KEY(engagementId), '1');
  setTbLoaded(true);
+ if (pendingCsvSwitch) {
+ // CSV import disconnects the engagement from its source for all years
+ const m = getEngagementMeta(engagementId);
+ const provider = m.sourceProvider ?? linkedProvider ?? undefined;
+ setEngagementMeta(engagementId, { ...m, dataSource: 'csv', sourceProvider: provider, sourceDisconnectedFrom: provider, refreshYears: undefined });
+ setPendingCsvSwitch(false);
+ setMetaVersion(v => v + 1);
+ }
  setShowImport(false);
  setIsUploading(false);
  setCyFile(null); setPy1File(null); setPy2File(null);
@@ -262,6 +282,29 @@ export default function TrialBalance() {
  const status = contextEng?.status || engagement?.status || "In Progress";
  const uniqueClients = getUniqueClients();
  const clientEngagements = getEngagementsForClient(clientName);
+ // ── Source connection state (re-read when metaVersion changes) ──
+ void metaVersion;
+ const srcMeta = engagementId ? getEngagementMeta(engagementId) : ({ firstYearAudit: false } as ReturnType<typeof getEngagementMeta>);
+ const linkedProvider: "xero" | "quickbooks" | null = srcMeta.dataSource === 'source'
+ ? (srcMeta.sourceProvider ?? (() => { const c = getClientSourceIntegrationSafe(clientName); return c; })())
+ : null;
+ const isSourceLinked = !!linkedProvider;
+ const disconnectedFrom = srcMeta.dataSource !== 'source' ? srcMeta.sourceDisconnectedFrom ?? null : null;
+ const yearsAvailable = srcMeta.sourceYearsAvailable ?? 3;
+ const lockedRefresh = srcMeta.refreshYears;
+ const badgeProvider = linkedProvider ?? disconnectedFrom;
+ const confirmRefresh = () => {
+ if (!engagementId) return;
+ const m = getEngagementMeta(engagementId);
+ setEngagementMeta(engagementId, { ...m, refreshYears: refreshChoice });
+ setMetaVersion(v => v + 1);
+ setRefreshOpen(false);
+ toast.success(`Refreshed from ${sourceLabel(linkedProvider)}`);
+ };
+ const handleImportClick = () => {
+ if (isSourceLinked) setSwitchToCsvOpen(true);
+ else setShowImport(true);
+ };
 
  const trialBalanceBreadcrumb = (
  <div className="flex items-center gap-1 whitespace-nowrap flex-shrink-0 text-sidebar-foreground">
@@ -640,7 +683,11 @@ export default function TrialBalance() {
  <span>Auto Map</span>
  </DropdownMenuItem>
  <DropdownMenuSeparator />
- <DropdownMenuItem className="flex items-center gap-2 cursor-pointer">
+ <DropdownMenuItem
+ className="flex items-center gap-2 cursor-pointer"
+ disabled={isSourceLinked && !lockedRefresh}
+ onClick={handleImportClick}
+ >
  <Upload className="h-4 w-4 text-muted-foreground" />
  <span>Import</span>
  </DropdownMenuItem>
@@ -652,6 +699,46 @@ export default function TrialBalance() {
  </DropdownMenu>
 
  {/* Refresh button beside Actions */}
+ {isSourceLinked || disconnectedFrom ? (
+ <Popover open={refreshOpen} onOpenChange={setRefreshOpen}>
+ <PopoverTrigger asChild>
+ <ExpandableIconButton
+ variant={isSourceLinked ? "default" : "secondary"}
+ icon={<RefreshCw className="h-4 w-4" />}
+ label={<span className="inline-flex items-center gap-1">Refresh<ChevronDown className="h-3 w-3" /></span>}
+ disabled={!isSourceLinked}
+ onClick={() => setRefreshChoice(lockedRefresh ?? "cy")}
+ />
+ </PopoverTrigger>
+ <PopoverContent align="end" className="w-80 p-3 z-[100]">
+ <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Refresh years</p>
+ <div className="space-y-1">
+ {([
+ { id: "cy", label: `Current Year (${cyYear})`, needs: 1 },
+ { id: "cy-py1", label: "Current Year + Prior Year 1", needs: 2 },
+ { id: "all", label: yearsAvailable >= 3 ? "All Years (CY + PY1 + PY2)" : "All Years", needs: 3 },
+ ] as const).map(opt => {
+ const unavailable = yearsAvailable < opt.needs;
+ const disabled = unavailable || (!!lockedRefresh && lockedRefresh !== opt.id);
+ return (
+ <label key={opt.id} className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-sm ${disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:bg-muted"}`}>
+ <input type="radio" name="refresh-years" className="accent-primary" disabled={disabled} checked={refreshChoice === opt.id} onChange={() => setRefreshChoice(opt.id)} />
+ <span className="text-foreground">{opt.label}</span>
+ </label>
+ );
+ })}
+ </div>
+ {yearsAvailable < 3 && (
+ <p className="text-xs text-muted-foreground mt-2">Only {yearsAvailable} year{yearsAvailable === 1 ? "" : "s"} of data {yearsAvailable === 1 ? "is" : "are"} available in {sourceLabel(linkedProvider)}.</p>
+ )}
+ <p className="text-xs text-muted-foreground mt-2">
+ {lockedRefresh ? "Refresh selection is locked. To change years, go to Edit Engagement." : "Refresh selection will be locked after you confirm. To change years, go to Edit Engagement."}
+ </p>
+ <Button size="sm" className="w-full mt-3" onClick={confirmRefresh}>{lockedRefresh ? "Refresh" : "Confirm"}</Button>
+ </PopoverContent>
+ </Popover>
+ ) : (
+
  <Tooltip>
  <DropdownMenu>
  <TooltipTrigger asChild>
@@ -674,6 +761,7 @@ export default function TrialBalance() {
  Last updated: <span className="font-medium">54 min ago</span>
  </TooltipContent>
  </Tooltip>
+ )}
 
 
 
