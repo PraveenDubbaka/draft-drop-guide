@@ -1407,7 +1407,6 @@ export default function CreateEngagement() {
   )
   ) : (
   <div className="inline-flex w-fit max-w-full items-center gap-2.5 rounded-[10px] border border-border bg-card px-3 py-1.5">
-  <span className="text-sm text-foreground whitespace-nowrap shrink-0">{clientInfo?.entityLegalName || clientName}</span>
   <span className="h-2.5 w-2.5 rounded-full bg-gray-400" />
   <span className="text-sm text-foreground">Not connected</span>
   </div>
