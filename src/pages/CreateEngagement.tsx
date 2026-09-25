@@ -996,6 +996,9 @@ export default function CreateEngagement() {
  const isReconnectFlow = isEditMode && clientHasSourceConnection && originalDataSource === "csv" && dataSource === "source" && !!savedDisconnectedFrom;
  // Roll forward: Current Year pulls from source, prior years stay CSV
  const isRollForwardSource = isEditMode && !!editingMeta?.sourceRollForward;
+ // Years of data available in the connected source (demo) — drives the dynamic info alert
+ const yearsAvailable = editingMeta?.sourceYearsAvailable ?? 3;
+ const cyYear = parseInt(currentYearEnd.split("/")[2]) || 0;
 
  const applyFullYearPriors = (cyStart: string, cyEnd: string) => {
  setPriorYear1Start(shiftYearStr(cyStart, -1));
@@ -1520,11 +1523,32 @@ export default function CreateEngagement() {
  {isCsvToSourceSwitch && !isRollForwardSource && (
  <div className="flex items-start gap-4 pb-2.5">
  <span className="w-44 shrink-0" />
- <div className="flex-1 min-w-0 flex items-start gap-2 rounded-[10px] border border-blue-300 bg-blue-50 dark:bg-blue-950/30 px-3 py-2">
+ <div className="flex-1 min-w-0 space-y-3">
+ <div className="flex items-start gap-2 rounded-[10px] border border-blue-300 bg-blue-50 dark:bg-blue-950/30 px-3 py-2">
  <Info className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
  <span className="text-sm text-blue-900 dark:text-blue-200">
- Switching to Source will replace your existing CSV trial balance data based on what years are available in {sourceLabel(clientSourceIntegration)}.
+ {yearsAvailable >= 3
+ ? <>All years will refresh from source. Current Year ({cyYear}), Prior Year 1 ({cyYear - 1}) and Prior Year 2 ({cyYear - 2}) will be replaced with source data.</>
+ : yearsAvailable === 2
+ ? <>{sourceLabel(clientSourceIntegration)} has 2 years of data available. Current Year ({cyYear}) and Prior Year 1 ({cyYear - 1}) will refresh from source. Prior Year 2 ({cyYear - 2}) will remain as CSV.</>
+ : <>{sourceLabel(clientSourceIntegration)} has 1 year of data available. Current Year ({cyYear}) will refresh from source. Prior Year 1 ({cyYear - 1}) and Prior Year 2 ({cyYear - 2}) will remain as CSV.</>}
  </span>
+ </div>
+ <div className="rounded-[10px] border border-border divide-y divide-border">
+ {[
+ { tag: "CY", year: cyYear, fromSource: true },
+ { tag: "PY1", year: cyYear - 1, fromSource: yearsAvailable >= 2 },
+ { tag: "PY2", year: cyYear - 2, fromSource: yearsAvailable >= 3 },
+ ].map(y => (
+ <div key={y.tag} className="flex items-center justify-between px-3 py-2 text-sm">
+ <span className="text-foreground"><span className="font-medium">{y.tag}</span>&nbsp;&nbsp;{y.year}</span>
+ <span className="flex items-center gap-2 text-foreground font-medium">
+ <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${y.fromSource ? "bg-emerald-500" : "bg-muted-foreground/30"}`} aria-hidden="true" />
+ {y.fromSource ? `Source — ${sourceLabel(clientSourceIntegration)}` : "CSV"}
+ </span>
+ </div>
+ ))}
+ </div>
  </div>
  </div>
  )}
@@ -1575,25 +1599,17 @@ export default function CreateEngagement() {
   </div>
   </div>
   )}
-  {/* Edit mode follow-up questions — when the Engagement Data Type changed, or when the active connection is picked after an external source change */}
-  {isEditMode && clientHasSourceConnection && ((dataSource !== originalDataSource && (!isReconnectFlow || hasSelectedActiveConnection)) || (isSourceProviderMismatch && hasSelectedActiveConnection)) && (
-  <div className="flex items-start gap-4 py-2.5">
-  <span className="w-44 shrink-0" />
-  <div className="flex-1 min-w-0 space-y-2">
-  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">What would you like to do with the following?</p>
-  {[
-  { label: "Adjusting entries", desc: "Will not be retained." },
-  ...(isRollForwardSource || isReconnectFlow ? [] : [{ label: "New added accounts", desc: "Will not be retained." }]),
-  { label: "Documents", desc: "Will be moved to the documents section automatically." },
-  ].map(row => (
-  <p key={row.label} className="text-sm text-muted-foreground">
-  <span className="text-foreground">{row.label}</span> — {row.desc}
-  </p>
-  ))}
-   <p className="text-xs italic text-muted-foreground">All issues, comments and document requests, and LHS Procedure document references will be deleted regardless of the above selections.</p>
-   </div>
-   </div>
-   )}
+ {/* Edit mode — static informational note when the Engagement Data Type changed, or when the active connection is picked after an external source change */}
+ {isEditMode && clientHasSourceConnection && ((dataSource !== originalDataSource && (!isReconnectFlow || hasSelectedActiveConnection)) || (isSourceProviderMismatch && hasSelectedActiveConnection)) && (
+ <div className="flex items-start gap-4 py-2.5">
+ <span className="w-44 shrink-0" />
+ <div className="flex-1 min-w-0 rounded-[10px] border border-border bg-muted/50 px-3 py-2">
+ <p className="text-sm text-foreground">
+ Adjusting entries and manually added accounts will not be retained. Documents will be moved to the documents section automatically. All issues, comments and procedure references will be deleted.
+ </p>
+ </div>
+ </div>
+ )}
    </>)}
    </SectionCard>
   )}
