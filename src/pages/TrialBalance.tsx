@@ -647,6 +647,17 @@ export default function TrialBalance() {
  <DropdownMenuItem>Dec 31 2025</DropdownMenuItem>
  </DropdownMenuContent>
  </DropdownMenu>
+ {badgeProvider && (
+ <div className={`inline-flex items-center gap-2.5 rounded-[10px] border bg-card px-3 py-1.5 ${disconnectedFrom ? "border-amber-300" : "border-border"}`}>
+ <img src={badgeProvider === "xero" ? xeroLogoFull : intuitQbLogo} alt={sourceLabel(badgeProvider)} className="h-5 object-contain shrink-0" />
+ <span className="text-sm text-foreground whitespace-nowrap">{clientName}</span>
+ {disconnectedFrom ? (
+ <span className="inline-flex items-center rounded-full border border-[#B4720A]/30 bg-[#FEF6E7] px-2 py-0.5 text-[11px] font-medium text-[#B4720A]">Disconnected</span>
+ ) : (
+ <span className="inline-flex items-center rounded-full border border-[#2E7D52]/30 bg-[#EAF4EE] px-2 py-0.5 text-[11px] font-medium text-[#2E7D52]">Connected</span>
+ )}
+ </div>
+ )}
 
  </div>
 
@@ -778,6 +789,28 @@ export default function TrialBalance() {
  </div>
  </div>
 
+ {disconnectedFrom && (
+ <div className="mx-6 mt-4 flex items-center justify-between gap-3 rounded-[10px] border border-amber-300 bg-amber-50 px-3 py-2">
+ <span className="text-sm text-amber-800">This engagement is now CSV. Source connection is inactive. To reconnect to {sourceLabel(disconnectedFrom)}, go to Edit Engagement.</span>
+ <button type="button" className="text-sm font-medium text-[#1C63A6] hover:underline whitespace-nowrap" onClick={() => navigate(`/engagements/${engagementId}/edit`)}>Edit Engagement →</button>
+ </div>
+ )}
+ <AlertDialog open={switchToCsvOpen} onOpenChange={setSwitchToCsvOpen}>
+ <AlertDialogContent>
+ <AlertDialogHeader>
+ <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle className="h-5 w-5 text-amber-600" />Switch to CSV</AlertDialogTitle>
+ <AlertDialogDescription className="text-foreground">
+ Importing a CSV file will disconnect this engagement from {sourceLabel(linkedProvider)} for all years. You will not be able to refresh source data unless you reconnect via Edit Engagement.
+ </AlertDialogDescription>
+ </AlertDialogHeader>
+ <AlertDialogFooter>
+ <AlertDialogCancel>Cancel</AlertDialogCancel>
+ <AlertDialogAction className="bg-amber-600 hover:bg-amber-700 text-white" onClick={() => { setPendingCsvSwitch(true); setShowImport(true); }}>
+ Proceed with CSV import
+ </AlertDialogAction>
+ </AlertDialogFooter>
+ </AlertDialogContent>
+ </AlertDialog>
  {/* Table */}
  <StyledCard className="mx-6 mt-6 mb-6 overflow-hidden flex flex-col flex-1 min-h-0">
  <div className="flex-1 overflow-auto">
