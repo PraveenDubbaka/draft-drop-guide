@@ -425,7 +425,7 @@ export default function TrialBalance() {
  <div className="flex items-center justify-between">
  <div className="flex items-center gap-2">
  <Button variant="secondary" size="sm" className="h-9 text-xs gap-1.5 opacity-40 pointer-events-none" disabled>
- {dateFilter} <ChevronDown className="h-3.5 w-3.5" />
+ {contextEng?.yearEnd?.replace(',', '') || staticEng?.yearEnd?.replace(',', '') || `Dec 31 ${cyYear}`} <ChevronDown className="h-3.5 w-3.5" />
  </Button>
  </div>
  <div className="flex items-center gap-2">
