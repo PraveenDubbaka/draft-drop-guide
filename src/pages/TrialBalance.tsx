@@ -667,7 +667,7 @@ export default function TrialBalance() {
  <DropdownMenu>
  <DropdownMenuTrigger asChild>
  <Button variant="secondary" size="sm" className="h-9 text-xs gap-1.5">
-  {activeYear.date}
+   <span className="whitespace-nowrap">{activeYear.date}</span>
  <ChevronDown className="h-3.5 w-3.5" />
  </Button>
  </DropdownMenuTrigger>
@@ -678,7 +678,7 @@ export default function TrialBalance() {
    onClick={() => setActiveYearTab(year.id)}
    className="flex items-center justify-between gap-4 py-2 cursor-pointer"
   >
-   <span className="flex items-center gap-2">
+   <span className="flex shrink-0 items-center gap-2">
      <span className="w-7 shrink-0 text-xs font-semibold text-muted-foreground whitespace-nowrap">{year.label.split(' ')[0]}</span>
      <span className="text-sm text-foreground whitespace-nowrap">{year.date}</span>
    </span>
