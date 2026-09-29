@@ -50,7 +50,7 @@ function seedDemoEngagementMeta() {
  }
 
   // Deterministic demo data-source seeds for the edit-engagement scenarios.
-  const SEED_FLAG = 'cds_engagement_datasource_seed_v6';
+  const SEED_FLAG = 'cds_engagement_datasource_seed_v7';
  if (localStorage.getItem(SEED_FLAG)) return;
   const sampleTeam = (): EngagementMeta['teamMembers'] => ([
     { id: 'tm-partner', role: 'Partner', name: 'Atin Gupta', email: 'atin@countable.co', title: 'Partner', hourlyRate: '200.00', timeAllocation: '15' },
@@ -59,24 +59,25 @@ function seedDemoEngagementMeta() {
     { id: 'tm-staff', role: 'Staff / Assistant', name: 'Sarah Chen', email: 'sarahc@countable.co', title: 'Staff Auditor', hourlyRate: '65.00', timeAllocation: '20' },
   ]);
 
- const seeds: Record<string, { dataSource: 'csv' | 'source'; sourceProvider?: 'xero' | 'quickbooks'; sourceYearsAvailable?: number; sourceRollForward?: boolean }> = {
-   'COM-QB-Jan142026': { dataSource: 'source' }, // Scenario 1 — already Source, no change
-   'COM-QB-Dec312024': { dataSource: 'csv', sourceYearsAvailable: 1 },     // Scenario 2 — CSV, switch to Source
-   'COM-QB-Dec312025': { dataSource: 'source' },  // Scenario 3 — Source, switch to CSV
-   'COM-CHE-Dec252024': { dataSource: 'csv' },    // Scenario 4 — client not connected, switch to Source
-   'COM-HF-Dec312024': { dataSource: 'source', sourceProvider: 'xero' }, // Scenario 5 — provider mismatch (Compilation)
-   'COM-HFRF-Dec312024': { dataSource: 'csv', sourceRollForward: true }, // Scenario 6 — roll forward (CY source, PY CSV)
+ const seeds: Record<string, { dataSource: 'csv' | 'source'; sourceProvider?: 'xero' | 'quickbooks'; sourceYearsAvailable?: number; sourceYears?: number; sourceRollForward?: boolean }> = {
+   'COM-QB-Jan142026': { dataSource: 'source', sourceProvider: 'quickbooks', sourceYearsAvailable: 3, sourceYears: 1 },
+   'COM-QB-Dec312024': { dataSource: 'csv', sourceYearsAvailable: 1 },
+   'COM-QB-Dec312025': { dataSource: 'source', sourceProvider: 'quickbooks', sourceYearsAvailable: 3, sourceYears: 3 },
+   'COM-CHE-Dec252024': { dataSource: 'csv' },
+   'COM-HF-Dec312024': { dataSource: 'source', sourceProvider: 'xero', sourceYearsAvailable: 3, sourceYears: 2 },
+   'COM-HFRF-Dec312024': { dataSource: 'source', sourceProvider: 'quickbooks', sourceRollForward: true, sourceYearsAvailable: 3, sourceYears: 1 },
  };
  Object.entries(seeds).forEach(([id, seed]) => {
    try {
      const raw = localStorage.getItem(META_KEY(id));
      const meta: EngagementMeta = raw ? JSON.parse(raw) : { firstYearAudit: false };
      meta.dataSource = seed.dataSource;
-     if (seed.sourceProvider) meta.sourceProvider = seed.sourceProvider;
+     if (seed.sourceProvider) meta.sourceProvider = seed.sourceProvider; else delete meta.sourceProvider;
      delete meta.sourceDisconnectedFrom;
      delete meta.refreshYears;
      meta.sourceYearsAvailable = seed.sourceYearsAvailable ?? 3;
-     if (seed.sourceRollForward) meta.sourceRollForward = true;
+     if (seed.sourceYears) meta.sourceYears = seed.sourceYears; else delete meta.sourceYears;
+     if (seed.sourceRollForward) meta.sourceRollForward = true; else delete meta.sourceRollForward;
      if (!meta.teamMembers || meta.teamMembers.length === 0) meta.teamMembers = sampleTeam();
      localStorage.setItem(META_KEY(id), JSON.stringify(meta));
    } catch {}
