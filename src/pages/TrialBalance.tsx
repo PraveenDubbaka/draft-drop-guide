@@ -434,7 +434,7 @@ export default function TrialBalance() {
  <ExpandableIconButton variant="secondary" icon={<Wrench className="h-4 w-4" />} label={<span className="inline-flex items-center gap-1">Actions<ChevronDown className="h-3 w-3" /></span>} />
  </DropdownMenuTrigger>
  <DropdownMenuContent align="end" className="w-44">
- <DropdownMenuItem className="flex items-center gap-2 cursor-pointer" onClick={() => setShowImport(true)}>
+ <DropdownMenuItem className="flex items-center gap-2 cursor-pointer" disabled={activeTabIsSource} onClick={() => !activeTabIsSource && setShowImport(true)}>
  <Upload className="h-4 w-4 text-muted-foreground" /><span>Import</span>
  </DropdownMenuItem>
  <DropdownMenuSeparator />
@@ -760,7 +760,7 @@ export default function TrialBalance() {
  <Popover open={refreshOpen} onOpenChange={setRefreshOpen}>
  <PopoverTrigger asChild>
  <ExpandableIconButton
- variant={isSourceLinked && activeTabIsSource ? "default" : "secondary"}
+ variant="secondary"
  icon={<RefreshCw className="h-4 w-4" />}
  label={<span className="inline-flex items-center gap-1">Refresh<ChevronDown className="h-3 w-3" /></span>}
  disabled={!isSourceLinked || !activeTabIsSource}
