@@ -195,7 +195,6 @@ function computeAdjFromStorage(engId: string): Record<string, number> {
 export default function TrialBalance() {
  const navigate = useNavigate();
  const { engagementId } = useParams();
- const [dateFilter] = useState("Dec 31 2024");
  const [hideZeroAcc, setHideZeroAcc] = useState(false);
  const zeroAccCount = 0;
  const [isToolbarExpanded, setIsToolbarExpanded] = useState(true);
@@ -317,7 +316,12 @@ export default function TrialBalance() {
  { id: "cy", label: `CY ${cyYear}` },
  { id: "py1", label: `PY1 ${cyYear - 1}` },
  { id: "py2", label: `PY2 ${cyYear - 2}` },
- ] as const).map((t, i) => ({ ...t, isSource: i < sourceYearCount }));
+ ] as const).map((t, i) => {
+  const yearEnd = contextEng?.yearEnd || staticEng?.yearEnd || `Dec 31, ${cyYear}`;
+  const date = yearEnd.replace(/\d{4}/, String(cyYear - i)).replace(',', '');
+  return { ...t, date, isSource: i < sourceYearCount };
+ });
+ const activeYear = yearTabs.find(t => t.id === activeYearTab) ?? yearTabs[0];
  const activeTabIsSource = !!yearTabs.find(t => t.id === activeYearTab)?.isSource;
  const handleImportClick = () => {
  if (isSourceLinked && activeTabIsSource) setSwitchToCsvOpen(true);
@@ -663,12 +667,27 @@ export default function TrialBalance() {
  <DropdownMenu>
  <DropdownMenuTrigger asChild>
  <Button variant="secondary" size="sm" className="h-9 text-xs gap-1.5">
- {dateFilter}
+  {activeYear.date}
  <ChevronDown className="h-3.5 w-3.5" />
  </Button>
  </DropdownMenuTrigger>
- <DropdownMenuContent>
- <DropdownMenuItem>Dec 31 2025</DropdownMenuItem>
+ <DropdownMenuContent align="start" className="w-72">
+ {yearTabs.map((year) => (
+  <DropdownMenuItem
+   key={year.id}
+   onClick={() => setActiveYearTab(year.id)}
+   className="flex items-center justify-between gap-4 py-2 cursor-pointer"
+  >
+   <span className="flex items-center gap-2">
+    <span className="w-7 text-xs font-semibold text-muted-foreground">{year.label.split(' ')[0]}</span>
+    <span className="text-sm text-foreground">{year.date}</span>
+   </span>
+   <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium whitespace-nowrap">
+    <span className={`h-1.5 w-1.5 rounded-full ${year.isSource ? "bg-emerald-500" : "bg-gray-400"}`} />
+    {year.isSource ? sourceLabel(configuredProvider) : "CSV"}
+   </span>
+  </DropdownMenuItem>
+ ))}
  </DropdownMenuContent>
   </DropdownMenu>
 
@@ -857,26 +876,8 @@ export default function TrialBalance() {
  </AlertDialogFooter>
  </AlertDialogContent>
  </AlertDialog>
- {/* Year tabs — source years locked, CSV years editable */}
- {configuredProvider && (
- <div className="mx-6 mt-6 flex items-center gap-2" role="tablist" aria-label="Trial balance years">
- {yearTabs.map(t => {
- const active = activeYearTab === t.id;
- return (
- <button key={t.id} role="tab" aria-selected={active} onClick={() => setActiveYearTab(t.id)}
- className={`inline-flex items-center gap-2 rounded-[10px] border px-3 py-1.5 text-sm ${active ? "border-primary bg-primary/10 font-semibold text-foreground" : "border-border bg-card text-foreground"}`}>
- <span>{t.label}</span>
- <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium">
- <span className={`h-1.5 w-1.5 rounded-full ${t.isSource ? "bg-emerald-500" : "bg-gray-400"}`} />
- {t.isSource ? sourceLabel(configuredProvider) : "CSV"}
- </span>
- </button>
- );
- })}
- </div>
- )}
  {/* Table */}
- <StyledCard className={`mx-6 ${configuredProvider ? "mt-3" : "mt-6"} mb-6 overflow-hidden flex flex-col flex-1 min-h-0`}>
+ <StyledCard className="mx-6 mt-6 mb-6 overflow-hidden flex flex-col flex-1 min-h-0">
  <div className="flex-1 overflow-auto">
  <table className="w-full text-sm">
  <thead className="sticky top-0 z-10">
