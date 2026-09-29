@@ -12,3 +12,4 @@
 - [x] Refresh dropdown labels (Current Year / Prior Year 1 / Prior Year 2 / All Years) + locked label text
 - [x] Actions → Import disabled on source-connected year tabs (empty-state menu too)
 - [x] Refresh button always secondary style, never primary blue
+- [x] Refresh popover simplified: clickable year options apply instantly (no radios, Confirm, lock box, refreshYears)

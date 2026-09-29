@@ -72,7 +72,6 @@ function seedDemoEngagementMeta() {
      meta.dataSource = seed.dataSource;
      if (seed.sourceProvider) meta.sourceProvider = seed.sourceProvider; else delete meta.sourceProvider;
      delete meta.sourceDisconnectedFrom;
-     delete meta.refreshYears;
      meta.sourceYearsAvailable = seed.sourceYearsAvailable ?? 3;
      if (seed.sourceYears) meta.sourceYears = seed.sourceYears; else delete meta.sourceYears;
      if (seed.sourceRollForward) meta.sourceRollForward = true; else delete meta.sourceRollForward;
@@ -131,7 +130,6 @@ export type EngagementMeta = {
  sourceDisconnectedFrom?: "xero" | "quickbooks"; // set when a CSV import disconnected a source engagement
  sourceRollForward?: boolean; // roll forward: CY from source, prior years stay CSV
  sourceYearsAvailable?: number; // years of data available in the source (demo)
- refreshYears?: "cy" | "py1" | "py2" | "all"; // locked refresh selection
  sourceProvider?: "xero" | "quickbooks"; // which accounting source the engagement is linked to
  teamMembers?: {
    id: string;
