@@ -671,7 +671,7 @@ export default function TrialBalance() {
  <ChevronDown className="h-3.5 w-3.5" />
  </Button>
  </DropdownMenuTrigger>
- <DropdownMenuContent align="start" className="w-72">
+  <DropdownMenuContent align="start" className="w-auto min-w-72">
  {yearTabs.map((year) => (
   <DropdownMenuItem
    key={year.id}
