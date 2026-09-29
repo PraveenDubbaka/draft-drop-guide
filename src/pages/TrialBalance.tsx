@@ -301,7 +301,8 @@ export default function TrialBalance() {
   ? configuredProvider
   : (srcMeta.dataSource !== 'source' ? srcMeta.sourceDisconnectedFrom ?? null : null);
   const lockedRefresh = srcMeta.refreshYears;
-  const badgeProvider = configuredProvider ?? disconnectedFrom;
+   const badgeProvider = configuredProvider ?? disconnectedFrom;
+   const sourceStatusDisconnected = isExternallyDisconnected || !!disconnectedFrom;
  const confirmRefresh = () => {
  if (!engagementId) return;
  const m = getEngagementMeta(engagementId);
@@ -373,12 +374,17 @@ export default function TrialBalance() {
  {status}
  </Badge>
 
- {/* Linked source badge */}
- {badgeProvider && (
- <div className="ml-1 inline-flex items-center justify-center h-7 px-2 bg-card border border-border rounded-sm">
- <img src={badgeProvider === "xero" ? xeroLogoFull : intuitQbLogo} alt={sourceLabel(badgeProvider)} className="h-4" />
- </div>
- )}
+  {/* Linked source badge — logo + connection status (single source of truth) */}
+  {badgeProvider && (
+  <div className={`ml-1 inline-flex items-center gap-1.5 h-7 px-1.5 bg-card border rounded-sm ${sourceStatusDisconnected ? "border-amber-300" : "border-border"}`}>
+  <img src={badgeProvider === "xero" ? xeroLogoFull : intuitQbLogo} alt={sourceLabel(badgeProvider)} className="h-4" />
+  {sourceStatusDisconnected ? (
+  <span className="inline-flex items-center rounded-full border border-[#B4720A]/30 bg-[#FEF6E7] px-1.5 py-0.5 text-[10px] font-medium text-[#B4720A] whitespace-nowrap">Disconnected</span>
+  ) : (
+  <span className="inline-flex items-center rounded-full border border-[#2E7D52]/30 bg-[#EAF4EE] px-1.5 py-0.5 text-[10px] font-medium text-[#2E7D52] whitespace-nowrap">Connected</span>
+  )}
+  </div>
+  )}
  </div>
  );
 
@@ -665,17 +671,12 @@ export default function TrialBalance() {
  <DropdownMenuItem>Dec 31 2025</DropdownMenuItem>
  </DropdownMenuContent>
  </DropdownMenu>
- {badgeProvider && (
- <div className={`inline-flex items-center gap-2.5 rounded-[10px] border bg-card px-3 py-1.5 ${disconnectedFrom ? "border-amber-300" : "border-border"}`}>
- <img src={badgeProvider === "xero" ? xeroLogoFull : intuitQbLogo} alt={sourceLabel(badgeProvider)} className="h-5 object-contain shrink-0" />
- <span className="text-sm text-foreground whitespace-nowrap">{clientName}</span>
- {disconnectedFrom ? (
- <span className="inline-flex items-center rounded-full border border-[#B4720A]/30 bg-[#FEF6E7] px-2 py-0.5 text-[11px] font-medium text-[#B4720A]">Disconnected</span>
- ) : (
- <span className="inline-flex items-center rounded-full border border-[#2E7D52]/30 bg-[#EAF4EE] px-2 py-0.5 text-[11px] font-medium text-[#2E7D52]">Connected</span>
- )}
- </div>
- )}
+  {badgeProvider && (
+  <div className="inline-flex items-center gap-2.5 rounded-[10px] border border-border bg-card px-3 py-1.5">
+  <img src={badgeProvider === "xero" ? xeroLogoFull : intuitQbLogo} alt={sourceLabel(badgeProvider)} className="h-5 object-contain shrink-0" />
+  <span className="text-sm text-foreground whitespace-nowrap">{clientName}</span>
+  </div>
+  )}
 
  </div>
 
