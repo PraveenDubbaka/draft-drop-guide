@@ -760,7 +760,7 @@ export default function TrialBalance() {
  <Popover open={refreshOpen} onOpenChange={setRefreshOpen}>
  <PopoverTrigger asChild>
  <ExpandableIconButton
- variant={isSourceLinked && activeTabIsSource ? "default" : "secondary"}
+ variant="secondary"
  icon={<RefreshCw className="h-4 w-4" />}
  label={<span className="inline-flex items-center gap-1">Refresh<ChevronDown className="h-3 w-3" /></span>}
  disabled={!isSourceLinked || !activeTabIsSource}
