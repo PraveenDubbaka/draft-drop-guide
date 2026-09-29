@@ -9,3 +9,6 @@
 - [x] P7 Post-import disconnected state + banner
 - [x] P8 Reconnect CSV→Source dropdown
 - [x] P9 Roll forward Source→CSV warning
+- [x] Refresh dropdown labels (Current Year / Prior Year 1 / Prior Year 2 / All Years) + locked label text
+- [x] Actions → Import disabled on source-connected year tabs (empty-state menu too)
+- [x] Refresh button always secondary style, never primary blue
