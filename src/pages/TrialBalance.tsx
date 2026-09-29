@@ -800,27 +800,17 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  </PopoverContent>
  </Popover>
  ) : (
-
  <Tooltip>
- <DropdownMenu>
  <TooltipTrigger asChild>
- <DropdownMenuTrigger asChild>
  <ExpandableIconButton
  variant="secondary"
  icon={<RefreshCw className="h-4 w-4" />}
- label={<span className="inline-flex items-center gap-1">Refresh<ChevronDown className="h-3 w-3" /></span>}
+ label="Refresh"
+ disabled
  />
- </DropdownMenuTrigger>
  </TooltipTrigger>
- <DropdownMenuContent align="end" className="z-[100]">
- <DropdownMenuItem>All Years</DropdownMenuItem>
- <DropdownMenuItem>Current Year</DropdownMenuItem>
- <DropdownMenuItem>PY 1</DropdownMenuItem>
- <DropdownMenuItem>PY 2</DropdownMenuItem>
- </DropdownMenuContent>
- </DropdownMenu>
  <TooltipContent side="bottom" sideOffset={8} className="z-[110]">
- Last updated: <span className="font-medium">54 min ago</span>
+ Refresh is available on years linked to an accounting source.
  </TooltipContent>
  </Tooltip>
  )}
