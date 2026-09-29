@@ -68,7 +68,9 @@ import {
  Info,
  CloudUpload,
  Plug,
+ Lock,
 } from "lucide-react";
+import { SourceSwitchDisclaimer } from "@/components/SourceSwitchDisclaimer";
 
 // Filter categories with badge colors and short labels (matching screenshot)
 const FILTER_CATEGORIES = [
@@ -231,6 +233,8 @@ export default function TrialBalance() {
  const [pendingCsvSwitch, setPendingCsvSwitch] = useState(false);
  const [refreshOpen, setRefreshOpen] = useState(false);
  const [refreshChoice, setRefreshChoice] = useState<"cy" | "cy-py1" | "all">("cy");
+ const [activeYearTab, setActiveYearTab] = useState<"cy" | "py1" | "py2">("cy");
+ const [disconnectText, setDisconnectText] = useState("");
  const cyInputRef = useRef<HTMLInputElement>(null);
  const py1InputRef = useRef<HTMLInputElement>(null);
  const py2InputRef = useRef<HTMLInputElement>(null);
@@ -301,8 +305,16 @@ export default function TrialBalance() {
  setRefreshOpen(false);
  toast.success(`Refreshed from ${sourceLabel(linkedProvider)}`);
  };
+ // Year tabs: the first `sourceYearCount` years come from source (locked), the rest are CSV
+ const sourceYearCount = isSourceLinked ? (srcMeta.sourceYears ?? 1) : 0;
+ const yearTabs = ([
+ { id: "cy", label: `CY ${cyYear}` },
+ { id: "py1", label: `PY1 ${cyYear - 1}` },
+ { id: "py2", label: `PY2 ${cyYear - 2}` },
+ ] as const).map((t, i) => ({ ...t, isSource: i < sourceYearCount }));
+ const activeTabIsSource = !!yearTabs.find(t => t.id === activeYearTab)?.isSource;
  const handleImportClick = () => {
- if (isSourceLinked) setSwitchToCsvOpen(true);
+ if (isSourceLinked && activeTabIsSource) setSwitchToCsvOpen(true);
  else setShowImport(true);
  };
 
@@ -677,11 +689,11 @@ export default function TrialBalance() {
  <Plus className="h-4 w-4 text-muted-foreground" />
  <span>Add</span>
  </DropdownMenuItem>
- <DropdownMenuItem className="flex items-center gap-2 cursor-pointer">
+ <DropdownMenuItem className="flex items-center gap-2 cursor-pointer" disabled={activeTabIsSource}>
  <GitMerge className="h-4 w-4 text-muted-foreground" />
  <span>Merge</span>
  </DropdownMenuItem>
- <DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-destructive focus:text-destructive">
+ <DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-destructive focus:text-destructive" disabled={activeTabIsSource}>
  <Trash2 className="h-4 w-4 text-destructive" />
  <span>Delete</span>
  </DropdownMenuItem>
@@ -697,7 +709,7 @@ export default function TrialBalance() {
  <DropdownMenuSeparator />
  <DropdownMenuItem
  className="flex items-center gap-2 cursor-pointer"
- disabled={isSourceLinked && !lockedRefresh}
+ disabled={activeTabIsSource}
  onClick={handleImportClick}
  >
  <Upload className="h-4 w-4 text-muted-foreground" />
@@ -715,10 +727,10 @@ export default function TrialBalance() {
  <Popover open={refreshOpen} onOpenChange={setRefreshOpen}>
  <PopoverTrigger asChild>
  <ExpandableIconButton
- variant={isSourceLinked ? "default" : "secondary"}
+ variant={isSourceLinked && activeTabIsSource ? "default" : "secondary"}
  icon={<RefreshCw className="h-4 w-4" />}
  label={<span className="inline-flex items-center gap-1">Refresh<ChevronDown className="h-3 w-3" /></span>}
- disabled={!isSourceLinked}
+ disabled={!isSourceLinked || !activeTabIsSource}
  onClick={() => setRefreshChoice(lockedRefresh ?? "cy")}
  />
  </PopoverTrigger>
@@ -796,24 +808,47 @@ export default function TrialBalance() {
  <button type="button" className="text-sm font-medium text-[#1C63A6] hover:underline whitespace-nowrap" onClick={() => navigate(`/engagements/${engagementId}/edit`)}>Edit Engagement →</button>
  </div>
  )}
- <AlertDialog open={switchToCsvOpen} onOpenChange={setSwitchToCsvOpen}>
- <AlertDialogContent>
+ <AlertDialog open={switchToCsvOpen} onOpenChange={(o) => { setSwitchToCsvOpen(o); if (!o) setDisconnectText(""); }}>
+ <AlertDialogContent className="max-w-2xl">
  <AlertDialogHeader>
  <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle className="h-5 w-5 text-amber-600" />Switch to CSV</AlertDialogTitle>
  <AlertDialogDescription className="text-foreground">
- Importing a CSV file will disconnect this engagement from {sourceLabel(linkedProvider)} for all years. You will not be able to refresh source data unless you reconnect via Edit Engagement.
+ This engagement is currently connected to {sourceLabel(linkedProvider)}. Importing a CSV file will disconnect all source-connected years.
  </AlertDialogDescription>
  </AlertDialogHeader>
+ <SourceSwitchDisclaimer title="The following will happen:" footnote={null} />
+ <div className="space-y-1.5">
+ <label htmlFor="disconnect-confirm" className="text-sm text-foreground">Type <span className="font-semibold">DISCONNECT</span> to confirm</label>
+ <Input id="disconnect-confirm" value={disconnectText} onChange={e => setDisconnectText(e.target.value)} placeholder="DISCONNECT" autoComplete="off" />
+ </div>
  <AlertDialogFooter>
  <AlertDialogCancel>Cancel</AlertDialogCancel>
- <AlertDialogAction className="bg-amber-600 hover:bg-amber-700 text-white" onClick={() => { setPendingCsvSwitch(true); setShowImport(true); }}>
+ <AlertDialogAction disabled={disconnectText !== "DISCONNECT"} className="bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-50" onClick={() => { setPendingCsvSwitch(true); setShowImport(true); setDisconnectText(""); }}>
  Proceed with CSV import
  </AlertDialogAction>
  </AlertDialogFooter>
  </AlertDialogContent>
  </AlertDialog>
+ {/* Year tabs — source years locked, CSV years editable */}
+ {isSourceLinked && (
+ <div className="mx-6 mt-6 flex items-center gap-2" role="tablist" aria-label="Trial balance years">
+ {yearTabs.map(t => {
+ const active = activeYearTab === t.id;
+ return (
+ <button key={t.id} role="tab" aria-selected={active} onClick={() => setActiveYearTab(t.id)}
+ className={`inline-flex items-center gap-2 rounded-[10px] border px-3 py-1.5 text-sm ${active ? "border-primary bg-primary/10 font-semibold text-foreground" : "border-border bg-card text-foreground"}`}>
+ <span>{t.label}</span>
+ <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium">
+ <span className={`h-1.5 w-1.5 rounded-full ${t.isSource ? "bg-emerald-500" : "bg-gray-400"}`} />
+ {t.isSource ? sourceLabel(linkedProvider) : "CSV"}
+ </span>
+ </button>
+ );
+ })}
+ </div>
+ )}
  {/* Table */}
- <StyledCard className="mx-6 mt-6 mb-6 overflow-hidden flex flex-col flex-1 min-h-0">
+ <StyledCard className={`mx-6 ${isSourceLinked ? "mt-3" : "mt-6"} mb-6 overflow-hidden flex flex-col flex-1 min-h-0`}>
  <div className="flex-1 overflow-auto">
  <table className="w-full text-sm">
  <thead className="sticky top-0 z-10">
@@ -912,7 +947,16 @@ export default function TrialBalance() {
  </td>
  <td className="px-2 py-2"><Checkbox /></td>
  <td className="px-6 py-2 text-foreground whitespace-nowrap">{row.accNo}</td>
- <td className="px-6 py-2 text-foreground whitespace-nowrap">{row.description}</td>
+ <td className="px-6 py-2 text-foreground whitespace-nowrap">
+ {activeTabIsSource ? (
+ <Tooltip>
+ <TooltipTrigger asChild>
+ <span className="inline-flex items-center gap-1.5 cursor-not-allowed"><Lock className="h-3 w-3 text-foreground shrink-0" />{row.description}</span>
+ </TooltipTrigger>
+ <TooltipContent side="top" className="max-w-[240px]">Descriptions are locked on source-connected years to prevent duplication errors.</TooltipContent>
+ </Tooltip>
+ ) : row.description}
+ </td>
  <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{formatNumber(row.original)}</td>
  <td className="px-6 py-2 text-right whitespace-nowrap">
  <button onClick={() => { setSelectedAdjRow({ accNo: row.accNo, description: row.description }); setAdjModalOpen(true); }} className="text-link font-medium hover:underline focus:outline-none">

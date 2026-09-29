@@ -13,6 +13,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Layout } from "@/components/Layout";
 import { Checkbox } from "@/components/ui/checkbox";
+import { SourceSwitchDisclaimer } from "@/components/SourceSwitchDisclaimer";
+import { SourceYearSelection } from "@/components/SourceYearSelection";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { TemplatePickerPanel } from "@/components/TemplatePickerPanel";
@@ -998,7 +1000,8 @@ export default function CreateEngagement() {
  const isRollForwardSource = isEditMode && !!editingMeta?.sourceRollForward;
  // Years of data available in the connected source (demo) — drives the dynamic info alert
  const yearsAvailable = editingMeta?.sourceYearsAvailable ?? 3;
- const cyYear = parseInt(currentYearEnd.split("/")[2]) || 0;
+  const cyYear = parseInt(currentYearEnd.split("/")[2]) || 0;
+  const [sourceYears, setSourceYears] = useState<number>(editingMeta?.sourceYears ?? 1);
 
  const applyFullYearPriors = (cyStart: string, cyEnd: string) => {
  setPriorYear1Start(shiftYearStr(cyStart, -1));
@@ -1067,11 +1070,22 @@ export default function CreateEngagement() {
    // either the connection isn't active or the engagement is linked to a different source.
    const showConnectionDropdown = isSourceProviderMismatch || isReconnectFlow;
    const dropdownSavedProvider = isReconnectFlow ? savedDisconnectedFrom : savedSourceProvider;
-   const isConnectionDisconnected = clientHasSourceConnection&& (!sourceConnected || isSourceProviderMismatch);
+    const isConnectionDisconnected = clientHasSourceConnection&& (!sourceConnected || isSourceProviderMismatch);
+    // Roll forward with no client connection → auto CSV, locked
+    const isRollForwardNoSource = isRollForwardSource && !clientHasSourceConnection;
+    const rollForwardPriorProvider: "xero" | "quickbooks" = savedDisconnectedFrom ?? savedSourceProvider
+      ?? (clientSourceIntegration === "quickbooks" ? "xero" : "quickbooks");
+    // Year selection (CY locked; PY1/PY2 optional, in order)
+    const originalSourceYears = originalDataSource === "source" ? (editingMeta?.sourceYears ?? 1) : 0;
+    const isAddingSourceYearsFlow = isEditMode && originalDataSource === "source" && dataSource === "source" && !isSourceProviderMismatch;
+    const yearLockedCount = isAddingSourceYearsFlow ? originalSourceYears : 1;
+    const isAddingSourceYears = isAddingSourceYearsFlow && sourceYears > originalSourceYears;
+    const showYearSelection = isEditMode && !isStubPeriod && dataSource === "source" && clientHasSourceConnection
+      && (isCsvToSourceSwitch || isAddingSourceYearsFlow || (isSourceProviderMismatch && hasSelectedActiveConnection) || (isReconnectFlow && hasSelectedActiveConnection));
 
   const performSave = () => {
   // Partial Year locks Engagement Data Type to CSV — always save CSV in that state
-  const savedDataSource: "csv" | "source" = isStubPeriod ? "csv" : dataSource;
+  const savedDataSource: "csv" | "source" = isStubPeriod || isRollForwardNoSource ? "csv" : dataSource;
  const record: EngagementRecord = {
  id: engagementId,
  client: clientName,
@@ -1101,6 +1115,7 @@ export default function CreateEngagement() {
  periodStart: currentYearStart,
  periodEnd: currentYearEnd,
  dataSource: savedDataSource,
+ sourceYears: savedDataSource === "source" ? sourceYears : undefined,
  teamMembers,
  sourceProvider: savedDataSource === "source" ? (clientSourceIntegration ?? undefined) : (editingMeta?.sourceDisconnectedFrom ? editingMeta.sourceProvider : undefined),
  sourceDisconnectedFrom: savedDataSource === "csv" ? editingMeta?.sourceDisconnectedFrom : undefined,
@@ -1415,15 +1430,40 @@ export default function CreateEngagement() {
   </div>
   )}
   </div>
+   </div>
+  {isRollForwardSource && clientHasSourceConnection && !isStubPeriod && (
+  <div className="flex items-center gap-4 py-2.5">
+  <span className="text-sm text-foreground w-44 shrink-0">Prior Year (FY{cyYear - 1})</span>
+  <div className="inline-flex w-fit max-w-full items-center gap-2.5 rounded-[10px] border border-border bg-muted/40 px-3 py-1.5 opacity-70">
+  <img src={rollForwardPriorProvider === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={sourceLabel(rollForwardPriorProvider)} className="h-5 object-contain shrink-0 grayscale" />
+  <span className="text-sm text-foreground whitespace-nowrap shrink-0">{clientInfo?.entityLegalName || clientName}</span>
+  <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] font-medium text-foreground shrink-0">
+  <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />Disconnected
+  </span>
   </div>
+  </div>
+  )}
  <div className="flex items-center gap-4 py-2.5">
  <span className="text-sm text-foreground w-44 shrink-0 whitespace-nowrap">Engagement Data Type</span>
    <div className="flex-1 min-w-0 max-w-sm">
-   {isStubPeriod ? (
+   {isStubPeriod || isRollForwardNoSource ? (
    <Select value="csv" disabled>
    <SelectTrigger className="h-9 text-sm opacity-70 cursor-not-allowed">
    <span>CSV</span>
    </SelectTrigger>
+   </Select>
+   ) : isRollForwardSource && clientHasSourceConnection ? (
+   <Select value={dataSource} onValueChange={v => setDataSource(v as "csv" | "source")}>
+   <SelectTrigger className="h-9 text-sm">
+   <SelectValue />
+   </SelectTrigger>
+   <SelectContent>
+   <SelectItem value="source">Source — {sourceLabel(clientSourceIntegration)}</SelectItem>
+   {rollForwardPriorProvider !== clientSourceIntegration && (
+   <SelectItem value="source-prior" disabled className="text-muted-foreground">Source — {sourceLabel(rollForwardPriorProvider)} (disconnected)</SelectItem>
+   )}
+   <SelectItem value="csv">CSV</SelectItem>
+   </SelectContent>
    </Select>
    ) : (
    <Select value={dataSource} onValueChange={v => setDataSource(v as "csv" | "source")}>
@@ -1449,7 +1489,7 @@ export default function CreateEngagement() {
    </div>
    </div>
    )}
-    {!isStubPeriod && (<>
+    {!isStubPeriod && !isRollForwardNoSource && (<>
    {dataSource === "source" && !clientHasSourceConnection && (
   <div className="flex items-start gap-4 pb-2.5">
   <span className="w-44 shrink-0" />
@@ -1520,63 +1560,17 @@ export default function CreateEngagement() {
   </div>
   </div>
   )}
- {isCsvToSourceSwitch && !isRollForwardSource && (
- <div className="flex items-start gap-4 pb-2.5">
- <span className="w-44 shrink-0" />
- <div className="flex-1 min-w-0 space-y-3">
- <div className="flex items-start gap-2 rounded-[10px] border border-blue-300 bg-blue-50 dark:bg-blue-950/30 px-3 py-2">
- <Info className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
- <span className="text-sm text-blue-900 dark:text-blue-200">
- {yearsAvailable >= 3
- ? <>All years will refresh from source. Current Year ({cyYear}), Prior Year 1 ({cyYear - 1}) and Prior Year 2 ({cyYear - 2}) will be replaced with source data.</>
- : yearsAvailable === 2
- ? <>{sourceLabel(clientSourceIntegration)} has 2 years of data available. Current Year ({cyYear}) and Prior Year 1 ({cyYear - 1}) will refresh from source. Prior Year 2 ({cyYear - 2}) will remain as CSV.</>
- : <>{sourceLabel(clientSourceIntegration)} has 1 year of data available. Current Year ({cyYear}) will refresh from source. Prior Year 1 ({cyYear - 1}) and Prior Year 2 ({cyYear - 2}) will remain as CSV.</>}
- </span>
- </div>
- <div className="rounded-[10px] border border-border divide-y divide-border">
- {[
- { tag: "CY", year: cyYear, fromSource: true },
- { tag: "PY1", year: cyYear - 1, fromSource: yearsAvailable >= 2 },
- { tag: "PY2", year: cyYear - 2, fromSource: yearsAvailable >= 3 },
- ].map(y => (
- <div key={y.tag} className="flex items-center justify-between px-3 py-2 text-sm">
- <span className="text-foreground"><span className="font-medium">{y.tag}</span>&nbsp;&nbsp;{y.year}</span>
- <span className="flex items-center gap-2 text-foreground font-medium">
- <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${y.fromSource ? "bg-emerald-500" : "bg-muted-foreground/30"}`} aria-hidden="true" />
- {y.fromSource ? `Source — ${sourceLabel(clientSourceIntegration)}` : "CSV"}
- </span>
- </div>
- ))}
- </div>
- </div>
- </div>
- )}
- {isCsvToSourceSwitch && isRollForwardSource && (
- <div className="flex items-start gap-4 pb-2.5">
- <span className="w-44 shrink-0" />
- <div className="flex-1 min-w-0 space-y-3">
- <div className="flex items-start gap-2 rounded-[10px] border border-border bg-muted/50 px-3 py-2">
- <Info className="h-4 w-4 text-foreground shrink-0 mt-0.5" />
- <span className="text-sm text-foreground">
- Current Year will pull from {sourceLabel(clientSourceIntegration)}. Prior Year 1 and Prior Year 2 will remain as CSV data.
- </span>
- </div>
- <div className="rounded-[10px] border border-border divide-y divide-border">
- {[
- { label: `Current Year (${(parseInt(currentYearEnd.split("/")[2]) || 0)})`, value: `Source — ${sourceLabel(clientSourceIntegration)}` },
- { label: `Prior Year 1 (${(parseInt(currentYearEnd.split("/")[2]) || 0) - 1})`, value: "CSV" },
- { label: `Prior Year 2 (${(parseInt(currentYearEnd.split("/")[2]) || 0) - 2})`, value: "CSV" },
- ].map(y => (
- <div key={y.label} className="flex items-center justify-between px-3 py-2 text-sm">
- <span className="text-foreground">{y.label}</span>
- <span className="text-foreground font-medium">{y.value}</span>
- </div>
- ))}
- </div>
- </div>
- </div>
- )}
+  {isRollForwardSource && dataSource === "source" && clientHasSourceConnection && rollForwardPriorProvider !== clientSourceIntegration && (
+  <div className="flex items-start gap-4 pb-2.5">
+  <span className="w-44 shrink-0" />
+  <div className="flex-1 min-w-0 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+  <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+  <span className="text-sm text-amber-800 dark:text-amber-200">
+  This engagement will connect to {sourceLabel(clientSourceIntegration)} for the current year. Last year was connected to {sourceLabel(rollForwardPriorProvider)}.
+  </span>
+  </div>
+  </div>
+  )}
  {isReconnectFlow && hasSelectedActiveConnection && (
  <div className="flex items-start gap-4 pb-2.5">
  <span className="w-44 shrink-0" />
@@ -1599,18 +1593,47 @@ export default function CreateEngagement() {
   </div>
   </div>
   )}
- {/* Edit mode — static informational note when the Engagement Data Type changed, or when the active connection is picked after an external source change */}
- {isEditMode && clientHasSourceConnection && ((dataSource !== originalDataSource && (!isReconnectFlow || hasSelectedActiveConnection)) || (isSourceProviderMismatch && hasSelectedActiveConnection)) && (
- <div className="flex items-start gap-4 py-2.5">
- <span className="w-44 shrink-0" />
- <div className="flex-1 min-w-0 rounded-[10px] border border-border bg-muted/50 px-3 py-2">
- <p className="text-sm text-foreground">
- Adjusting entries and manually added accounts will not be retained. Documents will be moved to the documents section automatically. All issues, comments and procedure references will be deleted.
- </p>
- </div>
- </div>
- )}
-   </>)}
+  {/* Year selection — which years connect to source (CY locked) */}
+  {showYearSelection && (
+  <div className="flex items-start gap-4 pb-2.5">
+  <span className="w-44 shrink-0" />
+  <div className="flex-1 min-w-0 space-y-2">
+  <SourceYearSelection
+  rows={[
+  { tag: "CY", label: "Current Year (CY)", start: currentYearStart, end: currentYearEnd },
+  { tag: "PY1", label: "Prior Year 1 (PY1)", start: priorYear1Start, end: priorYear1End },
+  { tag: "PY2", label: "Prior Year 2 (PY2)", start: priorYear2Start, end: priorYear2End },
+  ]}
+  selected={sourceYears}
+  onChange={setSourceYears}
+  lockedCount={yearLockedCount}
+  available={editingMeta?.sourceYearsAvailable}
+  sourceName={sourceLabel(clientSourceIntegration)}
+  />
+  {isAddingSourceYearsFlow && (
+  <p className="text-xs text-foreground">To add or remove source years, return to Edit Engagement.</p>
+  )}
+  </div>
+  </div>
+  )}
+  {/* Edit mode — disclaimer whenever the source setup changes */}
+  {isEditMode && clientHasSourceConnection && (((dataSource !== originalDataSource && (!isReconnectFlow || hasSelectedActiveConnection)) || (isSourceProviderMismatch && hasSelectedActiveConnection)) || isAddingSourceYears) && (
+  <div className="flex items-start gap-4 py-2.5">
+  <span className="w-44 shrink-0" />
+  <div className="flex-1 min-w-0">
+  <SourceSwitchDisclaimer />
+  </div>
+  </div>
+  )}
+    </>)}
+    {isRollForwardNoSource && (
+    <div className="flex items-start gap-4 pb-2.5">
+    <span className="w-44 shrink-0" />
+    <div className="flex-1 min-w-0 rounded-[10px] border border-border bg-muted/50 px-3 py-2">
+    <p className="text-sm text-foreground">No source connection found for this client. This engagement has been set to CSV. To connect a source, go to the client page and add an integration.</p>
+    </div>
+    </div>
+    )}
    </SectionCard>
   )}
  </div>
