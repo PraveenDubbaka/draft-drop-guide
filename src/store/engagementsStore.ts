@@ -129,6 +129,7 @@ export type EngagementMeta = {
  annualizeInterim?: boolean; // true by default when auditPeriodType === "Interim (6-month)"
  firstTimeAdoption?: boolean; // first-time adoption of accounting standard
  dataSource?: "csv" | "source";
+ sourceYears?: number; // 1 = CY only, 2 = CY + PY1, 3 = all years connected to source
  sourceDisconnectedFrom?: "xero" | "quickbooks"; // set when a CSV import disconnected a source engagement
  sourceRollForward?: boolean; // roll forward: CY from source, prior years stay CSV
  sourceYearsAvailable?: number; // years of data available in the source (demo)
