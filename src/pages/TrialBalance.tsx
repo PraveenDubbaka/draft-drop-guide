@@ -670,13 +670,7 @@ export default function TrialBalance() {
  <DropdownMenuContent>
  <DropdownMenuItem>Dec 31 2025</DropdownMenuItem>
  </DropdownMenuContent>
- </DropdownMenu>
-  {badgeProvider && (
-  <div className="inline-flex items-center gap-2.5 rounded-[10px] border border-border bg-card px-3 py-1.5">
-  <img src={badgeProvider === "xero" ? xeroLogoFull : intuitQbLogo} alt={sourceLabel(badgeProvider)} className="h-5 object-contain shrink-0" />
-  <span className="text-sm text-foreground whitespace-nowrap">{clientName}</span>
-  </div>
-  )}
+  </DropdownMenu>
 
  </div>
 
