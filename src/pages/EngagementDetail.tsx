@@ -63,6 +63,7 @@ import { Audit680Worksheet } from "@/components/Audit680Worksheet";
   import { ConnectorsModal, CONNECTORS_BY_ID } from "@/components/ConnectorsModal";
   import { getEngagementMeta } from "@/store/engagementsStore";
   import { getClientSourceIntegration } from "@/lib/clientSource";
+  import { useEngagements } from "@/store/EngagementsContext";
   import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
   import xeroLogo from "@/assets/xero-logo-full.svg";
 import FSPageViewer, { FSPageType } from "@/components/FSPageViewer";
@@ -981,6 +982,7 @@ export default function EngagementDetail() {
  checklistKey?: string;
  }>();
  const navigate = useNavigate();
+  const { engagements } = useEngagements();
  const [searchParams] = useSearchParams();
  const { isCollapsed: isPanelCollapsed, toggle: togglePanel } = useSecondaryPanel();
  const [checklist, setChecklist] = useState<Checklist | null>(null);
@@ -1265,14 +1267,18 @@ export default function EngagementDetail() {
  // Client responses hook
  const checklistAssignments = useChecklistAssignments(engagementId ?? '', checklist?.id ?? checklistKey ?? '');
  const clientResponses = useClientResponses(checklist, checklistAssignments.assignments);
- const engagement = engagementId ? engagementsData[engagementId] : null;
+ const contextEngagement = engagements.find((item) => item.id === engagementId);
+ const engagement = contextEngagement ?? (engagementId ? engagementsData[engagementId] : null);
  const displayId = engagementId || "Unknown";
  const clientName = engagement?.client || "Unknown Client";
  const status = engagement?.status || "In Progress";
 
  // Get unique clients and current client's engagements
  const uniqueClients = useMemo(() => getUniqueClients(), []);
- const clientEngagements = useMemo(() => getEngagementsForClient(clientName), [clientName]);
+ const clientEngagements = useMemo(
+  () => engagements.filter((item) => item.client === clientName),
+  [clientName, engagements]
+ );
  const currentChecklistId = checklistKey ? NAV_KEY_TO_CHECKLIST_ID[checklistKey] : undefined;
 
  // Compute banner fill status + counts
@@ -2255,8 +2261,13 @@ export default function EngagementDetail() {
   const headerMeta = getEngagementMeta(engagementId ?? '');
   const headerSavedProvider = headerMeta.sourceProvider;
   const headerClientSource = getClientSourceIntegration(clientName);
-  const headerSourceProvider = headerMeta.dataSource === 'source' ? (headerSavedProvider ?? headerClientSource) : null;
-  const isHeaderSourceDisconnected = !!headerSavedProvider && headerSavedProvider !== headerClientSource;
+  const headerConfiguredProvider = headerMeta.dataSource === 'source' ? (headerSavedProvider ?? headerClientSource) : null;
+  const isHeaderExternallyDisconnected = !!headerConfiguredProvider && headerClientSource !== headerConfiguredProvider;
+  const headerDisconnectedFrom = isHeaderExternallyDisconnected
+   ? headerConfiguredProvider
+   : (headerMeta.dataSource !== 'source' ? headerMeta.sourceDisconnectedFrom ?? null : null);
+  const headerSourceProvider = headerConfiguredProvider ?? headerDisconnectedFrom;
+  const isHeaderSourceDisconnected = isHeaderExternallyDisconnected || !!headerDisconnectedFrom;
   const engagementBreadcrumb = (
  <div className="flex items-center gap-1 whitespace-nowrap flex-shrink-0 text-sidebar-foreground">
  {/* Client Name (read-only) */}
