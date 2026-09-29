@@ -1121,7 +1121,6 @@ export default function CreateEngagement() {
  sourceDisconnectedFrom: savedDataSource === "csv" ? editingMeta?.sourceDisconnectedFrom : undefined,
  sourceRollForward: editingMeta?.sourceRollForward,
  sourceYearsAvailable: editingMeta?.sourceYearsAvailable,
- refreshYears: savedDataSource === originalDataSource && !isSourceProviderMismatch ? editingMeta?.refreshYears : undefined,
  auditPeriodType: isAudit ? periodType : undefined,
  annualizeInterim: isAudit && periodType === "Interim (6-month)" ? annualizeInterim : undefined,
  firstTimeAdoption: isAudit ? firstTimeAdoption : undefined,

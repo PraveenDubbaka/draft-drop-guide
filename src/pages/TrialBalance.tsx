@@ -231,7 +231,6 @@ export default function TrialBalance() {
  const [switchToCsvOpen, setSwitchToCsvOpen] = useState(false);
  const [pendingCsvSwitch, setPendingCsvSwitch] = useState(false);
  const [refreshOpen, setRefreshOpen] = useState(false);
- const [refreshChoice, setRefreshChoice] = useState<"cy" | "py1" | "py2" | "all">("cy");
  const [activeYearTab, setActiveYearTab] = useState<"cy" | "py1" | "py2">("cy");
  const [disconnectText, setDisconnectText] = useState("");
  const cyInputRef = useRef<HTMLInputElement>(null);
@@ -261,7 +260,7 @@ export default function TrialBalance() {
  // CSV import disconnects the engagement from its source for all years
  const m = getEngagementMeta(engagementId);
  const provider = m.sourceProvider ?? linkedProvider ?? undefined;
- setEngagementMeta(engagementId, { ...m, dataSource: 'csv', sourceProvider: provider, sourceDisconnectedFrom: provider, refreshYears: undefined });
+ setEngagementMeta(engagementId, { ...m, dataSource: 'csv', sourceProvider: provider, sourceDisconnectedFrom: provider });
  setPendingCsvSwitch(false);
  setMetaVersion(v => v + 1);
  }
@@ -299,16 +298,18 @@ export default function TrialBalance() {
   const disconnectedFrom: "xero" | "quickbooks" | null = isExternallyDisconnected
   ? configuredProvider
   : (srcMeta.dataSource !== 'source' ? srcMeta.sourceDisconnectedFrom ?? null : null);
-  const lockedRefresh = srcMeta.refreshYears;
    const badgeProvider = configuredProvider ?? disconnectedFrom;
    const sourceStatusDisconnected = isExternallyDisconnected || !!disconnectedFrom;
- const confirmRefresh = () => {
+const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  if (!engagementId) return;
- const m = getEngagementMeta(engagementId);
- setEngagementMeta(engagementId, { ...m, refreshYears: refreshChoice });
- setMetaVersion(v => v + 1);
+ const labels: Record<typeof years, string> = {
+ cy: "Current Year",
+ py1: "Prior Year 1",
+ py2: "Prior Year 2",
+ all: "All Years",
+ };
  setRefreshOpen(false);
- toast.success(`Refreshed from ${sourceLabel(linkedProvider)}`);
+ toast.success(`Refreshed ${labels[years]} from ${sourceLabel(linkedProvider)}`);
  };
  // Year tabs: the first `sourceYearCount` years come from source (locked), the rest are CSV
  const sourceYearCount = configuredProvider ? Math.min(srcMeta.sourceYears ?? 1, srcMeta.sourceYearsAvailable ?? 3) : 0;
@@ -764,49 +765,38 @@ export default function TrialBalance() {
  icon={<RefreshCw className="h-4 w-4" />}
  label={<span className="inline-flex items-center gap-1">Refresh<ChevronDown className="h-3 w-3" /></span>}
  disabled={!isSourceLinked || !activeTabIsSource}
- onClick={() => setRefreshChoice(lockedRefresh ?? "cy")}
  />
  </PopoverTrigger>
-  <PopoverContent align="end" className="w-80 p-3 z-[100]">
-  {lockedRefresh && (
-  <div className="mb-3 flex items-start gap-2 rounded-md border border-[#F5D48A] bg-[#FEF6E7] p-2.5 text-xs text-foreground">
-  <Lock className="h-3.5 w-3.5 mt-0.5 shrink-0 text-[#B4720A]" />
-  <div>
-  <p>Refresh is locked to {lockedRefresh === "cy" ? "Current Year" : lockedRefresh === "py1" ? "Prior Year 1" : lockedRefresh === "py2" ? "Prior Year 2" : "All Years"}. To change years, go to Edit Engagement.</p>
-  <button type="button" className="mt-1 font-medium text-[#1C63A6] hover:underline" onClick={() => { setRefreshOpen(false); navigate(`/engagements/${engagementId}/edit`); }}>Edit Engagement →</button>
-  </div>
-  </div>
-  )}
-  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Refresh years</p>
+ <PopoverContent align="end" className="w-80 p-3 z-[100]">
+ <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Refresh years</p>
  <div className="space-y-1">
-  {([
-   { id: "cy", label: "Current Year", needs: 1, note: "" },
-   { id: "py1", label: "Prior Year 1", needs: 2, note: "PY1 is not source connected." },
-   { id: "py2", label: "Prior Year 2", needs: 3, note: "PY2 is not source connected." },
-   { id: "all", label: "All Years", needs: 3, note: "Not all years are source connected." },
-  ] as const).map(opt => {
-  const unavailable = sourceYearCount < opt.needs;
-  const disabled = unavailable || (!!lockedRefresh && lockedRefresh !== opt.id);
-  return (
-  <div key={opt.id}>
-  <label className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-sm ${disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:bg-muted"}`}>
-  <input type="radio" name="refresh-years" className="accent-primary" disabled={disabled} checked={refreshChoice === opt.id} onChange={() => setRefreshChoice(opt.id)} />
-  <span className="text-foreground">{opt.label}</span>
-  </label>
-  {unavailable && (
-  <div className="pl-8 pb-1 text-xs">
-  <p className="text-muted-foreground">{opt.note}</p>
-  <button type="button" className="text-link hover:underline" onClick={() => { setRefreshOpen(false); navigate(`/engagements/${engagementId}/edit`); }}>Connect more years in Edit Engagement →</button>
-  </div>
-  )}
-  </div>
-  );
-  })}
-  </div>
- <p className="text-xs text-muted-foreground mt-2">
- {lockedRefresh ? "Refresh selection is locked. To change years, go to Edit Engagement." : "Refresh selection will be locked after you confirm. To change years, go to Edit Engagement."}
- </p>
- <Button size="sm" className="w-full mt-3" onClick={confirmRefresh}>{lockedRefresh ? "Refresh" : "Confirm"}</Button>
+ {([
+ { id: "cy", label: "Current Year", needs: 1, note: "" },
+ { id: "py1", label: "Prior Year 1", needs: 2, note: "PY1 is not source connected." },
+ { id: "py2", label: "Prior Year 2", needs: 3, note: "PY2 is not source connected." },
+ { id: "all", label: "All Years", needs: 3, note: "Not all years are source connected." },
+ ] as const).map(opt => {
+ const unavailable = sourceYearCount < opt.needs;
+ return (
+ <div key={opt.id}>
+ <button
+ type="button"
+ disabled={unavailable}
+ onClick={() => confirmRefresh(opt.id)}
+ className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-left ${unavailable ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:bg-muted"}`}
+ >
+ <span className="text-foreground">{opt.label}</span>
+ </button>
+ {unavailable && (
+ <div className="px-2 pb-1 text-xs">
+ <p className="text-muted-foreground">{opt.note}</p>
+ <button type="button" className="text-link hover:underline" onClick={() => { setRefreshOpen(false); navigate(`/engagements/${engagementId}/edit`); }}>Connect more years in Edit Engagement →</button>
+ </div>
+ )}
+ </div>
+ );
+ })}
+ </div>
  </PopoverContent>
  </Popover>
  ) : (
