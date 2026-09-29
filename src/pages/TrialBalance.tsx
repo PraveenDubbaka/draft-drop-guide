@@ -289,14 +289,19 @@ export default function TrialBalance() {
  // ── Source connection state (re-read when metaVersion changes) ──
  void metaVersion;
  const srcMeta = engagementId ? getEngagementMeta(engagementId) : ({ firstYearAudit: false } as ReturnType<typeof getEngagementMeta>);
- const linkedProvider: "xero" | "quickbooks" | null = srcMeta.dataSource === 'source'
- ? (srcMeta.sourceProvider ?? (() => { const c = getClientSourceIntegrationSafe(clientName); return c; })())
- : null;
- const isSourceLinked = !!linkedProvider;
- const disconnectedFrom = srcMeta.dataSource !== 'source' ? srcMeta.sourceDisconnectedFrom ?? null : null;
- const yearsAvailable = srcMeta.sourceYearsAvailable ?? 3;
- const lockedRefresh = srcMeta.refreshYears;
- const badgeProvider = linkedProvider ?? disconnectedFrom;
+  const clientActiveProvider = getClientSourceIntegrationSafe(clientName);
+  const configuredProvider: "xero" | "quickbooks" | null = srcMeta.dataSource === 'source'
+  ? (srcMeta.sourceProvider ?? clientActiveProvider)
+  : null;
+  // Source disconnected outside the app: engagement still linked, but the client's active connection differs / is gone
+  const isExternallyDisconnected = !!configuredProvider && clientActiveProvider !== configuredProvider;
+  const linkedProvider = isExternallyDisconnected ? null : configuredProvider;
+  const isSourceLinked = !!linkedProvider;
+  const disconnectedFrom: "xero" | "quickbooks" | null = isExternallyDisconnected
+  ? configuredProvider
+  : (srcMeta.dataSource !== 'source' ? srcMeta.sourceDisconnectedFrom ?? null : null);
+  const lockedRefresh = srcMeta.refreshYears;
+  const badgeProvider = configuredProvider ?? disconnectedFrom;
  const confirmRefresh = () => {
  if (!engagementId) return;
  const m = getEngagementMeta(engagementId);
@@ -306,7 +311,7 @@ export default function TrialBalance() {
  toast.success(`Refreshed from ${sourceLabel(linkedProvider)}`);
  };
  // Year tabs: the first `sourceYearCount` years come from source (locked), the rest are CSV
- const sourceYearCount = isSourceLinked ? (srcMeta.sourceYears ?? 1) : 0;
+ const sourceYearCount = configuredProvider ? Math.min(srcMeta.sourceYears ?? 1, srcMeta.sourceYearsAvailable ?? 3) : 0;
  const yearTabs = ([
  { id: "cy", label: `CY ${cyYear}` },
  { id: "py1", label: `PY1 ${cyYear - 1}` },
@@ -709,7 +714,7 @@ export default function TrialBalance() {
  <DropdownMenuSeparator />
  <DropdownMenuItem
  className="flex items-center gap-2 cursor-pointer"
- disabled={activeTabIsSource}
+ disabled={activeTabIsSource || isExternallyDisconnected}
  onClick={handleImportClick}
  >
  <Upload className="h-4 w-4 text-muted-foreground" />
@@ -738,11 +743,11 @@ export default function TrialBalance() {
  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Refresh years</p>
  <div className="space-y-1">
  {([
- { id: "cy", label: `Current Year (${cyYear})`, needs: 1 },
+ { id: "cy", label: "Current Year only", needs: 1 },
  { id: "cy-py1", label: "Current Year + Prior Year 1", needs: 2 },
- { id: "all", label: yearsAvailable >= 3 ? "All Years (CY + PY1 + PY2)" : "All Years", needs: 3 },
+ { id: "all", label: "All Years", needs: 3 },
  ] as const).map(opt => {
- const unavailable = yearsAvailable < opt.needs;
+ const unavailable = sourceYearCount < opt.needs;
  const disabled = unavailable || (!!lockedRefresh && lockedRefresh !== opt.id);
  return (
  <label key={opt.id} className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-sm ${disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:bg-muted"}`}>
@@ -752,8 +757,8 @@ export default function TrialBalance() {
  );
  })}
  </div>
- {yearsAvailable < 3 && (
- <p className="text-xs text-muted-foreground mt-2">Only {yearsAvailable} year{yearsAvailable === 1 ? "" : "s"} of data {yearsAvailable === 1 ? "is" : "are"} available in {sourceLabel(linkedProvider)}.</p>
+ {sourceYearCount < 3 && (
+ <p className="text-xs text-muted-foreground mt-2">Only {sourceYearCount} year{sourceYearCount === 1 ? " is" : "s are"} source-connected in the engagement setup.</p>
  )}
  <p className="text-xs text-muted-foreground mt-2">
  {lockedRefresh ? "Refresh selection is locked. To change years, go to Edit Engagement." : "Refresh selection will be locked after you confirm. To change years, go to Edit Engagement."}
@@ -804,7 +809,7 @@ export default function TrialBalance() {
 
  {disconnectedFrom && (
  <div className="mx-6 mt-4 flex items-center justify-between gap-3 rounded-[10px] border border-amber-300 bg-amber-50 px-3 py-2">
- <span className="text-sm text-amber-800">This engagement is now CSV. Source connection is inactive. To reconnect to {sourceLabel(disconnectedFrom)}, go to Edit Engagement.</span>
+ <span className="text-sm text-amber-800">{isExternallyDisconnected ? "Source connection inactive. Your data is unchanged. Go to Edit Engagement to reconnect or switch to CSV." : `This engagement is now CSV. Source connection is inactive. To reconnect to ${sourceLabel(disconnectedFrom)}, go to Edit Engagement.`}</span>
  <button type="button" className="text-sm font-medium text-[#1C63A6] hover:underline whitespace-nowrap" onClick={() => navigate(`/engagements/${engagementId}/edit`)}>Edit Engagement →</button>
  </div>
  )}
@@ -830,7 +835,7 @@ export default function TrialBalance() {
  </AlertDialogContent>
  </AlertDialog>
  {/* Year tabs — source years locked, CSV years editable */}
- {isSourceLinked && (
+ {configuredProvider && (
  <div className="mx-6 mt-6 flex items-center gap-2" role="tablist" aria-label="Trial balance years">
  {yearTabs.map(t => {
  const active = activeYearTab === t.id;
@@ -840,7 +845,7 @@ export default function TrialBalance() {
  <span>{t.label}</span>
  <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium">
  <span className={`h-1.5 w-1.5 rounded-full ${t.isSource ? "bg-emerald-500" : "bg-gray-400"}`} />
- {t.isSource ? sourceLabel(linkedProvider) : "CSV"}
+ {t.isSource ? sourceLabel(configuredProvider) : "CSV"}
  </span>
  </button>
  );
@@ -848,7 +853,7 @@ export default function TrialBalance() {
  </div>
  )}
  {/* Table */}
- <StyledCard className={`mx-6 ${isSourceLinked ? "mt-3" : "mt-6"} mb-6 overflow-hidden flex flex-col flex-1 min-h-0`}>
+ <StyledCard className={`mx-6 ${configuredProvider ? "mt-3" : "mt-6"} mb-6 overflow-hidden flex flex-col flex-1 min-h-0`}>
  <div className="flex-1 overflow-auto">
  <table className="w-full text-sm">
  <thead className="sticky top-0 z-10">
