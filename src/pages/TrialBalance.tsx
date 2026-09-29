@@ -289,14 +289,19 @@ export default function TrialBalance() {
  // ── Source connection state (re-read when metaVersion changes) ──
  void metaVersion;
  const srcMeta = engagementId ? getEngagementMeta(engagementId) : ({ firstYearAudit: false } as ReturnType<typeof getEngagementMeta>);
- const linkedProvider: "xero" | "quickbooks" | null = srcMeta.dataSource === 'source'
- ? (srcMeta.sourceProvider ?? (() => { const c = getClientSourceIntegrationSafe(clientName); return c; })())
- : null;
- const isSourceLinked = !!linkedProvider;
- const disconnectedFrom = srcMeta.dataSource !== 'source' ? srcMeta.sourceDisconnectedFrom ?? null : null;
- const yearsAvailable = srcMeta.sourceYearsAvailable ?? 3;
- const lockedRefresh = srcMeta.refreshYears;
- const badgeProvider = linkedProvider ?? disconnectedFrom;
+  const clientActiveProvider = getClientSourceIntegrationSafe(clientName);
+  const configuredProvider: "xero" | "quickbooks" | null = srcMeta.dataSource === 'source'
+  ? (srcMeta.sourceProvider ?? clientActiveProvider)
+  : null;
+  // Source disconnected outside the app: engagement still linked, but the client's active connection differs / is gone
+  const isExternallyDisconnected = !!configuredProvider && clientActiveProvider !== configuredProvider;
+  const linkedProvider = isExternallyDisconnected ? null : configuredProvider;
+  const isSourceLinked = !!linkedProvider;
+  const disconnectedFrom: "xero" | "quickbooks" | null = isExternallyDisconnected
+  ? configuredProvider
+  : (srcMeta.dataSource !== 'source' ? srcMeta.sourceDisconnectedFrom ?? null : null);
+  const lockedRefresh = srcMeta.refreshYears;
+  const badgeProvider = configuredProvider ?? disconnectedFrom;
  const confirmRefresh = () => {
  if (!engagementId) return;
  const m = getEngagementMeta(engagementId);
