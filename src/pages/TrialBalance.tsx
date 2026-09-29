@@ -712,14 +712,28 @@ export default function TrialBalance() {
  <span>Auto Map</span>
  </DropdownMenuItem>
  <DropdownMenuSeparator />
- <DropdownMenuItem
- className="flex items-center gap-2 cursor-pointer"
- disabled={activeTabIsSource || isExternallyDisconnected}
- onClick={handleImportClick}
- >
- <Upload className="h-4 w-4 text-muted-foreground" />
- <span>Import</span>
- </DropdownMenuItem>
+  {activeTabIsSource ? (
+  <Tooltip delayDuration={100}>
+  <TooltipTrigger asChild>
+  <div>
+  <DropdownMenuItem className="flex items-center gap-2" disabled>
+  <Upload className="h-4 w-4 text-muted-foreground" />
+  <span>Import</span>
+  </DropdownMenuItem>
+  </div>
+  </TooltipTrigger>
+  <TooltipContent side="left" className="max-w-[240px] z-[200]">Import is disabled for source-connected years. Switch to CSV in Edit Engagement to re-enable.</TooltipContent>
+  </Tooltip>
+  ) : (
+  <DropdownMenuItem
+  className="flex items-center gap-2 cursor-pointer"
+  disabled={isExternallyDisconnected}
+  onClick={handleImportClick}
+  >
+  <Upload className="h-4 w-4 text-muted-foreground" />
+  <span>Import</span>
+  </DropdownMenuItem>
+  )}
  <DropdownMenuItem className="flex items-center gap-2 cursor-pointer">
  <Download className="h-4 w-4 text-muted-foreground" />
  <span>Export</span>
@@ -742,24 +756,29 @@ export default function TrialBalance() {
  <PopoverContent align="end" className="w-80 p-3 z-[100]">
  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Refresh years</p>
  <div className="space-y-1">
- {([
- { id: "cy", label: "Current Year only", needs: 1 },
- { id: "cy-py1", label: "Current Year + Prior Year 1", needs: 2 },
- { id: "all", label: "All Years", needs: 3 },
- ] as const).map(opt => {
- const unavailable = sourceYearCount < opt.needs;
- const disabled = unavailable || (!!lockedRefresh && lockedRefresh !== opt.id);
- return (
- <label key={opt.id} className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-sm ${disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:bg-muted"}`}>
- <input type="radio" name="refresh-years" className="accent-primary" disabled={disabled} checked={refreshChoice === opt.id} onChange={() => setRefreshChoice(opt.id)} />
- <span className="text-foreground">{opt.label}</span>
- </label>
- );
- })}
- </div>
- {sourceYearCount < 3 && (
- <p className="text-xs text-muted-foreground mt-2">Only {sourceYearCount} year{sourceYearCount === 1 ? " is" : "s are"} source-connected in the engagement setup.</p>
- )}
+  {([
+  { id: "cy", label: "Current Year only", needs: 1, note: "" },
+  { id: "cy-py1", label: "Current Year + Prior Year 1", needs: 2, note: "PY1 is not source connected." },
+  { id: "all", label: "All Years", needs: 3, note: "PY2 is not source connected." },
+  ] as const).map(opt => {
+  const unavailable = sourceYearCount < opt.needs;
+  const disabled = unavailable || (!!lockedRefresh && lockedRefresh !== opt.id);
+  return (
+  <div key={opt.id}>
+  <label className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-sm ${disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:bg-muted"}`}>
+  <input type="radio" name="refresh-years" className="accent-primary" disabled={disabled} checked={refreshChoice === opt.id} onChange={() => setRefreshChoice(opt.id)} />
+  <span className="text-foreground">{opt.label}</span>
+  </label>
+  {unavailable && (
+  <div className="pl-8 pb-1 text-xs">
+  <p className="text-muted-foreground">{opt.note}</p>
+  <button type="button" className="text-link hover:underline" onClick={() => { setRefreshOpen(false); navigate(`/engagements/${engagementId}/edit`); }}>Connect more years in Edit Engagement →</button>
+  </div>
+  )}
+  </div>
+  );
+  })}
+  </div>
  <p className="text-xs text-muted-foreground mt-2">
  {lockedRefresh ? "Refresh selection is locked. To change years, go to Edit Engagement." : "Refresh selection will be locked after you confirm. To change years, go to Edit Engagement."}
  </p>
@@ -945,22 +964,27 @@ export default function TrialBalance() {
  {cat.short}
  </div>
  </td>
- <td className="px-2 py-2 text-center">
- <button className="text-muted-foreground hover:text-foreground">
- <MoreVertical className="h-3.5 w-3.5" />
- </button>
- </td>
- <td className="px-2 py-2"><Checkbox /></td>
- <td className="px-6 py-2 text-foreground whitespace-nowrap">{row.accNo}</td>
- <td className="px-6 py-2 text-foreground whitespace-nowrap">
- {activeTabIsSource ? (
- <Tooltip>
- <TooltipTrigger asChild>
- <span className="inline-flex items-center gap-1.5 cursor-not-allowed"><Lock className="h-3 w-3 text-foreground shrink-0" />{row.description}</span>
- </TooltipTrigger>
- <TooltipContent side="top" className="max-w-[240px]">Descriptions are locked on source-connected years to prevent duplication errors.</TooltipContent>
- </Tooltip>
- ) : row.description}
+  <td className="px-2 py-2 text-center">
+  {!activeTabIsSource && (
+  <button className="text-muted-foreground hover:text-foreground">
+  <MoreVertical className="h-3.5 w-3.5" />
+  </button>
+  )}
+  </td>
+  <td className="px-2 py-2"><Checkbox /></td>
+  <td className="px-6 py-2 text-foreground whitespace-nowrap">{row.accNo}</td>
+  <td className="px-6 py-2 text-foreground whitespace-nowrap">
+  {activeTabIsSource ? (
+  <span className="inline-flex items-center gap-1.5">
+  <Tooltip delayDuration={100}>
+  <TooltipTrigger asChild>
+  <span tabIndex={0} aria-label="Locked" className="inline-flex cursor-help"><Lock className="h-3 w-3 text-foreground shrink-0" /></span>
+  </TooltipTrigger>
+  <TooltipContent side="top" className="max-w-[240px] z-[200]">Locked on source-connected years to prevent duplication errors.</TooltipContent>
+  </Tooltip>
+  <span className="cursor-not-allowed">{row.description}</span>
+  </span>
+  ) : row.description}
  </td>
  <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{formatNumber(row.original)}</td>
  <td className="px-6 py-2 text-right whitespace-nowrap">
