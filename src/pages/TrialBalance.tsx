@@ -821,8 +821,8 @@ export default function TrialBalance() {
  />
  </DropdownMenuTrigger>
  </TooltipTrigger>
- <DropdownMenuContent align="end" className="z-[100]">
- <DropdownMenuItem>All Years</DropdownMenuItem>
+  <DropdownMenuContent align="end" className="z-[100]">
+  <DropdownMenuItem>Current Year</DropdownMenuItem>
  <DropdownMenuItem>Current Year</DropdownMenuItem>
  <DropdownMenuItem>PY 1</DropdownMenuItem>
  <DropdownMenuItem>PY 2</DropdownMenuItem>
