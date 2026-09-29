@@ -753,8 +753,17 @@ export default function TrialBalance() {
  onClick={() => setRefreshChoice(lockedRefresh ?? "cy")}
  />
  </PopoverTrigger>
- <PopoverContent align="end" className="w-80 p-3 z-[100]">
- <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Refresh years</p>
+  <PopoverContent align="end" className="w-80 p-3 z-[100]">
+  {lockedRefresh && (
+  <div className="mb-3 flex items-start gap-2 rounded-md border border-[#F5D48A] bg-[#FEF6E7] p-2.5 text-xs text-foreground">
+  <Lock className="h-3.5 w-3.5 mt-0.5 shrink-0 text-[#B4720A]" />
+  <div>
+  <p>Refresh is locked to {lockedRefresh === "cy" ? "Current Year only" : lockedRefresh === "cy-py1" ? "Current Year + Prior Year 1" : "All Years"}. To change years, go to Edit Engagement.</p>
+  <button type="button" className="mt-1 font-medium text-[#1C63A6] hover:underline" onClick={() => { setRefreshOpen(false); navigate(`/engagements/${engagementId}/edit`); }}>Edit Engagement →</button>
+  </div>
+  </div>
+  )}
+  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Refresh years</p>
  <div className="space-y-1">
   {([
   { id: "cy", label: "Current Year only", needs: 1, note: "" },
