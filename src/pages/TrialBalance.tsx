@@ -27,7 +27,7 @@ import { StyledCard } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { getEngagementMeta, setEngagementMeta } from "@/store/engagementsStore";
-import { sourceLabel, getClientSourceIntegration as getClientSourceIntegrationSafe } from "@/lib/clientSource";
+import { sourceLabel, getClientSourceIntegration as getClientSourceIntegrationSafe, VISIBLE_ENGAGEMENT_IDS } from "@/lib/clientSource";
 import xeroLogoFull from "@/assets/xero-logo-full.svg";
 import intuitQbLogo from "@/assets/intuit-quickbooks-logo.svg";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -220,7 +220,7 @@ export default function TrialBalance() {
 
  // TB load state — persisted per engagement
  const [tbLoaded, setTbLoaded] = useState(() =>
- engagementId ? !!localStorage.getItem(TB_LOADED_KEY(engagementId)) : false
+ engagementId ? (VISIBLE_ENGAGEMENT_IDS.includes(engagementId) || !!localStorage.getItem(TB_LOADED_KEY(engagementId))) : false
  );
  const [showImport, setShowImport] = useState(false);
  const [cyFile, setCyFile] = useState<File | null>(null);
