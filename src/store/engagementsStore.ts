@@ -49,9 +49,7 @@ function seedDemoEngagementMeta() {
    localStorage.setItem(key, JSON.stringify(meta));
  }
 
-  // Deterministic demo data-source seeds for the edit-engagement scenarios.
-  const SEED_FLAG = 'cds_engagement_datasource_seed_v7';
- if (localStorage.getItem(SEED_FLAG)) return;
+  // Deterministic demo data-source seeds — re-applied on every load so the 6 scenarios always show the correct source state.
   const sampleTeam = (): EngagementMeta['teamMembers'] => ([
     { id: 'tm-partner', role: 'Partner', name: 'Atin Gupta', email: 'atin@countable.co', title: 'Partner', hourlyRate: '200.00', timeAllocation: '15' },
     { id: 'tm-manager', role: 'Manager', name: 'Kaushal Bhagat', email: 'kaushalb@countable.co', title: 'Manager', hourlyRate: '100.00', timeAllocation: '35' },
@@ -82,7 +80,6 @@ function seedDemoEngagementMeta() {
      localStorage.setItem(META_KEY(id), JSON.stringify(meta));
    } catch {}
  });
- localStorage.setItem(SEED_FLAG, '1');
 }
 
 
