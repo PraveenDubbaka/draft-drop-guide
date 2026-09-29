@@ -131,7 +131,7 @@ export type EngagementMeta = {
  sourceDisconnectedFrom?: "xero" | "quickbooks"; // set when a CSV import disconnected a source engagement
  sourceRollForward?: boolean; // roll forward: CY from source, prior years stay CSV
  sourceYearsAvailable?: number; // years of data available in the source (demo)
- refreshYears?: "cy" | "py1" | "py2"; // locked refresh selection
+ refreshYears?: "cy" | "py1" | "py2" | "all"; // locked refresh selection
  sourceProvider?: "xero" | "quickbooks"; // which accounting source the engagement is linked to
  teamMembers?: {
    id: string;
