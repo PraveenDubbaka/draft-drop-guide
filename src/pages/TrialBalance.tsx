@@ -689,11 +689,11 @@ export default function TrialBalance() {
  <Plus className="h-4 w-4 text-muted-foreground" />
  <span>Add</span>
  </DropdownMenuItem>
- <DropdownMenuItem className="flex items-center gap-2 cursor-pointer">
+ <DropdownMenuItem className="flex items-center gap-2 cursor-pointer" disabled={activeTabIsSource}>
  <GitMerge className="h-4 w-4 text-muted-foreground" />
  <span>Merge</span>
  </DropdownMenuItem>
- <DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-destructive focus:text-destructive">
+ <DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-destructive focus:text-destructive" disabled={activeTabIsSource}>
  <Trash2 className="h-4 w-4 text-destructive" />
  <span>Delete</span>
  </DropdownMenuItem>
@@ -709,7 +709,7 @@ export default function TrialBalance() {
  <DropdownMenuSeparator />
  <DropdownMenuItem
  className="flex items-center gap-2 cursor-pointer"
- disabled={isSourceLinked && !lockedRefresh}
+ disabled={activeTabIsSource}
  onClick={handleImportClick}
  >
  <Upload className="h-4 w-4 text-muted-foreground" />
@@ -727,10 +727,10 @@ export default function TrialBalance() {
  <Popover open={refreshOpen} onOpenChange={setRefreshOpen}>
  <PopoverTrigger asChild>
  <ExpandableIconButton
- variant={isSourceLinked ? "default" : "secondary"}
+ variant={isSourceLinked && activeTabIsSource ? "default" : "secondary"}
  icon={<RefreshCw className="h-4 w-4" />}
  label={<span className="inline-flex items-center gap-1">Refresh<ChevronDown className="h-3 w-3" /></span>}
- disabled={!isSourceLinked}
+ disabled={!isSourceLinked || !activeTabIsSource}
  onClick={() => setRefreshChoice(lockedRefresh ?? "cy")}
  />
  </PopoverTrigger>
