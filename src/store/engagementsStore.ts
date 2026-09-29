@@ -80,7 +80,6 @@ function seedDemoEngagementMeta() {
      localStorage.setItem(META_KEY(id), JSON.stringify(meta));
    } catch {}
  });
- localStorage.setItem(SEED_FLAG, '1');
 }
 
 
