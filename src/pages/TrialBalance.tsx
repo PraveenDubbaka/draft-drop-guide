@@ -231,7 +231,7 @@ export default function TrialBalance() {
  const [switchToCsvOpen, setSwitchToCsvOpen] = useState(false);
  const [pendingCsvSwitch, setPendingCsvSwitch] = useState(false);
  const [refreshOpen, setRefreshOpen] = useState(false);
- const [refreshChoice, setRefreshChoice] = useState<"cy" | "cy-py1" | "all">("cy");
+ const [refreshChoice, setRefreshChoice] = useState<"cy" | "py1" | "py2" | "all">("cy");
  const [activeYearTab, setActiveYearTab] = useState<"cy" | "py1" | "py2">("cy");
  const [disconnectText, setDisconnectText] = useState("");
  const cyInputRef = useRef<HTMLInputElement>(null);
@@ -772,7 +772,7 @@ export default function TrialBalance() {
   <div className="mb-3 flex items-start gap-2 rounded-md border border-[#F5D48A] bg-[#FEF6E7] p-2.5 text-xs text-foreground">
   <Lock className="h-3.5 w-3.5 mt-0.5 shrink-0 text-[#B4720A]" />
   <div>
-  <p>Refresh is locked to {lockedRefresh === "cy" ? "Current Year only" : lockedRefresh === "cy-py1" ? "Current Year + Prior Year 1" : "All Years"}. To change years, go to Edit Engagement.</p>
+  <p>Refresh is locked to {lockedRefresh === "cy" ? "Current Year" : lockedRefresh === "py1" ? "PY 1" : lockedRefresh === "py2" ? "PY 2" : "All Years"}. To change years, go to Edit Engagement.</p>
   <button type="button" className="mt-1 font-medium text-[#1C63A6] hover:underline" onClick={() => { setRefreshOpen(false); navigate(`/engagements/${engagementId}/edit`); }}>Edit Engagement →</button>
   </div>
   </div>
@@ -780,8 +780,9 @@ export default function TrialBalance() {
   <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Refresh years</p>
  <div className="space-y-1">
   {([
-  { id: "cy", label: "Current Year only", needs: 1, note: "" },
-  { id: "cy-py1", label: "Current Year + Prior Year 1", needs: 2, note: "PY1 is not source connected." },
+  { id: "cy", label: "Current Year", needs: 1, note: "" },
+  { id: "py1", label: "PY 1", needs: 2, note: "PY1 is not source connected." },
+  { id: "py2", label: "PY 2", needs: 3, note: "PY2 is not source connected." },
   { id: "all", label: "All Years", needs: 3, note: "PY2 is not source connected." },
   ] as const).map(opt => {
   const unavailable = sourceYearCount < opt.needs;
