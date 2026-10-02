@@ -66,6 +66,8 @@ function seedDemoEngagementMeta() {
    'COM-CHE-Dec252024': { dataSource: 'csv' },
    'COM-HF-Dec312024': { dataSource: 'source', sourceProvider: 'xero', sourceYearsAvailable: 3, sourceYears: 2 },
    'COM-HFRF-Dec312024': { dataSource: 'source', sourceProvider: 'quickbooks', sourceRollForward: true, sourceYearsAvailable: 3, sourceYears: 1 },
+   'COM-QB-STCSV-Dec312024': { dataSource: 'source', sourceProvider: 'quickbooks', sourceYearsAvailable: 3, sourceYears: 3 },
+   'COM-HFRF-STCSV-Dec312024': { dataSource: 'source', sourceProvider: 'quickbooks', sourceRollForward: true, sourceYearsAvailable: 3, sourceYears: 1 },
  };
  Object.entries(seeds).forEach(([id, seed]) => {
    try {
