@@ -30,6 +30,8 @@ export const SEED_ENGAGEMENTS: EngagementRecord[] = [
  { id: "COM-SHR-Dec302023", client: "ShRoll Forward", type: "Compilation (COM)", yearEnd: "Dec 30, 2023", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: true, dateCreated: "Jan 13, 2026 03:51 AM", firstYearAudit: false },
  { id: "COM-HF-Dec312024", client: "Harbor Freight Logistics LLC", type: "Compilation (COM)", yearEnd: "Dec 31, 2024", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: false, dateCreated: "Jan 22, 2026 08:00 AM", firstYearAudit: false },
  { id: "COM-HFRF-Dec312024", client: "Harbor Freight Logistics LLC", type: "Compilation (COM)", yearEnd: "Dec 31, 2024", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: true, dateCreated: "Jan 23, 2026 09:00 AM", firstYearAudit: false },
+ { id: "COM-QB-STCSV-Dec312024", client: "Cedar Point Logistics Inc.", type: "Compilation (COM)", yearEnd: "Dec 31, 2024", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: false, dateCreated: "Jan 24, 2026 09:00 AM", firstYearAudit: false },
+ { id: "COM-HFRF-STCSV-Dec312024", client: "Harbor Freight Logistics LLC", type: "Compilation (COM)", yearEnd: "Dec 31, 2024", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: true, dateCreated: "Jan 25, 2026 09:00 AM", firstYearAudit: false },
 ];
 
 function seedDemoEngagementMeta() {
@@ -64,6 +66,8 @@ function seedDemoEngagementMeta() {
    'COM-CHE-Dec252024': { dataSource: 'csv' },
    'COM-HF-Dec312024': { dataSource: 'source', sourceProvider: 'xero', sourceYearsAvailable: 3, sourceYears: 2 },
    'COM-HFRF-Dec312024': { dataSource: 'source', sourceProvider: 'quickbooks', sourceRollForward: true, sourceYearsAvailable: 3, sourceYears: 1 },
+   'COM-QB-STCSV-Dec312024': { dataSource: 'source', sourceProvider: 'quickbooks', sourceYearsAvailable: 3, sourceYears: 3 },
+   'COM-HFRF-STCSV-Dec312024': { dataSource: 'source', sourceProvider: 'quickbooks', sourceRollForward: true, sourceYearsAvailable: 3, sourceYears: 1 },
  };
  Object.entries(seeds).forEach(([id, seed]) => {
    try {
