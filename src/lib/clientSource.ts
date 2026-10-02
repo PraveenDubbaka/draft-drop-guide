@@ -9,6 +9,13 @@ const DEMO_DATA_SOURCES: Readonly<Record<string, "csv" | "source">> = {
   "COM-CHE-Dec252024": "csv",
   "COM-HF-Dec312024": "source",
   "COM-HFRF-Dec312024": "csv",
+  "COM-QB-STCSV-Dec312024": "source",
+  "COM-HFRF-STCSV-Dec312024": "source",
+};
+
+/** Exact client-name connections for demo engagements (exact match only, so "Cedar Point Logistics" stays unconnected). */
+const DEMO_EXACT_CONNECTIONS: Readonly<Record<string, "xero" | "quickbooks">> = {
+  "cedar point logistics inc.": "quickbooks",
 };
 
 /**
@@ -19,6 +26,7 @@ const DEMO_DATA_SOURCES: Readonly<Record<string, "csv" | "source">> = {
 export function getClientSourceIntegration(clientName: string): ClientSourceIntegration {
   const normalized = (clientName || "").trim().toLowerCase();
   if (!normalized) return null;
+  if (DEMO_EXACT_CONNECTIONS[normalized]) return DEMO_EXACT_CONNECTIONS[normalized];
   const override = getClientConnectionOverride(normalized);
   if (override) return override;
   const client = clientsData.find(
@@ -69,6 +77,8 @@ export const VISIBLE_ENGAGEMENT_IDS: readonly string[] = [
   "COM-CHE-Dec252024",
   "COM-HF-Dec312024",
   "COM-HFRF-Dec312024",
+  "COM-QB-STCSV-Dec312024",
+  "COM-HFRF-STCSV-Dec312024",
 ];
 
 /** Keep only the visible engagements, in the fixed scenario order. */
