@@ -1034,14 +1034,29 @@ export default function CreateEngagement() {
  setPriorYear2End(shiftYearStr(cyEnd, -2));
  };
 
- const handlePeriodTypeChange = (val: string) => {
- setPeriodType(val);
- if (val === "Full Year" || val === "Full year") {
- const autoEnd = addDaysStr(shiftYearStr(currentYearStart, 1), -1);
- setCurrentYearEnd(autoEnd);
- applyFullYearPriors(currentYearStart, autoEnd);
- }
- };
+  const handlePeriodTypeChange = (val: string) => {
+  setPeriodType(val);
+  const isNowFull = val === "Full Year" || val === "Full year";
+  const isNowStub = val === "Partial Year" || val === "Partial year";
+  if (isNowFull) {
+  const autoEnd = addDaysStr(shiftYearStr(currentYearStart, 1), -1);
+  setCurrentYearEnd(autoEnd);
+  applyFullYearPriors(currentYearStart, autoEnd);
+  }
+  if (isNowStub && !firstYearOfOperations && dataSource === "source") {
+  setDataSource("csv");
+  }
+  if (isNowFull && isEditMode && originalDataSource === "source") {
+  setDataSource("source");
+  }
+  };
+
+  const handleFOOChange = (checked: boolean) => {
+  setFirstYearOfOperations(checked);
+  if (!checked && dataSource === "source") {
+  setDataSource("csv");
+  }
+  };
 
  const handleCurrentYearStartChange = (val: string) => {
  setCurrentYearStart(val);
@@ -1392,7 +1407,7 @@ const performSave = () => {
  <div className="flex items-center gap-4 pb-2.5">
  <span className="w-44 shrink-0" />
  <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
- <Checkbox checked={firstYearOfOperations} onCheckedChange={v => setFirstYearOfOperations(!!v)} />
+ <Checkbox checked={firstYearOfOperations} onCheckedChange={v => handleFOOChange(!!v)} />
  First Year of Operations
  </label>
  </div>
@@ -1406,21 +1421,24 @@ const performSave = () => {
  </div>
  )}
  {/* Year rows */}
- {[
- { label: "Current Year", required: true, start: currentYearStart, setStart: handleCurrentYearStartChange, end: currentYearEnd, setEnd: handleCurrentYearEndChange },
- { label: "Prior Year 1", required: false, start: priorYear1Start, setStart: setPriorYear1Start, end: priorYear1End, setEnd: setPriorYear1End },
- { label: "Prior Year 2", required: false, start: priorYear2Start, setStart: setPriorYear2Start, end: priorYear2End, setEnd: setPriorYear2End },
- ].map(row => (
- <div key={row.label} className="flex items-start gap-4 py-2.5">
- <span className="text-sm text-foreground w-44 shrink-0 whitespace-nowrap pt-5">
- {row.label}{row.required && <span className="text-destructive ml-0.5">*</span>}
- </span>
- <div className="flex gap-3 flex-1 min-w-0">
- <div className="flex-1 min-w-0 max-w-44"><LabeledInput label="Start Date" value={row.start} onChange={row.setStart} required={row.required} icon={<Calendar className="h-4 w-4" />} /></div>
- <div className="flex-1 min-w-0 max-w-44"><LabeledInput label="End Date" value={row.end} onChange={row.setEnd} required={row.required} icon={<Calendar className="h-4 w-4" />} /></div>
- </div>
- </div>
- ))}
+  {[
+  { label: "Current Year", required: true, start: currentYearStart, setStart: handleCurrentYearStartChange, end: currentYearEnd, setEnd: handleCurrentYearEndChange, disabled: false },
+  { label: "Prior Year 1", required: false, start: priorYear1Start, setStart: setPriorYear1Start, end: priorYear1End, setEnd: setPriorYear1End, disabled: isFullYearPeriod },
+  { label: "Prior Year 2", required: false, start: priorYear2Start, setStart: setPriorYear2Start, end: priorYear2End, setEnd: setPriorYear2End, disabled: isFullYearPeriod },
+  ].map(row => (
+  <div key={row.label} className="flex items-start gap-4 py-2.5">
+  <span className="text-sm text-foreground w-44 shrink-0 whitespace-nowrap pt-5">
+  {row.label}{row.required && <span className="text-destructive ml-0.5">*</span>}
+  </span>
+  <div className="flex flex-col gap-1 flex-1 min-w-0">
+  <div className={`flex gap-3 ${row.disabled ? "opacity-60" : ""}`}>
+  <div className="flex-1 min-w-0 max-w-44"><LabeledInput label="Start Date" value={row.start} onChange={row.setStart} required={row.required} icon={<Calendar className="h-4 w-4" />} disabled={row.disabled} /></div>
+  <div className="flex-1 min-w-0 max-w-44"><LabeledInput label="End Date" value={row.end} onChange={row.setEnd} required={row.required} icon={<Calendar className="h-4 w-4" />} disabled={row.disabled} /></div>
+  </div>
+  {row.disabled && <p className="text-xs text-muted-foreground">Auto-derived from Current Year dates</p>}
+  </div>
+  </div>
+  ))}
   </SectionCard>
 
    {/* Engagement Source — full year: editable; stub period: locked to CSV */}

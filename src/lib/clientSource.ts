@@ -87,6 +87,9 @@ export const VISIBLE_ENGAGEMENT_IDS: readonly string[] = [
   "COM-HFRF-STCSV-Dec312024",
   "COM-STUB-FOO-Dec312024",
   "COM-STUB-NOFOO-Dec312024",
+  "COM-FULL-TO-STUB-Dec312024",
+  "COM-STUB-TO-FULL-Dec312024",
+  "COM-STUB-SRC-TO-CSV-Dec312024",
 ];
 
 /** Keep only the visible engagements, in the fixed scenario order. */
