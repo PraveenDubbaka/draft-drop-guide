@@ -83,6 +83,12 @@ function seedDemoEngagementMeta() {
      meta.sourceYearsAvailable = seed.sourceYearsAvailable ?? 3;
      if (seed.sourceYears) meta.sourceYears = seed.sourceYears; else delete meta.sourceYears;
      if (seed.sourceRollForward) meta.sourceRollForward = true; else delete meta.sourceRollForward;
+     if (seed.periodType === 'stub') {
+       meta.auditPeriodType = 'Partial year';
+       meta.firstYearOfOperations = !!seed.firstYearOfOperations;
+       meta.periodStart = '04/01/2024';
+       meta.periodEnd = '12/31/2024';
+     }
      if (!meta.teamMembers || meta.teamMembers.length === 0) meta.teamMembers = sampleTeam();
      localStorage.setItem(META_KEY(id), JSON.stringify(meta));
    } catch {}
