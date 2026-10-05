@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
 import xeroLogo from "@/assets/xero-logo-full.svg";
 import { clientsData as appClientsData } from "@/data/clientsData";
-import { getClientSourceIntegration, sourceLabel, getClientConnectionOverride, connectClientSource, CLIENT_CONNECTION_EVENT } from "@/lib/clientSource";
+import { getClientSourceIntegration, sourceLabel, getClientConnectionOverride, getEngagementConnectionOverride, connectClientSource, CLIENT_CONNECTION_EVENT } from "@/lib/clientSource";
 import { ArrowLeft, Briefcase, Calendar, Users, ChevronDown, Plus, Pencil, Trash2, Search, ExternalLink, X, Building2, FileText, Settings2, Check, UserPlus, Link2, AlertTriangle, XCircle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -777,7 +777,7 @@ export default function CreateEngagement() {
     // Sync data source default when client selection changes based on source connection status
     useEffect(() => {
       {
-        const integ = getClientConnectionOverride(clientName, localClientInfo?.entityLegalName) ?? (localClientInfo
+        const integ = getEngagementConnectionOverride(routeEngagementId) ?? getClientConnectionOverride(clientName, localClientInfo?.entityLegalName) ?? (localClientInfo
           ? (localClientInfo.integrations.includes("xero") ? "xero"
             : localClientInfo.integrations.includes("quickbooks") ? "quickbooks"
             : null)
@@ -995,7 +995,7 @@ export default function CreateEngagement() {
   const [firstYearOfOperations, setFirstYearOfOperations] = useState<boolean>(!!editingMeta?.firstYearOfOperations);
   // Stub periods allow source only when it's the first year of operations
   const isSourceLockedStub = isStubPeriod && !firstYearOfOperations;
- const clientSourceIntegration = getClientConnectionOverride(clientName, clientInfo?.entityLegalName) ?? (localClientInfo
+ const clientSourceIntegration = getEngagementConnectionOverride(routeEngagementId) ?? getClientConnectionOverride(clientName, clientInfo?.entityLegalName) ?? (localClientInfo
    ? (localClientInfo.integrations.includes("xero") ? "xero" as const
      : localClientInfo.integrations.includes("quickbooks") ? "quickbooks" as const
      : null)
@@ -1595,7 +1595,7 @@ const performSave = () => {
     type="button"
     className="text-sm font-medium text-[#1C63A6] hover:underline"
     onClick={() => {
-    connectClientSource(clientInfo?.entityLegalName || clientName, "quickbooks");
+    connectClientSource(clientInfo?.entityLegalName || clientName, "quickbooks", routeEngagementId);
     toast.success(`${clientInfo?.entityLegalName || clientName} connected to QuickBooks Online`);
     }}
     >
