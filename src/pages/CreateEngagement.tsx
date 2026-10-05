@@ -761,7 +761,10 @@ export default function CreateEngagement() {
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, []);
-  const [sourceConnected, setSourceConnected] = useState(false);
+  const [sourceConnected, setSourceConnected] = useState(() => {
+    if (isEditMode && editingMeta?.dataSource === "source") return true;
+    return false;
+  });
   const originalDataSource = editingMeta?.dataSource ?? inferredEditDataSource;
   // Follow-up questions shown in edit mode when the Engagement Data Type is changed
   const [fuAdjustingEntries, setFuAdjustingEntries] = useState(false);
