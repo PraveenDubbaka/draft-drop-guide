@@ -619,7 +619,7 @@ const CLIENT_DATA: Record<string, {
     cellPhone: "(519) 555-0489",
   },
   "Cedar Point Logistics": {
-    entityLegalName: "Cedar Point Logistics Inc.",
+    entityLegalName: "Cedar Point Logistics",
     entityType: "Corporation",
     contactPerson: "Daniel Reyes",
     engagementPartner: "Atin Gupta",
@@ -1426,8 +1426,8 @@ const performSave = () => {
    {/* Engagement Source — full year: editable; stub period: locked to CSV */}
    {(isFullYearPeriod || isStubPeriod) && (
   <SectionCard icon={<Link2 className="h-5 w-5" />} title="Engagement Source">
-  <div className="flex items-start gap-8">
-  <div className="flex-[1.15] min-w-0 flex flex-col gap-1.5 py-2.5">
+  <div className="grid grid-cols-2 gap-8 items-start">
+  <div className="flex flex-col gap-1.5 py-2.5">
   <span className="text-sm text-foreground whitespace-nowrap">Data Source Type</span>
     <div className="min-w-0">
     {isSourceLockedStub || isRollForwardNoSource ? (
@@ -1466,7 +1466,6 @@ const performSave = () => {
     </div>
   </div>
   {dataSource === "source" && (
-  <div className="w-fit shrink-0">
   <div className="flex flex-col gap-1.5 py-2.5">
   <span className="text-sm text-foreground">Source Connection Status<span className="text-destructive ml-0.5">*</span></span>
   <div className="w-fit max-w-full min-w-0">
@@ -1537,7 +1536,6 @@ const performSave = () => {
    );
   })()}
   </div>
-   </div>
   {isRollForwardSource && clientHasSourceConnection && !isSourceLockedStub && (
   <div className="flex flex-col gap-1.5 py-2.5">
   <span className="text-sm text-foreground">Prior Year (FY{cyYear - 1})</span>
