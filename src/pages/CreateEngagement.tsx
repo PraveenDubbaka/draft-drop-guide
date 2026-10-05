@@ -1101,8 +1101,8 @@ export default function CreateEngagement() {
     const isAddingSourceYearsFlow = isEditMode && originalDataSource === "source" && dataSource === "source" && !isSourceProviderMismatch;
     const yearLockedCount = isAddingSourceYearsFlow ? originalSourceYears : 1;
     const isAddingSourceYears = isAddingSourceYearsFlow && sourceYears > originalSourceYears;
-     const showYearSelection = isEditMode && !isSourceLockedStub && dataSource === "source" && clientHasSourceConnection
-       && (isCsvToSourceSwitch || isAddingSourceYearsFlow || (isSourceProviderMismatch && hasSelectedActiveConnection) || (isReconnectFlow && hasSelectedActiveConnection));
+     const showYearSelection = !isSourceLockedStub && dataSource === "source" && clientHasSourceConnection && sourceConnected
+       && (!isEditMode || isCsvToSourceSwitch || isAddingSourceYearsFlow || (isSourceProviderMismatch && hasSelectedActiveConnection) || (isReconnectFlow && hasSelectedActiveConnection));
      const isDisconnecting = isEditMode && originalDataSource === "source" && dataSource === "csv";
      const showAck = isEditMode && !isSourceLockedStub && !isRollForwardNoSource && clientHasSourceConnection
        && (((dataSource !== originalDataSource && (!isReconnectFlow || hasSelectedActiveConnection)) || (isSourceProviderMismatch && hasSelectedActiveConnection)) || isAddingSourceYears);
@@ -1409,8 +1409,10 @@ export default function CreateEngagement() {
    {/* Engagement Source — full year: editable; stub period: locked to CSV */}
    {(isFullYearPeriod || isStubPeriod) && (
   <SectionCard icon={<Link2 className="h-5 w-5" />} title="Engagement Source">
-  <div className="flex items-center gap-4 py-2.5">
-  <span className="text-sm text-foreground w-44 shrink-0">Source Connection Status<span className="text-destructive ml-0.5">*</span></span>
+  <div className="flex items-start gap-8">
+  <div className="order-2 flex-1 min-w-0">
+  <div className="flex flex-col gap-1.5 py-2.5">
+  <span className="text-sm text-foreground">Source Connection Status<span className="text-destructive ml-0.5">*</span></span>
   <div className="w-fit max-w-full min-w-0">
   {clientHasSourceConnection ? (
   showConnectionDropdown ? (
@@ -1492,18 +1494,24 @@ export default function CreateEngagement() {
   </div>
   </div>
   )}
-  <div className="flex items-start gap-4 py-2.5">
-  <span className="text-sm text-foreground w-44 shrink-0 whitespace-nowrap pt-2">Data Source Type</span>
-    <div className="flex-1 min-w-0 max-w-lg">
+  </div>
+  <div className="order-1 flex-[1.15] min-w-0 flex flex-col gap-1.5 py-2.5">
+  <span className="text-sm text-foreground whitespace-nowrap">Data Source Type</span>
+    <div className="min-w-0">
     {isSourceLockedStub || isRollForwardNoSource ? (
     <Select value="csv" disabled>
     <SelectTrigger className="h-9 w-fit min-w-max text-sm opacity-70 cursor-not-allowed gap-3">
     <span>{CSV_LABEL}</span>
     </SelectTrigger>
     </Select>
-    ) : isEditMode ? (
+    ) : (
     <RadioGroup value={dataSource} onValueChange={v => setDataSource(v as "csv" | "source")} className="gap-3 pt-1.5">
-    {(originalDataSource === "csv"
+    {(!isEditMode
+      ? [
+          { value: "csv", label: "Non-Source Connected", desc: "Trial balance data will be manually imported via CSV or Excel." },
+          { value: "source", label: "Connect to Source", desc: "Pull trial balance data directly from your accounting software." },
+        ]
+      : originalDataSource === "csv"
       ? [
           { value: "csv", label: "Keep as CSV", desc: "Trial balance data will be manually imported via CSV or Excel." },
           { value: "source", label: "Connect to Source", desc: "Pull trial balance data directly from your accounting software." },
@@ -1522,17 +1530,8 @@ export default function CreateEngagement() {
     </label>
     ))}
     </RadioGroup>
-    ) : (
-    <Select value={dataSource} onValueChange={v => setDataSource(v as "csv" | "source")}>
-    <SelectTrigger className="h-9 w-fit min-w-72 text-sm gap-3">
-    <SelectValue />
-    </SelectTrigger>
-    <SelectContent>
-    <SelectItem value="csv">{CSV_LABEL}</SelectItem>
-    <SelectItem value="source">Source</SelectItem>
-    </SelectContent>
-    </Select>
     )}
+    </div>
     </div>
     </div>
     {isSourceLockedStub && (
