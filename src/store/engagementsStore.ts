@@ -33,7 +33,10 @@ export const SEED_ENGAGEMENTS: EngagementRecord[] = [
  { id: "COM-QB-STCSV-Dec312024", client: "Cedar Point Logistics Inc.", type: "Compilation (COM)", yearEnd: "Dec 31, 2024", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: false, dateCreated: "Jan 24, 2026 09:00 AM", firstYearAudit: false },
  { id: "COM-STUB-FOO-Dec312024", client: "Sunrise Ventures Inc.", type: "Compilation (COM)", yearEnd: "Dec 31, 2024", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: false, dateCreated: "Jan 26, 2026 09:00 AM", firstYearAudit: true },
  { id: "COM-STUB-NOFOO-Dec312024", client: "Maple Grove Partners LLC", type: "Compilation (COM)", yearEnd: "Dec 31, 2024", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: false, dateCreated: "Jan 27, 2026 09:00 AM", firstYearAudit: false },
- { id: "COM-HFRF-STCSV-Dec312024", client: "Harbor Freight Logistics LLC", type: "Compilation (COM)", yearEnd: "Dec 31, 2024", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: true, dateCreated: "Jan 25, 2026 09:00 AM", firstYearAudit: false },
+  { id: "COM-HFRF-STCSV-Dec312024", client: "Harbor Freight Logistics LLC", type: "Compilation (COM)", yearEnd: "Dec 31, 2024", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: true, dateCreated: "Jan 25, 2026 09:00 AM", firstYearAudit: false },
+  { id: "COM-FULL-TO-STUB-Dec312024", client: "Riverstone Capital", type: "Compilation (COM)", yearEnd: "Dec 31, 2024", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: false, dateCreated: "Jan 28, 2026 09:00 AM", firstYearAudit: false },
+  { id: "COM-STUB-TO-FULL-Dec312024", client: "Sunrise Ventures Inc.", type: "Compilation (COM)", yearEnd: "Dec 31, 2024", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: false, dateCreated: "Jan 29, 2026 09:00 AM", firstYearAudit: false },
+  { id: "COM-STUB-SRC-TO-CSV-Dec312024", client: "Cedar Point Logistics Inc.", type: "Compilation (COM)", yearEnd: "Dec 31, 2024", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: false, dateCreated: "Jan 30, 2026 09:00 AM", firstYearAudit: true },
 ];
 
 function seedDemoEngagementMeta() {
@@ -61,34 +64,45 @@ function seedDemoEngagementMeta() {
     { id: 'tm-staff', role: 'Staff / Assistant', name: 'Sarah Chen', email: 'sarahc@countable.co', title: 'Staff Auditor', hourlyRate: '65.00', timeAllocation: '20' },
   ]);
 
- const seeds: Record<string, { dataSource: 'csv' | 'source'; sourceProvider?: 'xero' | 'quickbooks'; sourceYearsAvailable?: number; sourceYears?: number; sourceRollForward?: boolean; periodType?: 'stub'; firstYearOfOperations?: boolean }> = {
-   'COM-QB-Jan142026': { dataSource: 'source', sourceProvider: 'quickbooks', sourceYearsAvailable: 3, sourceYears: 1 },
-   'COM-QB-Dec312024': { dataSource: 'csv', sourceYearsAvailable: 1 },
-   'COM-QB-Dec312025': { dataSource: 'source', sourceProvider: 'quickbooks', sourceYearsAvailable: 3, sourceYears: 3 },
-   'COM-CHE-Dec252024': { dataSource: 'csv' },
-   'COM-HF-Dec312024': { dataSource: 'source', sourceProvider: 'xero', sourceYearsAvailable: 3, sourceYears: 2 },
-   'COM-HFRF-Dec312024': { dataSource: 'source', sourceProvider: 'quickbooks', sourceRollForward: true, sourceYearsAvailable: 3, sourceYears: 1 },
-   'COM-QB-STCSV-Dec312024': { dataSource: 'source', sourceProvider: 'quickbooks', sourceYearsAvailable: 3, sourceYears: 3 },
-   'COM-HFRF-STCSV-Dec312024': { dataSource: 'source', sourceProvider: 'quickbooks', sourceRollForward: true, sourceYearsAvailable: 3, sourceYears: 1 },
-   'COM-STUB-FOO-Dec312024': { dataSource: 'csv', periodType: 'stub', firstYearOfOperations: true },
-   'COM-STUB-NOFOO-Dec312024': { dataSource: 'csv', periodType: 'stub', firstYearOfOperations: false },
- };
- Object.entries(seeds).forEach(([id, seed]) => {
-   try {
-     const raw = localStorage.getItem(META_KEY(id));
-     const meta: EngagementMeta = raw ? JSON.parse(raw) : { firstYearAudit: false };
-     meta.dataSource = seed.dataSource;
-     if (seed.sourceProvider) meta.sourceProvider = seed.sourceProvider; else delete meta.sourceProvider;
-     delete meta.sourceDisconnectedFrom;
-     meta.sourceYearsAvailable = seed.sourceYearsAvailable ?? 3;
-     if (seed.sourceYears) meta.sourceYears = seed.sourceYears; else delete meta.sourceYears;
-     if (seed.sourceRollForward) meta.sourceRollForward = true; else delete meta.sourceRollForward;
-     if (seed.periodType === 'stub') {
-       meta.auditPeriodType = 'Partial year';
-       meta.firstYearOfOperations = !!seed.firstYearOfOperations;
-       meta.periodStart = '04/01/2024';
-       meta.periodEnd = '12/31/2024';
-     }
+  const seeds: Record<string, { dataSource: 'csv' | 'source'; sourceProvider?: 'xero' | 'quickbooks'; sourceYearsAvailable?: number; sourceYears?: number; sourceRollForward?: boolean; periodType?: 'stub' | 'full'; firstYearOfOperations?: boolean }> = {
+    'COM-QB-Jan142026': { dataSource: 'source', sourceProvider: 'quickbooks', sourceYearsAvailable: 3, sourceYears: 1 },
+    'COM-QB-Dec312024': { dataSource: 'csv', sourceYearsAvailable: 1 },
+    'COM-QB-Dec312025': { dataSource: 'source', sourceProvider: 'quickbooks', sourceYearsAvailable: 3, sourceYears: 3 },
+    'COM-CHE-Dec252024': { dataSource: 'csv' },
+    'COM-HF-Dec312024': { dataSource: 'source', sourceProvider: 'xero', sourceYearsAvailable: 3, sourceYears: 2 },
+    'COM-HFRF-Dec312024': { dataSource: 'source', sourceProvider: 'quickbooks', sourceRollForward: true, sourceYearsAvailable: 3, sourceYears: 1 },
+    'COM-QB-STCSV-Dec312024': { dataSource: 'source', sourceProvider: 'quickbooks', sourceYearsAvailable: 3, sourceYears: 3 },
+    'COM-HFRF-STCSV-Dec312024': { dataSource: 'source', sourceProvider: 'quickbooks', sourceRollForward: true, sourceYearsAvailable: 3, sourceYears: 1 },
+    'COM-STUB-FOO-Dec312024': { dataSource: 'csv', periodType: 'stub', firstYearOfOperations: true },
+    'COM-STUB-NOFOO-Dec312024': { dataSource: 'csv', periodType: 'stub', firstYearOfOperations: false },
+    // Full Year + Source → user changes to Partial Year: source locks to CSV.
+    'COM-FULL-TO-STUB-Dec312024': { dataSource: 'source', sourceProvider: 'quickbooks', sourceYearsAvailable: 3, sourceYears: 1, periodType: 'full' },
+    // Stub + FOO + CSV → user changes to Full Year: source unlocks.
+    'COM-STUB-TO-FULL-Dec312024': { dataSource: 'csv', periodType: 'stub', firstYearOfOperations: true },
+    // Stub + FOO + Source → user switches to CSV: disconnect acknowledgment.
+    'COM-STUB-SRC-TO-CSV-Dec312024': { dataSource: 'source', sourceProvider: 'quickbooks', sourceYearsAvailable: 1, sourceYears: 1, periodType: 'stub', firstYearOfOperations: true },
+  };
+  Object.entries(seeds).forEach(([id, seed]) => {
+    try {
+      const raw = localStorage.getItem(META_KEY(id));
+      const meta: EngagementMeta = raw ? JSON.parse(raw) : { firstYearAudit: false };
+      meta.dataSource = seed.dataSource;
+      if (seed.sourceProvider) meta.sourceProvider = seed.sourceProvider; else delete meta.sourceProvider;
+      delete meta.sourceDisconnectedFrom;
+      meta.sourceYearsAvailable = seed.sourceYearsAvailable ?? 3;
+      if (seed.sourceYears) meta.sourceYears = seed.sourceYears; else delete meta.sourceYears;
+      if (seed.sourceRollForward) meta.sourceRollForward = true; else delete meta.sourceRollForward;
+      if (seed.periodType === 'stub') {
+        meta.auditPeriodType = 'Partial year';
+        meta.firstYearOfOperations = !!seed.firstYearOfOperations;
+        meta.periodStart = '04/01/2024';
+        meta.periodEnd = '12/31/2024';
+      } else if (seed.periodType === 'full') {
+        meta.auditPeriodType = 'Full Year';
+        delete meta.firstYearOfOperations;
+        meta.periodStart = '01/01/2024';
+        meta.periodEnd = '12/31/2024';
+      }
      if (!meta.teamMembers || meta.teamMembers.length === 0) meta.teamMembers = sampleTeam();
      localStorage.setItem(META_KEY(id), JSON.stringify(meta));
    } catch {}
