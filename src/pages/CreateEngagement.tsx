@@ -1556,14 +1556,14 @@ const performSave = () => {
     {showSourceSectionSeparator && <div className="mt-2" />}
   {isSourceLockedStub && (
     <div className="w-full mt-2">
-    <div className="flex-1 min-w-0 rounded-[10px] border border-border bg-muted/50 px-3 py-2">
+    <div className="rounded-[10px] border border-border bg-muted/50 px-3 py-2">
     <p className="text-sm text-muted-foreground">Source connection not available for stub periods</p>
     </div>
     </div>
     )}
     {isStubPeriod && firstYearOfOperations && (
     <div className="w-full mt-2">
-    <div className="flex-1 min-w-0 flex items-start gap-2 rounded-[10px] border border-blue-200 bg-blue-50 dark:bg-blue-950/30 px-3 py-2">
+    <div className="flex items-start gap-2 rounded-[10px] border border-blue-200 bg-blue-50 dark:bg-blue-950/30 px-3 py-2">
     <Info className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
     <span className="text-sm text-blue-900 dark:text-blue-100">First year of operations — short period treated as full year for source connection.</span>
     </div>
@@ -1572,7 +1572,7 @@ const performSave = () => {
      {!isSourceLockedStub && !isRollForwardNoSource && (<>
    {dataSource === "source" && !clientHasSourceConnection && (
   <div className="w-full mt-2">
-  <div className="flex-1 min-w-0 flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
+  <div className="flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
   <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
    <div className="flex flex-col gap-2">
    <span className="text-sm text-red-800 dark:text-red-200">
@@ -1608,7 +1608,7 @@ const performSave = () => {
   )}
     {clientHasSourceConnection && dataSource === "csv" && !isSourceToCsvSwitch && (
     <div className="w-full mt-2">
-    <div className="flex-1 min-w-0 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+    <div className="flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">
     Your client is connected to {sourceLabel(clientSourceIntegration)}. This engagement will use manually imported CSV data. The source connection will remain active but won't be used for this engagement.
@@ -1618,7 +1618,7 @@ const performSave = () => {
     )}
     {isSourceToCsvSwitch && (
     <div className="w-full mt-2">
-    <div className="flex-1 min-w-0 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+    <div className="flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">
     {isRollForwardSource
@@ -1630,7 +1630,7 @@ const performSave = () => {
     )}
    {clientHasSourceConnection && dataSource === "source" && !sourceConnected && (
   <div className="w-full mt-2">
-  <div className="flex-1 min-w-0 flex items-center justify-between gap-3 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+  <div className="flex items-center justify-between gap-3 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
   <span className="text-sm text-amber-900 dark:text-amber-200">No source connection found for this client</span>
   <Button size="sm" variant="outline" className="shrink-0" onClick={() => setSourceConnected(true)}>Connect source</Button>
   </div>
@@ -1638,7 +1638,7 @@ const performSave = () => {
   )}
   {isRollForwardSource && dataSource === "source" && clientHasSourceConnection && rollForwardPriorProvider !== clientSourceIntegration && (
   <div className="w-full mt-2">
-  <div className="flex-1 min-w-0 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+  <div className="flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
   <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
   <span className="text-sm text-amber-800 dark:text-amber-200">
   This engagement will connect to {sourceLabel(clientSourceIntegration)} for the current year. Last year was connected to {sourceLabel(rollForwardPriorProvider)}.
@@ -1648,7 +1648,7 @@ const performSave = () => {
   )}
  {isReconnectFlow && hasSelectedActiveConnection && (
  <div className="w-full mt-2">
- <div className="flex-1 min-w-0 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+ <div className="flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
  <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
  <span className="text-sm text-amber-800 dark:text-amber-200">
  Switching back to Source will replace your current CSV trial balance data. Years available from {sourceLabel(clientSourceIntegration)} will be refreshed.
@@ -1658,7 +1658,7 @@ const performSave = () => {
  )}
  {isSourceProviderMismatch && !hasSelectedActiveConnection && (
    <div className="w-full mt-2">
-   <div className="flex-1 min-w-0 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+   <div className="flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
    <span className="text-sm text-amber-800 dark:text-amber-200">
    Your client's source connection has changed. This engagement is still linked to {sourceLabel(savedSourceProvider ?? null)}. Select the new active connection above to continue pulling data.
@@ -1669,7 +1669,7 @@ const performSave = () => {
    {/* Year selection — system detects available years, user can only reduce */}
    {showYearSelection && (
    <div className="w-full mt-2">
-   <div className="flex-1 min-w-0 space-y-2">
+   <div className="space-y-2">
    <SourceYearSelection
    available={yearsAvailable}
    minYears={yearLockedCount}
@@ -1684,7 +1684,7 @@ const performSave = () => {
    {/* Edit mode — inline acknowledgment whenever the source setup changes */}
    {showAck && (
    <div className="w-full mt-2">
-   <div className="flex-1 min-w-0 rounded-[10px] border border-amber-300 border-l-4 border-l-amber-500 bg-amber-50 dark:bg-amber-950/30 px-3 py-2.5">
+   <div className="rounded-[10px] border border-amber-300 border-l-4 border-l-amber-500 bg-amber-50 dark:bg-amber-950/30 px-3 py-2.5">
    <div className="flex items-start gap-2">
    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
    <div className="min-w-0 flex-1">
@@ -1711,7 +1711,7 @@ const performSave = () => {
     </>)}
     {isRollForwardNoSource && (
     <div className="w-full mt-2">
-    <div className="flex-1 min-w-0 rounded-[10px] border border-border bg-muted/50 px-3 py-2">
+    <div className="rounded-[10px] border border-border bg-muted/50 px-3 py-2">
     <p className="text-sm text-foreground">No source connection found for this client. This engagement has been set to CSV. To connect a source, go to the client page and add an integration.</p>
     </div>
     </div>
