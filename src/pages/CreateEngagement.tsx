@@ -1463,7 +1463,7 @@ const performSave = () => {
     </div>
   </div>
   {dataSource === "source" && (
-  <div className="flex-1 min-w-0">
+  <div className="w-fit shrink-0">
   <div className="flex flex-col gap-1.5 py-2.5">
   <span className="text-sm text-foreground">Source Connection Status<span className="text-destructive ml-0.5">*</span></span>
   <div className="w-fit max-w-full min-w-0">
@@ -1536,8 +1536,8 @@ const performSave = () => {
   </div>
    </div>
   {isRollForwardSource && clientHasSourceConnection && !isSourceLockedStub && (
-  <div className="flex items-center gap-4 py-2.5">
-  <span className="text-sm text-foreground w-44 shrink-0">Prior Year (FY{cyYear - 1})</span>
+  <div className="flex flex-col gap-1.5 py-2.5">
+  <span className="text-sm text-foreground">Prior Year (FY{cyYear - 1})</span>
   <div className="inline-flex w-fit max-w-full items-center gap-2.5 rounded-[10px] border border-border bg-muted/40 px-3 py-1.5 opacity-70">
   <img src={rollForwardPriorProvider === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={sourceLabel(rollForwardPriorProvider)} className="h-5 object-contain shrink-0 grayscale" />
   <span className="text-sm text-foreground whitespace-nowrap shrink-0">{clientInfo?.entityLegalName || clientName}</span>
@@ -1550,16 +1550,16 @@ const performSave = () => {
   </div>
   )}
    </div>
-    {showSourceSectionSeparator && <div className="mt-4 border-t border-border" />}
+    {showSourceSectionSeparator && <div className="mt-2" />}
   {isSourceLockedStub && (
-    <div className="w-full pb-2.5">
+    <div className="w-full mt-2">
     <div className="flex-1 min-w-0 rounded-[10px] border border-border bg-muted/50 px-3 py-2">
     <p className="text-sm text-muted-foreground">Source connection not available for stub periods</p>
     </div>
     </div>
     )}
     {isStubPeriod && firstYearOfOperations && (
-    <div className="w-full pb-2.5">
+    <div className="w-full mt-2">
     <div className="flex-1 min-w-0 flex items-start gap-2 rounded-[10px] border border-blue-200 bg-blue-50 dark:bg-blue-950/30 px-3 py-2">
     <Info className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
     <span className="text-sm text-blue-900 dark:text-blue-100">First year of operations — short period treated as full year for source connection.</span>
@@ -1568,7 +1568,7 @@ const performSave = () => {
     )}
      {!isSourceLockedStub && !isRollForwardNoSource && (<>
    {dataSource === "source" && !clientHasSourceConnection && (
-  <div className="w-full pb-2.5">
+  <div className="w-full mt-2">
   <div className="flex-1 min-w-0 flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
   <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
    <div className="flex flex-col gap-2">
@@ -1604,7 +1604,7 @@ const performSave = () => {
   </div>
   )}
     {clientHasSourceConnection && dataSource === "csv" && !isSourceToCsvSwitch && (
-    <div className="w-full pb-2.5">
+    <div className="w-full mt-2">
     <div className="flex-1 min-w-0 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">
@@ -1614,7 +1614,7 @@ const performSave = () => {
     </div>
     )}
     {isSourceToCsvSwitch && (
-    <div className="w-full pb-2.5">
+    <div className="w-full mt-2">
     <div className="flex-1 min-w-0 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">
@@ -1626,7 +1626,7 @@ const performSave = () => {
     </div>
     )}
    {clientHasSourceConnection && dataSource === "source" && !sourceConnected && (
-  <div className="w-full pb-2.5">
+  <div className="w-full mt-2">
   <div className="flex-1 min-w-0 flex items-center justify-between gap-3 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
   <span className="text-sm text-amber-900 dark:text-amber-200">No source connection found for this client</span>
   <Button size="sm" variant="outline" className="shrink-0" onClick={() => setSourceConnected(true)}>Connect source</Button>
@@ -1634,7 +1634,7 @@ const performSave = () => {
   </div>
   )}
   {isRollForwardSource && dataSource === "source" && clientHasSourceConnection && rollForwardPriorProvider !== clientSourceIntegration && (
-  <div className="w-full pb-2.5">
+  <div className="w-full mt-2">
   <div className="flex-1 min-w-0 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
   <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
   <span className="text-sm text-amber-800 dark:text-amber-200">
@@ -1644,7 +1644,7 @@ const performSave = () => {
   </div>
   )}
  {isReconnectFlow && hasSelectedActiveConnection && (
- <div className="w-full pb-2.5">
+ <div className="w-full mt-2">
  <div className="flex-1 min-w-0 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
  <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
  <span className="text-sm text-amber-800 dark:text-amber-200">
@@ -1654,7 +1654,7 @@ const performSave = () => {
  </div>
  )}
  {isSourceProviderMismatch && !hasSelectedActiveConnection && (
-   <div className="w-full pb-2.5">
+   <div className="w-full mt-2">
    <div className="flex-1 min-w-0 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
    <span className="text-sm text-amber-800 dark:text-amber-200">
@@ -1665,7 +1665,7 @@ const performSave = () => {
   )}
    {/* Year selection — system detects available years, user can only reduce */}
    {showYearSelection && (
-   <div className="w-full pb-2.5">
+   <div className="w-full mt-2">
    <div className="flex-1 min-w-0 space-y-2">
    <SourceYearSelection
    available={yearsAvailable}
@@ -1680,7 +1680,7 @@ const performSave = () => {
    )}
    {/* Edit mode — inline acknowledgment whenever the source setup changes */}
    {showAck && (
-   <div className="w-full py-2.5">
+   <div className="w-full mt-2">
    <div className="flex-1 min-w-0 rounded-[10px] border border-amber-300 border-l-4 border-l-amber-500 bg-amber-50 dark:bg-amber-950/30 px-3 py-2.5">
    <div className="flex items-start gap-2">
    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
@@ -1707,7 +1707,7 @@ const performSave = () => {
    )}
     </>)}
     {isRollForwardNoSource && (
-    <div className="w-full pb-2.5">
+    <div className="w-full mt-2">
     <div className="flex-1 min-w-0 rounded-[10px] border border-border bg-muted/50 px-3 py-2">
     <p className="text-sm text-foreground">No source connection found for this client. This engagement has been set to CSV. To connect a source, go to the client page and add an integration.</p>
     </div>
