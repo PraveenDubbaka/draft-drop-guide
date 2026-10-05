@@ -743,7 +743,7 @@ export default function CreateEngagement() {
         }
       } catch {}
     }
-    return editingMeta?.dataSource ?? inferredEditDataSource;
+    return editingMeta?.dataSource ?? "csv";
   });
   // Bumped whenever a client connection may have changed (e.g. user connected on the Clients page)
   const [connVersion, setConnVersion] = useState(0);
@@ -1462,6 +1462,7 @@ const performSave = () => {
     )}
     </div>
   </div>
+  {dataSource === "source" && (
   <div className="flex-1 min-w-0">
   <div className="flex flex-col gap-1.5 py-2.5">
   <span className="text-sm text-foreground">Source Connection Status<span className="text-destructive ml-0.5">*</span></span>
@@ -1547,7 +1548,8 @@ const performSave = () => {
   </div>
   )}
   </div>
-  </div>
+  )}
+   </div>
     {showSourceSectionSeparator && <div className="mt-4 border-t border-border" />}
   {isSourceLockedStub && (
     <div className="w-full pb-2.5">
