@@ -13,8 +13,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Layout } from "@/components/Layout";
 import { Checkbox } from "@/components/ui/checkbox";
-import { SourceSwitchDisclaimer } from "@/components/SourceSwitchDisclaimer";
-import { SourceYearSelection } from "@/components/SourceYearSelection";
+import { SourceYearSelection, type YearsChoice } from "@/components/SourceYearSelection";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+
+const CSV_LABEL = "Non-Source Connected (CSV/Excel import required)";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { TemplatePickerPanel } from "@/components/TemplatePickerPanel";
@@ -987,6 +989,9 @@ export default function CreateEngagement() {
 
   const isFullYearPeriod = periodType === "Full Year" || periodType === "Full year";
   const isStubPeriod = periodType === "Partial Year" || periodType === "Partial year";
+  const [firstYearOfOperations, setFirstYearOfOperations] = useState<boolean>(!!editingMeta?.firstYearOfOperations);
+  // Stub periods allow source only when it's the first year of operations
+  const isSourceLockedStub = isStubPeriod && !firstYearOfOperations;
  const clientSourceIntegration = getClientConnectionOverride(clientName, clientInfo?.entityLegalName) ?? (localClientInfo
    ? (localClientInfo.integrations.includes("xero") ? "xero" as const
      : localClientInfo.integrations.includes("quickbooks") ? "quickbooks" as const
@@ -1001,7 +1006,23 @@ export default function CreateEngagement() {
  // Years of data available in the connected source (demo) — drives the dynamic info alert
  const yearsAvailable = editingMeta?.sourceYearsAvailable ?? 3;
   const cyYear = parseInt(currentYearEnd.split("/")[2]) || 0;
-  const [sourceYears, setSourceYears] = useState<number>(editingMeta?.sourceYears ?? 1);
+   const [sourceYears, setSourceYears] = useState<number>(editingMeta?.sourceYears ?? 1);
+   const maxSourceYears = Math.max(1, Math.min(3, yearsAvailable));
+   const [yearsChoice, setYearsChoice] = useState<YearsChoice>(() => {
+     const saved = editingMeta?.sourceYears;
+     if (!saved || saved >= maxSourceYears) return "all";
+     return String(saved) as YearsChoice;
+   });
+   const [ackChecked, setAckChecked] = useState(false);
+   // Connecting to source defaults to all available years (user can only reduce)
+   useEffect(() => {
+     if (isEditMode && originalDataSource === "csv" && dataSource === "source") {
+       setYearsChoice("all");
+       setSourceYears(maxSourceYears);
+     }
+     setAckChecked(false);
+   }, [dataSource]);
+   useEffect(() => { setAckChecked(false); }, [sourceYears, hasSelectedActiveConnection]);
 
  const applyFullYearPriors = (cyStart: string, cyEnd: string) => {
  setPriorYear1Start(shiftYearStr(cyStart, -1));
@@ -1049,7 +1070,7 @@ export default function CreateEngagement() {
  engagementTemplate.trim() !== "" &&
  engagementType !== "" &&
  budget.trim() !== "" &&
- (!isFullYearPeriod || dataSource !== "source" || clientHasSourceConnection || sourceConnected) &&
+ (isSourceLockedStub || dataSource !== "source" || clientHasSourceConnection || sourceConnected) &&
  accountingStandards !== "" &&
  additionalDisclosures !== "" &&
  currentYearStart.trim() !== "" &&
@@ -1080,12 +1101,15 @@ export default function CreateEngagement() {
     const isAddingSourceYearsFlow = isEditMode && originalDataSource === "source" && dataSource === "source" && !isSourceProviderMismatch;
     const yearLockedCount = isAddingSourceYearsFlow ? originalSourceYears : 1;
     const isAddingSourceYears = isAddingSourceYearsFlow && sourceYears > originalSourceYears;
-    const showYearSelection = isEditMode && !isStubPeriod && dataSource === "source" && clientHasSourceConnection
-      && (isCsvToSourceSwitch || isAddingSourceYearsFlow || (isSourceProviderMismatch && hasSelectedActiveConnection) || (isReconnectFlow && hasSelectedActiveConnection));
+     const showYearSelection = isEditMode && !isSourceLockedStub && dataSource === "source" && clientHasSourceConnection
+       && (isCsvToSourceSwitch || isAddingSourceYearsFlow || (isSourceProviderMismatch && hasSelectedActiveConnection) || (isReconnectFlow && hasSelectedActiveConnection));
+     const isDisconnecting = isEditMode && originalDataSource === "source" && dataSource === "csv";
+     const showAck = isEditMode && !isSourceLockedStub && !isRollForwardNoSource && clientHasSourceConnection
+       && (((dataSource !== originalDataSource && (!isReconnectFlow || hasSelectedActiveConnection)) || (isSourceProviderMismatch && hasSelectedActiveConnection)) || isAddingSourceYears);
 
-  const performSave = () => {
-  // Partial Year locks Engagement Data Type to CSV — always save CSV in that state
-  const savedDataSource: "csv" | "source" = isStubPeriod || isRollForwardNoSource ? "csv" : dataSource;
+   const performSave = () => {
+   // Stub period without first year of operations locks Data Source Type to CSV
+   const savedDataSource: "csv" | "source" = isSourceLockedStub || isRollForwardNoSource ? "csv" : dataSource;
  const record: EngagementRecord = {
  id: engagementId,
  client: clientName,
@@ -1121,7 +1145,8 @@ export default function CreateEngagement() {
  sourceDisconnectedFrom: savedDataSource === "csv" ? editingMeta?.sourceDisconnectedFrom : undefined,
  sourceRollForward: editingMeta?.sourceRollForward,
  sourceYearsAvailable: editingMeta?.sourceYearsAvailable,
- auditPeriodType: isAudit ? periodType : undefined,
+  auditPeriodType: periodType,
+  firstYearOfOperations: isStubPeriod ? firstYearOfOperations : undefined,
  annualizeInterim: isAudit && periodType === "Interim (6-month)" ? annualizeInterim : undefined,
  firstTimeAdoption: isAudit ? firstTimeAdoption : undefined,
  });
@@ -1347,6 +1372,15 @@ export default function CreateEngagement() {
  </div>
  </div>
  {isStubPeriod && (
+ <div className="flex items-center gap-4 pb-2.5">
+ <span className="w-44 shrink-0" />
+ <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+ <Checkbox checked={firstYearOfOperations} onCheckedChange={v => setFirstYearOfOperations(!!v)} />
+ First Year of Operations
+ </label>
+ </div>
+ )}
+ {isStubPeriod && (
  <div className="flex items-start gap-4 pb-2.5">
  <span className="w-44 shrink-0" />
  <p className="text-xs text-muted-foreground max-w-lg">
@@ -1376,7 +1410,7 @@ export default function CreateEngagement() {
    {(isFullYearPeriod || isStubPeriod) && (
   <SectionCard icon={<Link2 className="h-5 w-5" />} title="Engagement Source">
   <div className="flex items-center gap-4 py-2.5">
-  <span className="text-sm text-foreground w-44 shrink-0">Client Connection Status<span className="text-destructive ml-0.5">*</span></span>
+  <span className="text-sm text-foreground w-44 shrink-0">Source Connection Status<span className="text-destructive ml-0.5">*</span></span>
   <div className="w-fit max-w-full min-w-0">
   {clientHasSourceConnection ? (
   showConnectionDropdown ? (
@@ -1411,26 +1445,42 @@ export default function CreateEngagement() {
   </SelectItem>
   </SelectContent>
   </Select>
-  ) : (
-   <div className={`inline-flex w-fit max-w-full items-center gap-2.5 rounded-[10px] border bg-card px-3 py-1.5 ${isConnectionDisconnected ? "border-amber-300" : "border-border"}`}>
+  ) : (() => {
+   const content = (
+   <span className="inline-flex items-center gap-2.5 pr-1">
    <img src={clientSourceIntegration === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={sourceLabel(clientSourceIntegration)} className="h-5 object-contain shrink-0" />
-   <span className="text-sm text-foreground whitespace-nowrap shrink-0">{clientInfo?.entityLegalName || clientName}</span>
+   <span className="whitespace-nowrap shrink-0">{clientInfo?.entityLegalName || clientName}</span>
    {isConnectionDisconnected ? (
    <span className="inline-flex items-center rounded-full border border-[#B4720A]/30 bg-[#FEF6E7] px-2 py-0.5 text-[11px] font-medium text-[#B4720A] shrink-0">Disconnected</span>
    ) : (
    <span className="inline-flex items-center rounded-full border border-[#2E7D52]/30 bg-[#EAF4EE] px-2 py-0.5 text-[11px] font-medium text-[#2E7D52] shrink-0">Connected</span>
    )}
-   </div>
-  )
-  ) : (
-  <div className="inline-flex w-fit max-w-full items-center gap-2.5 rounded-[10px] border border-border bg-card px-3 py-1.5">
-  <span className="h-2.5 w-2.5 rounded-full bg-gray-400" />
-  <span className="text-sm text-foreground">Not connected</span>
+   </span>
+   );
+   return (
+   <Select value="current">
+   <SelectTrigger className={`h-9 w-fit min-w-max text-sm gap-3 ${isConnectionDisconnected ? "border-amber-300" : ""}`}>{content}</SelectTrigger>
+   <SelectContent><SelectItem value="current">{content}</SelectItem></SelectContent>
+   </Select>
+   );
+  })()
+  ) : (() => {
+   const content = (
+   <span className="inline-flex items-center gap-2.5 pr-1">
+   <span className="h-2.5 w-2.5 rounded-full bg-gray-400" />
+   <span>Not connected</span>
+   </span>
+   );
+   return (
+   <Select value="none">
+   <SelectTrigger className="h-9 w-fit min-w-max text-sm gap-3">{content}</SelectTrigger>
+   <SelectContent><SelectItem value="none">{content}</SelectItem></SelectContent>
+   </Select>
+   );
+  })()}
   </div>
-  )}
-  </div>
    </div>
-  {isRollForwardSource && clientHasSourceConnection && !isStubPeriod && (
+  {isRollForwardSource && clientHasSourceConnection && !isSourceLockedStub && (
   <div className="flex items-center gap-4 py-2.5">
   <span className="text-sm text-foreground w-44 shrink-0">Prior Year (FY{cyYear - 1})</span>
   <div className="inline-flex w-fit max-w-full items-center gap-2.5 rounded-[10px] border border-border bg-muted/40 px-3 py-1.5 opacity-70">
@@ -1442,53 +1492,67 @@ export default function CreateEngagement() {
   </div>
   </div>
   )}
- <div className="flex items-center gap-4 py-2.5">
- <span className="text-sm text-foreground w-44 shrink-0 whitespace-nowrap">Engagement Data Type</span>
-   <div className="flex-1 min-w-0 max-w-sm">
-   {isStubPeriod || isRollForwardNoSource ? (
-   <Select value="csv" disabled>
-   <SelectTrigger className="h-9 text-sm opacity-70 cursor-not-allowed">
-   <span>CSV</span>
-   </SelectTrigger>
-   </Select>
-   ) : isRollForwardSource && clientHasSourceConnection ? (
-   <Select value={dataSource} onValueChange={v => setDataSource(v as "csv" | "source")}>
-   <SelectTrigger className="h-9 text-sm">
-   <SelectValue />
-   </SelectTrigger>
-   <SelectContent>
-   <SelectItem value="source">Source — {sourceLabel(clientSourceIntegration)}</SelectItem>
-   {rollForwardPriorProvider !== clientSourceIntegration && (
-   <SelectItem value="source-prior" disabled className="text-muted-foreground">Source — {sourceLabel(rollForwardPriorProvider)} (disconnected)</SelectItem>
-   )}
-   <SelectItem value="csv">CSV</SelectItem>
-   </SelectContent>
-   </Select>
-   ) : (
-   <Select value={dataSource} onValueChange={v => setDataSource(v as "csv" | "source")}>
-   <SelectTrigger className="h-9 text-sm">
-   <SelectValue />
-   </SelectTrigger>
-   <SelectContent>
-   <SelectItem value="csv">CSV</SelectItem>
-   <SelectItem value="source">Source</SelectItem>
-   </SelectContent>
-   </Select>
-   )}
-   </div>
-   </div>
-   {isStubPeriod && clientHasSourceConnection && !isConnectionDisconnected && (
-   <div className="flex items-start gap-4 pb-2.5">
-   <span className="w-44 shrink-0" />
-   <div className="flex-1 min-w-0 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
-   <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-   <span className="text-sm text-amber-800 dark:text-amber-200">
-   Your client is connected to {sourceLabel(clientSourceIntegration)} · {clientInfo?.entityLegalName || clientName}. The source connection will stay active but won't be used for this engagement.
-   </span>
-   </div>
-   </div>
-   )}
-    {!isStubPeriod && !isRollForwardNoSource && (<>
+  <div className="flex items-start gap-4 py-2.5">
+  <span className="text-sm text-foreground w-44 shrink-0 whitespace-nowrap pt-2">Data Source Type</span>
+    <div className="flex-1 min-w-0 max-w-lg">
+    {isSourceLockedStub || isRollForwardNoSource ? (
+    <Select value="csv" disabled>
+    <SelectTrigger className="h-9 w-fit min-w-max text-sm opacity-70 cursor-not-allowed gap-3">
+    <span>{CSV_LABEL}</span>
+    </SelectTrigger>
+    </Select>
+    ) : isEditMode ? (
+    <RadioGroup value={dataSource} onValueChange={v => setDataSource(v as "csv" | "source")} className="gap-3 pt-1.5">
+    {(originalDataSource === "csv"
+      ? [
+          { value: "csv", label: "Keep as CSV", desc: "Trial balance data will be manually imported via CSV or Excel." },
+          { value: "source", label: "Connect to Source", desc: "Pull trial balance data directly from your accounting software." },
+        ]
+      : [
+          { value: "source", label: "Keep as is", desc: `Connected to ${sourceLabel(savedSourceProvider ?? clientSourceIntegration)}` },
+          { value: "csv", label: "Disconnect", desc: "Remove source connection. All years will revert to CSV." },
+        ]
+    ).map(o => (
+    <label key={o.value} className="flex items-start gap-2.5 cursor-pointer">
+    <RadioGroupItem value={o.value} className="mt-0.5" />
+    <span className="min-w-0">
+    <span className="block text-sm font-medium text-foreground">{o.label}</span>
+    <span className="block text-xs text-muted-foreground">{o.desc}</span>
+    </span>
+    </label>
+    ))}
+    </RadioGroup>
+    ) : (
+    <Select value={dataSource} onValueChange={v => setDataSource(v as "csv" | "source")}>
+    <SelectTrigger className="h-9 w-fit min-w-72 text-sm gap-3">
+    <SelectValue />
+    </SelectTrigger>
+    <SelectContent>
+    <SelectItem value="csv">{CSV_LABEL}</SelectItem>
+    <SelectItem value="source">Source</SelectItem>
+    </SelectContent>
+    </Select>
+    )}
+    </div>
+    </div>
+    {isSourceLockedStub && (
+    <div className="flex items-start gap-4 pb-2.5">
+    <span className="w-44 shrink-0" />
+    <div className="flex-1 min-w-0 rounded-[10px] border border-border bg-muted/50 px-3 py-2">
+    <p className="text-sm text-muted-foreground">Source connection not available for stub periods</p>
+    </div>
+    </div>
+    )}
+    {isStubPeriod && firstYearOfOperations && (
+    <div className="flex items-start gap-4 pb-2.5">
+    <span className="w-44 shrink-0" />
+    <div className="flex-1 min-w-0 flex items-start gap-2 rounded-[10px] border border-blue-200 bg-blue-50 dark:bg-blue-950/30 px-3 py-2">
+    <Info className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+    <span className="text-sm text-blue-900 dark:text-blue-100">First year of operations — short period treated as full year for source connection.</span>
+    </div>
+    </div>
+    )}
+     {!isSourceLockedStub && !isRollForwardNoSource && (<>
    {dataSource === "source" && !clientHasSourceConnection && (
   <div className="flex items-start gap-4 pb-2.5">
   <span className="w-44 shrink-0" />
@@ -1592,38 +1656,50 @@ export default function CreateEngagement() {
   </div>
   </div>
   )}
-  {/* Year selection — which years connect to source (CY locked) */}
-  {showYearSelection && (
-  <div className="flex items-start gap-4 pb-2.5">
-  <span className="w-44 shrink-0" />
-  <div className="flex-1 min-w-0 space-y-2">
-  <SourceYearSelection
-  rows={[
-  { tag: "CY", label: "Current Year (CY)", start: currentYearStart, end: currentYearEnd },
-  { tag: "PY1", label: "Prior Year 1 (PY1)", start: priorYear1Start, end: priorYear1End },
-  { tag: "PY2", label: "Prior Year 2 (PY2)", start: priorYear2Start, end: priorYear2End },
-  ]}
-  selected={sourceYears}
-  onChange={setSourceYears}
-  lockedCount={yearLockedCount}
-  available={editingMeta?.sourceYearsAvailable}
-  sourceName={sourceLabel(clientSourceIntegration)}
-  />
-  {isAddingSourceYearsFlow && (
-  <p className="text-xs text-foreground">To add or remove source years, return to Edit Engagement.</p>
-  )}
-  </div>
-  </div>
-  )}
-  {/* Edit mode — disclaimer whenever the source setup changes */}
-  {isEditMode && clientHasSourceConnection && (((dataSource !== originalDataSource && (!isReconnectFlow || hasSelectedActiveConnection)) || (isSourceProviderMismatch && hasSelectedActiveConnection)) || isAddingSourceYears) && (
-  <div className="flex items-start gap-4 py-2.5">
-  <span className="w-44 shrink-0" />
-  <div className="flex-1 min-w-0">
-  <SourceSwitchDisclaimer />
-  </div>
-  </div>
-  )}
+   {/* Year selection — system detects available years, user can only reduce */}
+   {showYearSelection && (
+   <div className="flex items-start gap-4 pb-2.5">
+   <span className="w-44 shrink-0" />
+   <div className="flex-1 min-w-0 space-y-2">
+   <SourceYearSelection
+   available={yearsAvailable}
+   minYears={yearLockedCount}
+   choice={yearsChoice}
+   onChange={(c, n) => { setYearsChoice(c); setSourceYears(n); }}
+   sourceName={sourceLabel(clientSourceIntegration)}
+   cyYear={cyYear}
+   />
+   </div>
+   </div>
+   )}
+   {/* Edit mode — inline acknowledgment whenever the source setup changes */}
+   {showAck && (
+   <div className="flex items-start gap-4 py-2.5">
+   <span className="w-44 shrink-0" />
+   <div className="flex-1 min-w-0 rounded-[10px] border border-amber-300 border-l-4 border-l-amber-500 bg-amber-50 dark:bg-amber-950/30 px-3 py-2.5">
+   <div className="flex items-start gap-2">
+   <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+   <div className="min-w-0 flex-1">
+   <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">Action required before proceeding</p>
+   {isDisconnecting ? (
+   <p className="mt-1.5 text-sm text-amber-900 dark:text-amber-100">Disconnecting will remove source data for all years. Import will re-enable. Documents will only move after you upload a CSV file.</p>
+   ) : (
+   <ul className="mt-1.5 list-disc pl-5 space-y-0.5 text-sm text-amber-900 dark:text-amber-100">
+   <li>Adjusting entries will be deleted</li>
+   <li>Manually added accounts will be deleted</li>
+   <li>Issues, comments and requests will be deleted</li>
+   <li>Documents will only move after data is imported from source</li>
+   </ul>
+   )}
+   <label className="mt-3 flex items-center gap-2 text-sm font-medium text-foreground cursor-pointer">
+   <Checkbox checked={ackChecked} onCheckedChange={v => setAckChecked(!!v)} />
+   I understand and want to proceed
+   </label>
+   </div>
+   </div>
+   </div>
+   </div>
+   )}
     </>)}
     {isRollForwardNoSource && (
     <div className="flex items-start gap-4 pb-2.5">
