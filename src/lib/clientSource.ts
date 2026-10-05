@@ -19,6 +19,11 @@ const DEMO_DATA_SOURCES: Readonly<Record<string, "csv" | "source">> = {
 const DEMO_EXACT_CONNECTIONS: Readonly<Record<string, "xero" | "quickbooks">> = {
   "cedar point logistics inc.": "quickbooks",
   "sunrise ventures inc.": "quickbooks",
+  "maple grove partners llc": "quickbooks",
+  "harbor freight logistics llc": "quickbooks",
+  "riverstone capital": "quickbooks",
+  "riverstone capital group inc.": "quickbooks",
+  "shipping line inc.": "quickbooks",
 };
 
 /**
@@ -35,9 +40,7 @@ export function getClientSourceIntegration(clientName: string): ClientSourceInte
   const client = clientsData.find(
     (c) =>
       c.legalEntityName.toLowerCase() === normalized ||
-      c.entityName.toLowerCase() === normalized ||
-      c.legalEntityName.toLowerCase().includes(normalized) ||
-      normalized.includes(c.entityName.toLowerCase())
+      c.entityName.toLowerCase() === normalized
   );
   if (!client) return null;
   const clientOverride = getClientConnectionOverride(client.legalEntityName, client.entityName);
@@ -111,15 +114,36 @@ export function getClientConnectionOverride(...names: (string | undefined | null
     const n = (raw || "").trim().toLowerCase();
     if (!n) continue;
     for (const [key, val] of Object.entries(overrides)) {
-      if (key === n || key.includes(n) || n.includes(key)) return val;
+      if (key === n) return val;
     }
   }
   return null;
 }
 
-export function connectClientSource(clientName: string, provider: "xero" | "quickbooks" = "quickbooks") {
-  const overrides = readOverrides();
-  overrides[clientName.trim().toLowerCase()] = provider;
-  localStorage.setItem(CONN_OVERRIDE_KEY, JSON.stringify(overrides));
+const engagementConnKey = (engagementId: string) => `engagement-connection-${engagementId}`;
+
+/** Connection made inline for one specific engagement ("Connect here →"). */
+export function getEngagementConnectionOverride(engagementId?: string | null): "xero" | "quickbooks" | null {
+  if (!engagementId) return null;
+  try {
+    const v = localStorage.getItem(engagementConnKey(engagementId));
+    return v === "xero" || v === "quickbooks" ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+export function connectClientSource(
+  clientName: string,
+  provider: "xero" | "quickbooks" = "quickbooks",
+  engagementId?: string
+) {
+  if (engagementId) {
+    localStorage.setItem(engagementConnKey(engagementId), provider);
+  } else {
+    const overrides = readOverrides();
+    overrides[clientName.trim().toLowerCase()] = provider;
+    localStorage.setItem(CONN_OVERRIDE_KEY, JSON.stringify(overrides));
+  }
   window.dispatchEvent(new Event(CLIENT_CONNECTION_EVENT));
 }
