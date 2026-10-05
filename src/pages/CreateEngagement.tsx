@@ -780,8 +780,8 @@ export default function CreateEngagement() {
             : null)
           : getClientSourceIntegration(clientName));
         setSourceConnected(integ !== null);
-        // In edit mode keep the saved data source until the user picks a different client
-        if (isEditMode && clientName === initialClientRef.current) return;
+        // Keep the initial data source until the user picks a different client
+        if (clientName === initialClientRef.current) return;
         // Default: connected client → Source, not connected → CSV
         setDataSource(integ ? "source" : "csv");
       }
