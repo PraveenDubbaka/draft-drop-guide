@@ -13,3 +13,4 @@
 - [x] Actions → Import disabled on source-connected year tabs (empty-state menu too)
 - [x] Refresh button always secondary style, never primary blue
 - [x] Refresh popover simplified: clickable year options apply instantly (no radios, Confirm, lock box, refreshYears)
+- [x] Engagement Source layout: Data Source Type first in DOM (no order classes), all blocks below full-width without w-44 spacers, separator line between the two-column row and the blocks

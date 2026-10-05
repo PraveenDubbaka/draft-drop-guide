@@ -1107,7 +1107,21 @@ export default function CreateEngagement() {
      const showAck = isEditMode && !isSourceLockedStub && !isRollForwardNoSource && clientHasSourceConnection
        && (((dataSource !== originalDataSource && (!isReconnectFlow || hasSelectedActiveConnection)) || (isSourceProviderMismatch && hasSelectedActiveConnection)) || isAddingSourceYears);
 
-   const performSave = () => {
+       const showSourceSectionSeparator = isSourceLockedStub
+      || (isStubPeriod && firstYearOfOperations)
+      || (!isSourceLockedStub && !isRollForwardNoSource && (
+        (dataSource === "source" && !clientHasSourceConnection)
+        || (clientHasSourceConnection && dataSource === "csv" && !isSourceToCsvSwitch)
+        || isSourceToCsvSwitch
+        || (clientHasSourceConnection && dataSource === "source" && !sourceConnected)
+        || (isRollForwardSource && dataSource === "source" && clientHasSourceConnection && rollForwardPriorProvider !== clientSourceIntegration)
+        || (isReconnectFlow && hasSelectedActiveConnection)
+        || (isSourceProviderMismatch && !hasSelectedActiveConnection)
+        || showYearSelection
+        || showAck
+      ))
+      || isRollForwardNoSource;
+const performSave = () => {
    // Stub period without first year of operations locks Data Source Type to CSV
    const savedDataSource: "csv" | "source" = isSourceLockedStub || isRollForwardNoSource ? "csv" : dataSource;
  const record: EngagementRecord = {
@@ -1410,7 +1424,44 @@ export default function CreateEngagement() {
    {(isFullYearPeriod || isStubPeriod) && (
   <SectionCard icon={<Link2 className="h-5 w-5" />} title="Engagement Source">
   <div className="flex items-start gap-8">
-  <div className="order-2 flex-1 min-w-0">
+  <div className="flex-[1.15] min-w-0 flex flex-col gap-1.5 py-2.5">
+  <span className="text-sm text-foreground whitespace-nowrap">Data Source Type</span>
+    <div className="min-w-0">
+    {isSourceLockedStub || isRollForwardNoSource ? (
+    <Select value="csv" disabled>
+    <SelectTrigger className="h-9 w-fit min-w-max text-sm opacity-70 cursor-not-allowed gap-3">
+    <span>{CSV_LABEL}</span>
+    </SelectTrigger>
+    </Select>
+    ) : (
+    <RadioGroup value={dataSource} onValueChange={v => setDataSource(v as "csv" | "source")} className="gap-3 pt-1.5">
+    {(!isEditMode
+      ? [
+          { value: "csv", label: "Non-Source Connected", desc: "Trial balance data will be manually imported via CSV or Excel." },
+          { value: "source", label: "Connect to Source", desc: "Pull trial balance data directly from your accounting software." },
+        ]
+      : originalDataSource === "csv"
+      ? [
+          { value: "csv", label: "Keep as CSV", desc: "Trial balance data will be manually imported via CSV or Excel." },
+          { value: "source", label: "Connect to Source", desc: "Pull trial balance data directly from your accounting software." },
+        ]
+      : [
+          { value: "source", label: "Keep as is", desc: `Connected to ${sourceLabel(savedSourceProvider ?? clientSourceIntegration)}` },
+          { value: "csv", label: "Disconnect", desc: "Remove source connection. All years will revert to CSV." },
+        ]
+    ).map(o => (
+    <label key={o.value} className="flex items-start gap-2.5 cursor-pointer">
+    <RadioGroupItem value={o.value} className="mt-0.5" />
+    <span className="min-w-0">
+    <span className="block text-sm font-medium text-foreground">{o.label}</span>
+    <span className="block text-xs text-muted-foreground">{o.desc}</span>
+    </span>
+    </label>
+    ))}
+    </RadioGroup>
+    )}
+    </div>
+  <div className="flex-1 min-w-0">
   <div className="flex flex-col gap-1.5 py-2.5">
   <span className="text-sm text-foreground">Source Connection Status<span className="text-destructive ml-0.5">*</span></span>
   <div className="w-fit max-w-full min-w-0">
@@ -1495,56 +1546,18 @@ export default function CreateEngagement() {
   </div>
   )}
   </div>
-  <div className="order-1 flex-[1.15] min-w-0 flex flex-col gap-1.5 py-2.5">
-  <span className="text-sm text-foreground whitespace-nowrap">Data Source Type</span>
-    <div className="min-w-0">
-    {isSourceLockedStub || isRollForwardNoSource ? (
-    <Select value="csv" disabled>
-    <SelectTrigger className="h-9 w-fit min-w-max text-sm opacity-70 cursor-not-allowed gap-3">
-    <span>{CSV_LABEL}</span>
-    </SelectTrigger>
-    </Select>
-    ) : (
-    <RadioGroup value={dataSource} onValueChange={v => setDataSource(v as "csv" | "source")} className="gap-3 pt-1.5">
-    {(!isEditMode
-      ? [
-          { value: "csv", label: "Non-Source Connected", desc: "Trial balance data will be manually imported via CSV or Excel." },
-          { value: "source", label: "Connect to Source", desc: "Pull trial balance data directly from your accounting software." },
-        ]
-      : originalDataSource === "csv"
-      ? [
-          { value: "csv", label: "Keep as CSV", desc: "Trial balance data will be manually imported via CSV or Excel." },
-          { value: "source", label: "Connect to Source", desc: "Pull trial balance data directly from your accounting software." },
-        ]
-      : [
-          { value: "source", label: "Keep as is", desc: `Connected to ${sourceLabel(savedSourceProvider ?? clientSourceIntegration)}` },
-          { value: "csv", label: "Disconnect", desc: "Remove source connection. All years will revert to CSV." },
-        ]
-    ).map(o => (
-    <label key={o.value} className="flex items-start gap-2.5 cursor-pointer">
-    <RadioGroupItem value={o.value} className="mt-0.5" />
-    <span className="min-w-0">
-    <span className="block text-sm font-medium text-foreground">{o.label}</span>
-    <span className="block text-xs text-muted-foreground">{o.desc}</span>
-    </span>
-    </label>
-    ))}
-    </RadioGroup>
-    )}
     </div>
     </div>
-    </div>
-    {isSourceLockedStub && (
-    <div className="flex items-start gap-4 pb-2.5">
-    <span className="w-44 shrink-0" />
+    {showSourceSectionSeparator && <div className="mt-4 border-t border-border" />}
+  {isSourceLockedStub && (
+    <div className="w-full pb-2.5">
     <div className="flex-1 min-w-0 rounded-[10px] border border-border bg-muted/50 px-3 py-2">
     <p className="text-sm text-muted-foreground">Source connection not available for stub periods</p>
     </div>
     </div>
     )}
     {isStubPeriod && firstYearOfOperations && (
-    <div className="flex items-start gap-4 pb-2.5">
-    <span className="w-44 shrink-0" />
+    <div className="w-full pb-2.5">
     <div className="flex-1 min-w-0 flex items-start gap-2 rounded-[10px] border border-blue-200 bg-blue-50 dark:bg-blue-950/30 px-3 py-2">
     <Info className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
     <span className="text-sm text-blue-900 dark:text-blue-100">First year of operations — short period treated as full year for source connection.</span>
@@ -1553,8 +1566,7 @@ export default function CreateEngagement() {
     )}
      {!isSourceLockedStub && !isRollForwardNoSource && (<>
    {dataSource === "source" && !clientHasSourceConnection && (
-  <div className="flex items-start gap-4 pb-2.5">
-  <span className="w-44 shrink-0" />
+  <div className="w-full pb-2.5">
   <div className="flex-1 min-w-0 flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
   <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
    <div className="flex flex-col gap-2">
@@ -1590,8 +1602,7 @@ export default function CreateEngagement() {
   </div>
   )}
     {clientHasSourceConnection && dataSource === "csv" && !isSourceToCsvSwitch && (
-    <div className="flex items-start gap-4 pb-2.5">
-    <span className="w-44 shrink-0" />
+    <div className="w-full pb-2.5">
     <div className="flex-1 min-w-0 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">
@@ -1601,8 +1612,7 @@ export default function CreateEngagement() {
     </div>
     )}
     {isSourceToCsvSwitch && (
-    <div className="flex items-start gap-4 pb-2.5">
-    <span className="w-44 shrink-0" />
+    <div className="w-full pb-2.5">
     <div className="flex-1 min-w-0 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">
@@ -1614,8 +1624,7 @@ export default function CreateEngagement() {
     </div>
     )}
    {clientHasSourceConnection && dataSource === "source" && !sourceConnected && (
-  <div className="flex items-center gap-4 pb-2.5">
-  <span className="w-44 shrink-0" />
+  <div className="w-full pb-2.5">
   <div className="flex-1 min-w-0 flex items-center justify-between gap-3 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
   <span className="text-sm text-amber-900 dark:text-amber-200">No source connection found for this client</span>
   <Button size="sm" variant="outline" className="shrink-0" onClick={() => setSourceConnected(true)}>Connect source</Button>
@@ -1623,8 +1632,7 @@ export default function CreateEngagement() {
   </div>
   )}
   {isRollForwardSource && dataSource === "source" && clientHasSourceConnection && rollForwardPriorProvider !== clientSourceIntegration && (
-  <div className="flex items-start gap-4 pb-2.5">
-  <span className="w-44 shrink-0" />
+  <div className="w-full pb-2.5">
   <div className="flex-1 min-w-0 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
   <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
   <span className="text-sm text-amber-800 dark:text-amber-200">
@@ -1634,8 +1642,7 @@ export default function CreateEngagement() {
   </div>
   )}
  {isReconnectFlow && hasSelectedActiveConnection && (
- <div className="flex items-start gap-4 pb-2.5">
- <span className="w-44 shrink-0" />
+ <div className="w-full pb-2.5">
  <div className="flex-1 min-w-0 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
  <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
  <span className="text-sm text-amber-800 dark:text-amber-200">
@@ -1645,8 +1652,7 @@ export default function CreateEngagement() {
  </div>
  )}
  {isSourceProviderMismatch && !hasSelectedActiveConnection && (
-   <div className="flex items-start gap-4 pb-2.5">
-   <span className="w-44 shrink-0" />
+   <div className="w-full pb-2.5">
    <div className="flex-1 min-w-0 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
    <span className="text-sm text-amber-800 dark:text-amber-200">
@@ -1657,8 +1663,7 @@ export default function CreateEngagement() {
   )}
    {/* Year selection — system detects available years, user can only reduce */}
    {showYearSelection && (
-   <div className="flex items-start gap-4 pb-2.5">
-   <span className="w-44 shrink-0" />
+   <div className="w-full pb-2.5">
    <div className="flex-1 min-w-0 space-y-2">
    <SourceYearSelection
    available={yearsAvailable}
@@ -1673,8 +1678,7 @@ export default function CreateEngagement() {
    )}
    {/* Edit mode — inline acknowledgment whenever the source setup changes */}
    {showAck && (
-   <div className="flex items-start gap-4 py-2.5">
-   <span className="w-44 shrink-0" />
+   <div className="w-full py-2.5">
    <div className="flex-1 min-w-0 rounded-[10px] border border-amber-300 border-l-4 border-l-amber-500 bg-amber-50 dark:bg-amber-950/30 px-3 py-2.5">
    <div className="flex items-start gap-2">
    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
@@ -1701,8 +1705,7 @@ export default function CreateEngagement() {
    )}
     </>)}
     {isRollForwardNoSource && (
-    <div className="flex items-start gap-4 pb-2.5">
-    <span className="w-44 shrink-0" />
+    <div className="w-full pb-2.5">
     <div className="flex-1 min-w-0 rounded-[10px] border border-border bg-muted/50 px-3 py-2">
     <p className="text-sm text-foreground">No source connection found for this client. This engagement has been set to CSV. To connect a source, go to the client page and add an integration.</p>
     </div>
