@@ -1,54 +1,61 @@
-import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export type YearRow = { tag: "CY" | "PY1" | "PY2"; label: string; start: string; end: string };
+export type YearsChoice = "all" | "1" | "2" | "3";
 
 type Props = {
-  rows: YearRow[];
-  /** Number of years selected for source (1 = CY only). */
-  selected: number;
-  onChange: (n: number) => void;
-  /** Years already connected to source — shown checked and locked. Min 1 (CY). */
-  lockedCount?: number;
-  /** Years available in source (API). Undefined = unknown (no API call). */
-  available?: number;
+  /** Years of data detected in the source (system maximum). */
+  available: number;
+  /** Minimum years that must stay connected (already-connected years). */
+  minYears?: number;
+  choice: YearsChoice;
+  onChange: (choice: YearsChoice, years: number) => void;
   sourceName: string;
+  cyYear: number;
 };
 
-export function SourceYearSelection({ rows, selected, onChange, lockedCount = 1, available, sourceName }: Props) {
+const OPTION_LABELS: Record<"1" | "2" | "3", string> = {
+  "1": "Current Year only",
+  "2": "Current Year + Prior Year 1",
+  "3": "Current Year + Prior Year 1 + Prior Year 2",
+};
+
+/** System detects the years in source; the user can only reduce. */
+export function SourceYearSelection({ available, minYears = 1, choice, onChange, sourceName, cyYear }: Props) {
+  const max = Math.max(1, Math.min(3, available));
+  const years = choice === "all" ? max : Math.min(max, Number(choice));
+  const options = (["1", "2", "3"] as const).filter((n) => Number(n) <= max && Number(n) >= minYears);
+  const rows = [
+    { tag: "CY", year: cyYear },
+    { tag: "PY1", year: cyYear - 1 },
+    { tag: "PY2", year: cyYear - 2 },
+  ];
   return (
-    <div className="space-y-2">
-      <p className="text-[10px] font-semibold uppercase tracking-widest text-foreground">Select years to connect to source</p>
+    <div className="space-y-3">
+      <p className="text-sm text-foreground">
+        {sourceName} has {max} year{max === 1 ? "" : "s"} of data available.
+      </p>
+      <div className="space-y-1.5">
+        <p className="text-sm font-medium text-foreground">Years to connect</p>
+        <Select value={choice} onValueChange={(v) => { const c = v as YearsChoice; onChange(c, c === "all" ? max : Number(c)); }}>
+          <SelectTrigger className="h-9 w-fit min-w-72 text-sm"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All available years</SelectItem>
+            {options.map((n) => <SelectItem key={n} value={n}>{OPTION_LABELS[n]}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
       <div className="rounded-[10px] border border-border divide-y divide-border">
         {rows.map((r, i) => {
-          const idx = i + 1;
-          const checked = selected >= idx;
-          const locked = idx <= Math.max(1, lockedCount);
-          const unavailable = available !== undefined && idx > available;
-          const disabled = locked || unavailable || (idx > 1 && selected < idx - 1);
+          const isSource = i < years;
           return (
-            <label
-              key={r.tag}
-              className={`flex items-center gap-3 px-3 py-2 text-sm ${disabled ? "cursor-not-allowed" : "cursor-pointer"} ${unavailable ? "opacity-50" : ""}`}
-            >
-              <Checkbox
-                checked={checked}
-                disabled={disabled}
-                onCheckedChange={(v) => onChange(v ? idx : idx - 1)}
-                aria-label={r.label}
-              />
-              <span className="min-w-0 flex-1">
-                <span className="font-medium text-foreground">{r.label}</span>
-                <span className="block text-xs text-foreground">{r.start} — {r.end}</span>
-              </span>
-              <span className="flex items-center gap-2 font-medium text-foreground whitespace-nowrap">
-                <span className={`inline-block h-1.5 w-1.5 rounded-full ${checked ? "bg-emerald-500" : "bg-muted-foreground/30"}`} aria-hidden="true" />
-                {checked ? `Source — ${sourceName}` : unavailable ? "CSV · not available in source" : "CSV"}
-              </span>
-            </label>
+            <div key={r.tag} className="flex items-center gap-2 px-3 py-2 text-sm text-foreground">
+              <span className={`inline-block h-1.5 w-1.5 rounded-full ${isSource ? "bg-emerald-500" : "bg-muted-foreground/30"}`} aria-hidden="true" />
+              <span className="font-medium whitespace-nowrap">{r.tag} {r.year || ""}:</span>
+              <span>{isSource ? `Source - ${sourceName}` : "CSV"}</span>
+            </div>
           );
         })}
       </div>
-      <p className="text-xs text-foreground">Years must be selected in order. You cannot skip a year.</p>
     </div>
   );
 }

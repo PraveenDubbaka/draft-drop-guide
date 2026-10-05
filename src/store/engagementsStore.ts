@@ -31,6 +31,8 @@ export const SEED_ENGAGEMENTS: EngagementRecord[] = [
  { id: "COM-HF-Dec312024", client: "Harbor Freight Logistics LLC", type: "Compilation (COM)", yearEnd: "Dec 31, 2024", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: false, dateCreated: "Jan 22, 2026 08:00 AM", firstYearAudit: false },
  { id: "COM-HFRF-Dec312024", client: "Harbor Freight Logistics LLC", type: "Compilation (COM)", yearEnd: "Dec 31, 2024", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: true, dateCreated: "Jan 23, 2026 09:00 AM", firstYearAudit: false },
  { id: "COM-QB-STCSV-Dec312024", client: "Cedar Point Logistics Inc.", type: "Compilation (COM)", yearEnd: "Dec 31, 2024", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: false, dateCreated: "Jan 24, 2026 09:00 AM", firstYearAudit: false },
+ { id: "COM-STUB-FOO-Dec312024", client: "Sunrise Ventures Inc.", type: "Compilation (COM)", yearEnd: "Dec 31, 2024", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: false, dateCreated: "Jan 26, 2026 09:00 AM", firstYearAudit: true },
+ { id: "COM-STUB-NOFOO-Dec312024", client: "Maple Grove Partners LLC", type: "Compilation (COM)", yearEnd: "Dec 31, 2024", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: false, dateCreated: "Jan 27, 2026 09:00 AM", firstYearAudit: false },
  { id: "COM-HFRF-STCSV-Dec312024", client: "Harbor Freight Logistics LLC", type: "Compilation (COM)", yearEnd: "Dec 31, 2024", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: true, dateCreated: "Jan 25, 2026 09:00 AM", firstYearAudit: false },
 ];
 
@@ -59,7 +61,7 @@ function seedDemoEngagementMeta() {
     { id: 'tm-staff', role: 'Staff / Assistant', name: 'Sarah Chen', email: 'sarahc@countable.co', title: 'Staff Auditor', hourlyRate: '65.00', timeAllocation: '20' },
   ]);
 
- const seeds: Record<string, { dataSource: 'csv' | 'source'; sourceProvider?: 'xero' | 'quickbooks'; sourceYearsAvailable?: number; sourceYears?: number; sourceRollForward?: boolean }> = {
+ const seeds: Record<string, { dataSource: 'csv' | 'source'; sourceProvider?: 'xero' | 'quickbooks'; sourceYearsAvailable?: number; sourceYears?: number; sourceRollForward?: boolean; periodType?: 'stub'; firstYearOfOperations?: boolean }> = {
    'COM-QB-Jan142026': { dataSource: 'source', sourceProvider: 'quickbooks', sourceYearsAvailable: 3, sourceYears: 1 },
    'COM-QB-Dec312024': { dataSource: 'csv', sourceYearsAvailable: 1 },
    'COM-QB-Dec312025': { dataSource: 'source', sourceProvider: 'quickbooks', sourceYearsAvailable: 3, sourceYears: 3 },
@@ -68,6 +70,8 @@ function seedDemoEngagementMeta() {
    'COM-HFRF-Dec312024': { dataSource: 'source', sourceProvider: 'quickbooks', sourceRollForward: true, sourceYearsAvailable: 3, sourceYears: 1 },
    'COM-QB-STCSV-Dec312024': { dataSource: 'source', sourceProvider: 'quickbooks', sourceYearsAvailable: 3, sourceYears: 3 },
    'COM-HFRF-STCSV-Dec312024': { dataSource: 'source', sourceProvider: 'quickbooks', sourceRollForward: true, sourceYearsAvailable: 3, sourceYears: 1 },
+   'COM-STUB-FOO-Dec312024': { dataSource: 'csv', periodType: 'stub', firstYearOfOperations: true },
+   'COM-STUB-NOFOO-Dec312024': { dataSource: 'csv', periodType: 'stub', firstYearOfOperations: false },
  };
  Object.entries(seeds).forEach(([id, seed]) => {
    try {
@@ -79,6 +83,12 @@ function seedDemoEngagementMeta() {
      meta.sourceYearsAvailable = seed.sourceYearsAvailable ?? 3;
      if (seed.sourceYears) meta.sourceYears = seed.sourceYears; else delete meta.sourceYears;
      if (seed.sourceRollForward) meta.sourceRollForward = true; else delete meta.sourceRollForward;
+     if (seed.periodType === 'stub') {
+       meta.auditPeriodType = 'Partial year';
+       meta.firstYearOfOperations = !!seed.firstYearOfOperations;
+       meta.periodStart = '04/01/2024';
+       meta.periodEnd = '12/31/2024';
+     }
      if (!meta.teamMembers || meta.teamMembers.length === 0) meta.teamMembers = sampleTeam();
      localStorage.setItem(META_KEY(id), JSON.stringify(meta));
    } catch {}
@@ -128,6 +138,7 @@ export type EngagementMeta = {
  periodEnd?: string;
  auditPeriodType?: string; // "Full Year" | "Interim (6-month)" | "Partial Year" | "Other"
  annualizeInterim?: boolean; // true by default when auditPeriodType === "Interim (6-month)"
+ firstYearOfOperations?: boolean; // stub period that is the entity's first year — allows source
  firstTimeAdoption?: boolean; // first-time adoption of accounting standard
  dataSource?: "csv" | "source";
  sourceYears?: number; // 1 = CY only, 2 = CY + PY1, 3 = all years connected to source
