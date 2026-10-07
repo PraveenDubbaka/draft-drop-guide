@@ -68,8 +68,13 @@ export const VISIBLE_ENGAGEMENT_IDS: readonly string[] = [
 
 /** Keep only the visible engagements, in the fixed scenario order. */
 export function filterVisibleEngagements<T extends { id: string }>(list: T[]): T[] {
-  const byId = new Map(list.map((e) => [e.id, e]));
-  return VISIBLE_ENGAGEMENT_IDS.map((id) => byId.get(id)).filter((e): e is T => !!e);
+  const visibleSet = new Set<string>(VISIBLE_ENGAGEMENT_IDS);
+  // Seeded engagements in fixed order, user-created engagements first
+  const seeded = VISIBLE_ENGAGEMENT_IDS
+    .map((id) => list.find((e) => e.id === id))
+    .filter((e): e is T => !!e);
+  const userCreated = list.filter((e) => !visibleSet.has(e.id));
+  return [...userCreated, ...seeded];
 }
 
 // ── Client connection overrides (connections made after the demo was seeded) ──

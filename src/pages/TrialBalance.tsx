@@ -220,7 +220,7 @@ export default function TrialBalance() {
 
  // TB load state — persisted per engagement
  const [tbLoaded, setTbLoaded] = useState(() =>
- engagementId ? (VISIBLE_ENGAGEMENT_IDS.includes(engagementId) || !!localStorage.getItem(TB_LOADED_KEY(engagementId))) : false
+ !!engagementId
  );
  const [showImport, setShowImport] = useState(false);
  const [cyFile, setCyFile] = useState<File | null>(null);
