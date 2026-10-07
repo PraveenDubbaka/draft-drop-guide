@@ -1475,17 +1475,17 @@ const performSave = () => {
   </RadioGroup>
   )}
   <div className="flex flex-col gap-1">
-  <div className="flex items-center gap-3">
+  <div className="flex flex-row flex-nowrap items-center gap-3 whitespace-nowrap">
   <span className="text-sm text-foreground whitespace-nowrap">Source status</span>
    {!clientHasSourceConnection ? <>
    {pill("border-border bg-muted text-foreground", "Not Connected")}
-   {dataSource === "source" && !isSourceLockedStub && !isRollForwardNoSource && <div className="flex flex-col gap-1">
-     <Button type="button" size="sm" variant="secondary" onClick={() => setShowSourceConnection(true)}>Connect Source</Button>
-     <span className="text-[11px] text-muted-foreground">(Prototype: simulates client connection)</span>
-   </div>}
+   {dataSource === "source" && !isSourceLockedStub && !isRollForwardNoSource && <span className="inline-flex items-center whitespace-nowrap">
+     <button type="button" onClick={() => setShowSourceConnection(true)} className="text-sm text-primary underline underline-offset-2 hover:text-primary/80 transition-colors">Connect Source</button>
+     <span className="text-[11px] text-muted-foreground ml-1">(Prototype: simulates client connection)</span>
+   </span>}
    </> : (
   <>
-   <span className="inline-flex items-center rounded-[10px] border border-border px-2 py-1"><img src={accountingProviders[statusProvider ?? "quickbooks"].logo} alt={sourceLabel(statusProvider ?? null)} className="h-4 object-contain" /></span>
+   <img src={accountingProviders[statusProvider ?? "quickbooks"].logo} alt={sourceLabel(statusProvider ?? null)} className="h-4 object-contain" />
   {needsSwitch
     ? pill("border-[#B4720A]/30 bg-[#FEF6E7] text-[#B4720A]", "Disconnected")
      : pill("border-connection-success/30 bg-connection-success-surface text-connection-success", "Connected")}
