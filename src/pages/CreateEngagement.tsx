@@ -1485,7 +1485,7 @@ const performSave = () => {
    </span>}
    </> : (
   <>
-   <span className="inline-flex items-center rounded-[10px] border border-border px-2 py-1"><img src={accountingProviders[statusProvider ?? "quickbooks"].badgeLogo} alt={sourceLabel(statusProvider ?? null)} className="h-4 object-contain" /></span>
+   <span onClick={() => setShowSourceConnection(true)} className="inline-flex items-center rounded-[10px] border border-border px-2 py-1 cursor-pointer"><img src={accountingProviders[statusProvider ?? "quickbooks"].badgeLogo} alt={sourceLabel(statusProvider ?? null)} className="h-4 object-contain" /></span>
   {needsSwitch
     ? pill("border-[#B4720A]/30 bg-[#FEF6E7] text-[#B4720A]", "Disconnected")
      : pill("border-connection-success/30 bg-connection-success-surface text-connection-success", "Connected")}
@@ -1777,7 +1777,7 @@ const performSave = () => {
  </div>
  </div>
  </div>
-  <SourceConnectionModal open={showSourceConnection} onOpenChange={setShowSourceConnection} clientName={clientName} connectionName={clientInfo?.entityLegalName || clientName} engagementId={routeEngagementId} onComplete={() => setConnVersion(v => v + 1)} />
+  <SourceConnectionModal open={showSourceConnection} onOpenChange={setShowSourceConnection} clientName={clientName} connectionName={clientInfo?.entityLegalName || clientName} engagementId={routeEngagementId} onComplete={() => setConnVersion(v => v + 1)} initialStep={clientHasSourceConnection ? "connected" : "select"} initialProvider={clientSourceIntegration} />
   <Dialog open={showAddRoleModal} onOpenChange={setShowAddRoleModal}>
  <DialogContent className="max-w-sm">
  <DialogHeader>
