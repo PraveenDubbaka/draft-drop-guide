@@ -8,15 +8,7 @@ const DEMO_DATA_SOURCES: Readonly<Record<string, "csv" | "source">> = {
 };
 
 /** Exact client-name connections for demo engagements (exact match only, so "Cedar Point Logistics" stays unconnected). */
-const DEMO_EXACT_CONNECTIONS: Readonly<Record<string, "xero" | "quickbooks">> = {
-  "cedar point logistics inc.": "quickbooks",
-  "sunrise ventures inc.": "quickbooks",
-  "maple grove partners llc": "quickbooks",
-  "harbor freight logistics llc": "quickbooks",
-  "riverstone capital": "quickbooks",
-  "riverstone capital group inc.": "quickbooks",
-  "shipping line inc.": "quickbooks",
-};
+const DEMO_EXACT_CONNECTIONS: Readonly<Record<string, "xero" | "quickbooks">> = {};
 
 /**
  * Resolve which accounting source a client is connected to.
