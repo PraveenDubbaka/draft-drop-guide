@@ -632,7 +632,7 @@ const CLIENT_DATA: Record<string, {
     entityType: "Corporation",
     contactPerson: "Elena Rivas",
     engagementPartner: "Atin Gupta",
-    integrations: ["quickbooks"],
+    integrations: [],
     businessPhone: "+1 (647) 555-0173",
     cellPhone: "+1 (647) 555-0174",
   },
