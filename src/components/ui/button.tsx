@@ -8,6 +8,7 @@ const buttonVariants = cva(
  {
  variants: {
  variant: {
+  accounting: "bg-connection-action text-connection-action-foreground border border-connection-action hover:bg-connection-action/90 active:bg-connection-action/80",
  default: [
  "bg-[#1C63A6] text-white border border-transparent",
  "hover:bg-[#1a5a9e]",
