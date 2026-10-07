@@ -1547,28 +1547,13 @@ const performSave = () => {
      {!isSourceLockedStub && !isRollForwardNoSource && (<>
    {dataSource === "source" && !clientHasSourceConnection && (
   <div className="w-full mt-2">
-  <div className="flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
-  <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
-   <div className="flex flex-col gap-2">
+   <div className="flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
+   <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
    <span className="text-sm text-red-800 dark:text-red-200">
-    No source connection found for this client. Connect your accounting software before switching to source.
+    No source connection found for this client. Connect your accounting software before switching to source.{" "}
+    <button type="button" onClick={() => setShowSourceConnection(true)} className="text-sm text-primary underline underline-offset-2 hover:text-primary/80 transition-colors">Connect Source</button>
     </span>
-    <div className="flex flex-wrap items-center gap-4">
-    {isEditMode && (
-    <button
-    type="button"
-    className="text-sm font-medium text-[#1C63A6] hover:underline"
-    onClick={() => {
-    try { sessionStorage.setItem(`edit-draft-${routeEngagementId}`, JSON.stringify({ dataSource: "source" })); } catch {}
-    navigate(`/clients?returnTo=${encodeURIComponent(location.pathname)}`);
-    }}
-    >
-    Connect from client page →
-    </button>
-    )}
-    </div>
    </div>
-  </div>
   </div>
   )}
     {clientHasSourceConnection && dataSource === "csv" && !isSourceToCsvSwitch && (
