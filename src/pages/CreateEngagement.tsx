@@ -783,7 +783,7 @@ export default function CreateEngagement() {
         const integ = getEngagementConnectionOverride(routeEngagementId) ?? getClientConnectionOverride(clientName, localClientInfo?.entityLegalName) ?? (localClientInfo
           ? (localClientInfo.integrations.includes("xero") ? "xero"
             : localClientInfo.integrations.includes("quickbooks") ? "quickbooks"
-            : null)
+            : getClientSourceIntegration(clientName))
           : getClientSourceIntegration(clientName));
         setSourceConnected(integ !== null);
         // Keep the initial data source until the user picks a different client
@@ -1002,7 +1002,7 @@ export default function CreateEngagement() {
  const clientSourceIntegration = getEngagementConnectionOverride(routeEngagementId) ?? getClientConnectionOverride(clientName, clientInfo?.entityLegalName) ?? (localClientInfo
    ? (localClientInfo.integrations.includes("xero") ? "xero" as const
      : localClientInfo.integrations.includes("quickbooks") ? "quickbooks" as const
-     : null)
+     : getClientSourceIntegration(clientName))
    : getClientSourceIntegration(clientName));
  const clientHasSourceConnection = clientSourceIntegration !== null;
  // Engagement was disconnected from its source by a CSV import; switching back to Source reconnects it
