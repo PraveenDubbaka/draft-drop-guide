@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 function Highlight({ text, query }: { text: string; query: string }) {
  if (!query.trim()) return <>{text}</>;
@@ -32,7 +32,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ScrollArea } from "@/components/ui/scroll-area";
 import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
 import { clientsData } from "@/data/clientsData";
-import { connectClientSource, getClientConnectionOverride } from "@/lib/clientSource";
+import { getClientConnectionOverride, CLIENT_CONNECTION_EVENT } from "@/lib/clientSource";
+import { SourceConnectionModal } from "@/components/SourceConnectionModal";
+import { accountingProviders } from "@/lib/accountingProviders";
 import { useSearchParams } from "react-router-dom";
 
 // Sample partners data for the dropdown
@@ -77,7 +79,7 @@ const StatusBadge = ({ status }: { status: string }) => {
 };
 
 const IntegrationCell = ({ type, onConnect }: { type: string; onConnect?: () => void }) => {
- if (type === "connect") {
+  if (type === "connect" || type === "none") {
  return (
  <Button variant="outline" size="sm" className="h-7 text-xs font-medium" onClick={(e) => { e.stopPropagation(); onConnect?.(); }}>
  Connect
@@ -90,7 +92,7 @@ const IntegrationCell = ({ type, onConnect }: { type: string; onConnect?: () => 
  if (type === "xero") {
  return (
  <div className={`${badgeClasses} gap-1`}>
- <img src="https://upload.wikimedia.org/wikipedia/en/9/9f/Xero_software_logo.svg" alt="Xero" className="h-4" />
+  <img src={accountingProviders.xero.logo} alt="Xero" className="h-4" />
  <span className="text-xs font-medium text-foreground dark:text-[hsl(var(--m3-inverse-on-surface))]">Xero</span>
  </div>
  );
@@ -104,7 +106,8 @@ const IntegrationCell = ({ type, onConnect }: { type: string; onConnect?: () => 
  );
  }
  
- return null;
+  if (type === "sage") return <div className={badgeClasses}><img src={accountingProviders.sage.logo} alt="Sage" className="h-5" /></div>;
+  return null;
 };
 
 export default function Clients() {
@@ -115,6 +118,12 @@ export default function Clients() {
  const [selectedClient, setSelectedClient] = useState<string | null>(null);
  const [clientList, setClientList] = useState(clientsData);
  const [, setConnVersion] = useState(0);
+  const [connectingClient, setConnectingClient] = useState<(typeof clientsData)[number] | null>(null);
+  useEffect(() => {
+    const bump = () => setConnVersion(v => v + 1);
+    window.addEventListener(CLIENT_CONNECTION_EVENT, bump);
+    return () => window.removeEventListener(CLIENT_CONNECTION_EVENT, bump);
+  }, []);
  const [searchParams] = useSearchParams();
  const returnTo = searchParams.get("returnTo");
 
@@ -381,11 +390,7 @@ export default function Clients() {
  <td className="px-6 py-2 whitespace-nowrap">
  <IntegrationCell
  type={getClientConnectionOverride(client.legalEntityName, client.entityName) ?? client.integration}
- onConnect={() => {
- connectClientSource(client.legalEntityName, "quickbooks");
- setConnVersion(v => v + 1);
- toast.success(`${client.entityName} connected to QuickBooks Online`);
- }}
+  onConnect={() => setConnectingClient(client)}
  />
  </td>
  <td className="px-6 py-2 text-sm text-foreground whitespace-nowrap">{client.contactName}</td>
@@ -451,6 +456,7 @@ export default function Clients() {
  clientName={selectedClientData?.entityName || 'Select a client'}
  />
  </div>
- </Layout>
+  <SourceConnectionModal open={connectingClient !== null} onOpenChange={open => { if (!open) setConnectingClient(null); }} clientName={connectingClient?.entityName ?? ""} connectionName={connectingClient?.legalEntityName} onComplete={() => setConnVersion(v => v + 1)} />
+  </Layout>
  );
 }

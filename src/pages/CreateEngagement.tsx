@@ -6,7 +6,9 @@ import { toast } from "sonner";
 import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
 import xeroLogo from "@/assets/xero-logo-full.svg";
 import { clientsData as appClientsData } from "@/data/clientsData";
-import { getClientSourceIntegration, sourceLabel, getClientConnectionOverride, getEngagementConnectionOverride, connectClientSource, CLIENT_CONNECTION_EVENT } from "@/lib/clientSource";
+import { getClientSourceIntegration, sourceLabel, getClientConnectionOverride, getEngagementConnectionOverride, CLIENT_CONNECTION_EVENT, type AccountingProvider } from "@/lib/clientSource";
+import { accountingProviders } from "@/lib/accountingProviders";
+import { SourceConnectionModal } from "@/components/SourceConnectionModal";
 import { ArrowLeft, Briefcase, Calendar, Users, ChevronDown, Plus, Pencil, Trash2, Search, ExternalLink, X, Building2, FileText, Settings2, Check, UserPlus, Link2, AlertTriangle, XCircle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -682,7 +684,7 @@ export default function CreateEngagement() {
   const { engagementId: routeEngagementId } = useParams();
   const isEditMode = !!routeEngagementId;
   const editingRecord = isEditMode ? loadEngagements().find(e => e.id === routeEngagementId) : undefined;
-  const editingMeta = isEditMode ? getEngagementMeta(routeEngagementId!) : undefined;
+   const editingMeta = routeEngagementId ? getEngagementMeta(routeEngagementId) : undefined;
   const prefill = isEditMode
     ? { clientName: editingRecord?.client, engagementType: editingRecord?.type }
     : ((location.state as { clientName?: string; engagementType?: string } | null) ?? {});
@@ -747,6 +749,7 @@ export default function CreateEngagement() {
   });
   // Bumped whenever a client connection may have changed (e.g. user connected on the Clients page)
   const [connVersion, setConnVersion] = useState(0);
+   const [showSourceConnection, setShowSourceConnection] = useState(false);
   useEffect(() => {
     const bump = () => setConnVersion(v => v + 1);
     const onVisible = () => { if (document.visibilityState === "visible") bump(); };
@@ -1114,7 +1117,7 @@ export default function CreateEngagement() {
     const isConnectionDisconnected = clientHasSourceConnection&& (!sourceConnected || isSourceProviderMismatch);
     // Roll forward with no client connection → auto CSV, locked
     const isRollForwardNoSource = isRollForwardSource && !clientHasSourceConnection;
-    const rollForwardPriorProvider: "xero" | "quickbooks" = savedDisconnectedFrom ?? savedSourceProvider
+    const rollForwardPriorProvider: AccountingProvider = savedDisconnectedFrom ?? savedSourceProvider
       ?? (clientSourceIntegration === "quickbooks" ? "xero" : "quickbooks");
     // Year selection (CY locked; PY1/PY2 optional, in order)
     const originalSourceYears = originalDataSource === "source" ? (editingMeta?.sourceYears ?? 1) : 0;
@@ -1258,7 +1261,7 @@ const performSave = () => {
               {Array.isArray(col.value) ? (
                 <div className="flex items-center gap-1.5">
                   {clientSourceIntegration ? (
-                    <img src={clientSourceIntegration === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={sourceLabel(clientSourceIntegration)} className="h-5 object-contain" />
+                    <img src={accountingProviders[clientSourceIntegration].logo} alt={sourceLabel(clientSourceIntegration)} className="h-5 object-contain" />
                   ) : (
                     <span className="text-sm text-foreground">—</span>
                   )}
@@ -1450,7 +1453,7 @@ const performSave = () => {
   const needsSwitch = (isSourceProviderMismatch || isReconnectFlow) && !hasSelectedActiveConnection;
   const statusProvider = needsSwitch ? dropdownSavedProvider : clientSourceIntegration;
   const pill = (cls: string, text: string) => <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium whitespace-nowrap ${cls}`}>{text}</span>;
-  const showYears = dataSource === "source" && clientHasSourceConnection && !isSourceLockedStub && !isRollForwardNoSource;
+  const showYears = dataSource === "source" && clientHasSourceConnection && sourceConnected && !isSourceLockedStub && !isRollForwardNoSource;
   const yearOpts = ([["1", "Current Year only"], ["2", "Current Year + Prior Year 1"], ["3", "Current Year + Prior Year 1 + Prior Year 2"]] as const)
     .filter(([n]) => Number(n) <= maxSourceYears && Number(n) >= yearLockedCount);
   return (
@@ -1474,12 +1477,18 @@ const performSave = () => {
   <div className="flex flex-col gap-1">
   <div className="flex items-center gap-3">
   <span className="text-sm text-foreground whitespace-nowrap">Source status</span>
-  {!clientHasSourceConnection ? pill("border-border bg-muted text-foreground", "Not Connected") : (
+   {!clientHasSourceConnection ? <>
+   {pill("border-border bg-muted text-foreground", "Not Connected")}
+   {dataSource === "source" && !isSourceLockedStub && !isRollForwardNoSource && <div className="flex flex-col gap-1">
+     <Button type="button" size="sm" variant="secondary" onClick={() => setShowSourceConnection(true)}>Connect Source</Button>
+     <span className="text-[11px] text-muted-foreground">(Prototype: simulates client connection)</span>
+   </div>}
+   </> : (
   <>
-  <span className="inline-flex items-center rounded-[10px] border border-border px-2 py-1"><img src={statusProvider === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={sourceLabel(statusProvider ?? null)} className="h-4 object-contain" /></span>
+   <span className="inline-flex items-center rounded-[10px] border border-border px-2 py-1"><img src={accountingProviders[statusProvider ?? "quickbooks"].logo} alt={sourceLabel(statusProvider ?? null)} className="h-4 object-contain" /></span>
   {needsSwitch
     ? pill("border-[#B4720A]/30 bg-[#FEF6E7] text-[#B4720A]", "Disconnected")
-    : pill("border-[#2E7D52]/30 bg-[#EAF4EE] text-[#2E7D52]", "Connected")}
+     : pill("border-connection-success/30 bg-connection-success-surface text-connection-success", "Connected")}
   {needsSwitch && dataSource === "source" && (
   <Button type="button" size="sm" variant="secondary" className="h-8 text-xs" onClick={() => setHasSelectedActiveConnection(true)}>Switch Connection</Button>
   )}
@@ -1495,7 +1504,7 @@ const performSave = () => {
   <div className="flex items-center gap-x-10">
   <span className="text-sm text-foreground w-24 shrink-0">Prior Year (FY{cyYear - 1})</span>
   <div className="inline-flex w-fit items-center gap-2.5 rounded-[10px] border border-border bg-muted/40 px-3 py-1.5 opacity-70">
-  <img src={rollForwardPriorProvider === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={sourceLabel(rollForwardPriorProvider)} className="h-5 object-contain shrink-0 grayscale" />
+   <img src={accountingProviders[rollForwardPriorProvider].logo} alt={sourceLabel(rollForwardPriorProvider)} className="h-5 object-contain shrink-0 grayscale" />
   <span className="text-sm text-foreground whitespace-nowrap">{clientInfo?.entityLegalName || clientName}</span>
   {pill("border-border bg-muted text-foreground", "Disconnected")}
   </div>
@@ -1557,16 +1566,6 @@ const performSave = () => {
     Connect from client page →
     </button>
     )}
-    <button
-    type="button"
-    className="text-sm font-medium text-[#1C63A6] hover:underline"
-    onClick={() => {
-    connectClientSource(clientInfo?.entityLegalName || clientName, "quickbooks", routeEngagementId);
-    toast.success(`${clientInfo?.entityLegalName || clientName} connected to QuickBooks Online`);
-    }}
-    >
-    Connect here →
-    </button>
     </div>
    </div>
   </div>
@@ -1598,7 +1597,7 @@ const performSave = () => {
   <div className="w-full mt-2">
   <div className="flex items-center justify-between gap-3 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
   <span className="text-sm text-amber-900 dark:text-amber-200">No source connection found for this client</span>
-  <Button size="sm" variant="outline" className="shrink-0" onClick={() => setSourceConnected(true)}>Connect source</Button>
+   <Button size="sm" variant="outline" className="shrink-0" onClick={() => setShowSourceConnection(true)}>Connect Source</Button>
   </div>
   </div>
   )}
@@ -1790,7 +1789,8 @@ const performSave = () => {
  </div>
  </div>
  </div>
- <Dialog open={showAddRoleModal} onOpenChange={setShowAddRoleModal}>
+  <SourceConnectionModal open={showSourceConnection} onOpenChange={setShowSourceConnection} clientName={clientName} connectionName={clientInfo?.entityLegalName || clientName} engagementId={routeEngagementId} onComplete={() => setConnVersion(v => v + 1)} />
+  <Dialog open={showAddRoleModal} onOpenChange={setShowAddRoleModal}>
  <DialogContent className="max-w-sm">
  <DialogHeader>
  <DialogTitle>Add new role</DialogTitle>

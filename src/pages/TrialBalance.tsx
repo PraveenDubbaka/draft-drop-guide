@@ -27,7 +27,7 @@ import { StyledCard } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { getEngagementMeta, setEngagementMeta } from "@/store/engagementsStore";
-import { sourceLabel, getClientSourceIntegration as getClientSourceIntegrationSafe, VISIBLE_ENGAGEMENT_IDS } from "@/lib/clientSource";
+import { sourceLabel, getClientSourceIntegration as getClientSourceIntegrationSafe, VISIBLE_ENGAGEMENT_IDS, type ClientSourceIntegration } from "@/lib/clientSource";
 import xeroLogoFull from "@/assets/xero-logo-full.svg";
 import intuitQbLogo from "@/assets/intuit-quickbooks-logo.svg";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -288,14 +288,14 @@ export default function TrialBalance() {
  void metaVersion;
  const srcMeta = engagementId ? getEngagementMeta(engagementId) : ({ firstYearAudit: false } as ReturnType<typeof getEngagementMeta>);
   const clientActiveProvider = getClientSourceIntegrationSafe(clientName);
-  const configuredProvider: "xero" | "quickbooks" | null = srcMeta.dataSource === 'source'
+   const configuredProvider: ClientSourceIntegration = srcMeta.dataSource === 'source'
   ? (srcMeta.sourceProvider ?? clientActiveProvider)
   : null;
   // Source disconnected outside the app: engagement still linked, but the client's active connection differs / is gone
   const isExternallyDisconnected = !!configuredProvider && clientActiveProvider !== configuredProvider;
   const linkedProvider = isExternallyDisconnected ? null : configuredProvider;
   const isSourceLinked = !!linkedProvider;
-  const disconnectedFrom: "xero" | "quickbooks" | null = isExternallyDisconnected
+   const disconnectedFrom: ClientSourceIntegration = isExternallyDisconnected
   ? configuredProvider
   : (srcMeta.dataSource !== 'source' ? srcMeta.sourceDisconnectedFrom ?? null : null);
    const badgeProvider = configuredProvider ?? disconnectedFrom;
