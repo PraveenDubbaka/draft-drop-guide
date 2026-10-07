@@ -111,7 +111,8 @@ export function loadEngagements(): EngagementRecord[] {
        const created = new Date(e.dateCreated);
        return created >= new Date("2026-10-01");
      });
-     const next = [...repaired, ...custom];
+     const next = [...repaired, ...custom]
+       .map((e) => (e.id === "COM-INPROGRESS-Dec312024" ? { ...e, hasRF: true } : e));
      localStorage.setItem(ENG_KEY, JSON.stringify(next));
      return next;
    }
