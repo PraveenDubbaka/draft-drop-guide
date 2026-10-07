@@ -1482,7 +1482,6 @@ const performSave = () => {
    {isExternallyDisconnected ? <>
     <span onClick={() => setShowSourceConnection(true)} className="inline-flex items-center rounded-[10px] border border-border px-2 py-1 cursor-pointer"><img src={accountingProviders[savedSourceProvider ?? "quickbooks"].badgeLogo} alt={sourceLabel(savedSourceProvider ?? null)} className="h-4 object-contain" /></span>
     {pill("border-[#B4720A]/30 bg-[#FEF6E7] text-[#B4720A]", "Disconnected")}
-    <Button type="button" size="sm" variant="secondary" className="h-8 text-xs" onClick={() => setShowSourceConnection(true)}>Switch Connection</Button>
    </> : !clientHasSourceConnection ? <>
    {pill("border-border bg-muted text-foreground", "Not Connected")}
    </> : (
@@ -1547,7 +1546,7 @@ const performSave = () => {
     </div>
     )}
      {!isSourceLockedStub && !isRollForwardNoSource && (<>
-   {dataSource === "source" && !clientHasSourceConnection && (
+   {dataSource === "source" && !clientHasSourceConnection && !isExternallyDisconnected && (
   <div className="w-full mt-2">
    <div className="flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
    <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
@@ -1613,7 +1612,7 @@ const performSave = () => {
     <div className="flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">
-    Your client's source connection has changed. This engagement is still linked to {sourceLabel(savedSourceProvider ?? null)}. Click Switch Connection to pull data from a new source, or change Data Source Type to CSV.
+    Your client has no active source connection. This engagement is still linked to {sourceLabel(savedSourceProvider ?? null)}. Connect a new source or change Data Source Type to CSV.{" "}<button type="button" onClick={() => setShowSourceConnection(true)} className="text-sm text-primary underline underline-offset-2 hover:text-primary/80 transition-colors">Connect Source</button>
     </span>
    </div>
    </div>
