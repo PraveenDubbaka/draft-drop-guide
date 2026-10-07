@@ -3,16 +3,8 @@ import { clientsData } from "@/data/clientsData";
 export type ClientSourceIntegration = "xero" | "quickbooks" | null;
 
 const DEMO_DATA_SOURCES: Readonly<Record<string, "csv" | "source">> = {
-  "COM-QB-Jan142026": "source",
-  "COM-QB-Dec312024": "csv",
-  "COM-QB-Dec312025": "source",
-  "COM-CHE-Dec252024": "csv",
-  "COM-HF-Dec312024": "source",
-  "COM-HFRF-Dec312024": "csv",
-  "COM-QB-STCSV-Dec312024": "source",
-  "COM-HFRF-STCSV-Dec312024": "source",
-  "COM-STUB-FOO-Dec312024": "csv",
-  "COM-STUB-NOFOO-Dec312024": "csv",
+  "COM-NEW-Dec312024": "csv",
+  "COM-INPROGRESS-Dec312024": "csv",
 };
 
 /** Exact client-name connections for demo engagements (exact match only, so "Cedar Point Logistics" stays unconnected). */
@@ -77,19 +69,8 @@ export function getEngagementSourceIntegration(
 
 /** The five scenario engagements shown on Dashboard and Engagements, in display order. */
 export const VISIBLE_ENGAGEMENT_IDS: readonly string[] = [
-  "COM-QB-Jan142026",
-  "COM-QB-Dec312024",
-  "COM-QB-Dec312025",
-  "COM-CHE-Dec252024",
-  "COM-HF-Dec312024",
-  "COM-HFRF-Dec312024",
-  "COM-QB-STCSV-Dec312024",
-  "COM-HFRF-STCSV-Dec312024",
-  "COM-STUB-FOO-Dec312024",
-  "COM-STUB-NOFOO-Dec312024",
-  "COM-FULL-TO-STUB-Dec312024",
-  "COM-STUB-TO-FULL-Dec312024",
-  "COM-STUB-SRC-TO-CSV-Dec312024",
+  "COM-NEW-Dec312024",
+  "COM-INPROGRESS-Dec312024",
 ];
 
 /** Keep only the visible engagements, in the fixed scenario order. */
