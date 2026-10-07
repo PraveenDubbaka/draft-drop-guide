@@ -1485,10 +1485,6 @@ const performSave = () => {
     <Button type="button" size="sm" variant="secondary" className="h-8 text-xs" onClick={() => setShowSourceConnection(true)}>Switch Connection</Button>
    </> : !clientHasSourceConnection ? <>
    {pill("border-border bg-muted text-foreground", "Not Connected")}
-   {dataSource === "source" && !isSourceLockedStub && !isRollForwardNoSource && <span className="inline-flex items-center whitespace-nowrap">
-     <button type="button" onClick={() => setShowSourceConnection(true)} className="text-sm text-primary underline underline-offset-2 hover:text-primary/80 transition-colors">Connect Source</button>
-     <span className="text-[11px] text-muted-foreground ml-1">(Prototype: simulates client connection)</span>
-   </span>}
    </> : (
   <>
    <span onClick={() => setShowSourceConnection(true)} className="inline-flex items-center rounded-[10px] border border-border px-2 py-1 cursor-pointer"><img src={accountingProviders[statusProvider ?? "quickbooks"].badgeLogo} alt={sourceLabel(statusProvider ?? null)} className="h-4 object-contain" /></span>
