@@ -27,8 +27,9 @@ import { StyledCard } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { getEngagementMeta, setEngagementMeta } from "@/store/engagementsStore";
-import { sourceLabel, getClientSourceIntegration as getClientSourceIntegrationSafe, VISIBLE_ENGAGEMENT_IDS } from "@/lib/clientSource";
+import { sourceLabel, getClientSourceIntegration as getClientSourceIntegrationSafe, VISIBLE_ENGAGEMENT_IDS, type ClientSourceIntegration } from "@/lib/clientSource";
 import xeroLogoFull from "@/assets/xero-logo-full.svg";
+import { accountingProviders } from "@/lib/accountingProviders";
 import intuitQbLogo from "@/assets/intuit-quickbooks-logo.svg";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { NewAdjEntryModal, type AdjLine, type AdjEntryMeta } from "@/components/NewAdjEntryModal";
@@ -288,14 +289,14 @@ export default function TrialBalance() {
  void metaVersion;
  const srcMeta = engagementId ? getEngagementMeta(engagementId) : ({ firstYearAudit: false } as ReturnType<typeof getEngagementMeta>);
   const clientActiveProvider = getClientSourceIntegrationSafe(clientName);
-  const configuredProvider: "xero" | "quickbooks" | null = srcMeta.dataSource === 'source'
+   const configuredProvider: ClientSourceIntegration = srcMeta.dataSource === 'source'
   ? (srcMeta.sourceProvider ?? clientActiveProvider)
   : null;
   // Source disconnected outside the app: engagement still linked, but the client's active connection differs / is gone
   const isExternallyDisconnected = !!configuredProvider && clientActiveProvider !== configuredProvider;
   const linkedProvider = isExternallyDisconnected ? null : configuredProvider;
   const isSourceLinked = !!linkedProvider;
-  const disconnectedFrom: "xero" | "quickbooks" | null = isExternallyDisconnected
+   const disconnectedFrom: ClientSourceIntegration = isExternallyDisconnected
   ? configuredProvider
   : (srcMeta.dataSource !== 'source' ? srcMeta.sourceDisconnectedFrom ?? null : null);
    const badgeProvider = configuredProvider ?? disconnectedFrom;
@@ -382,7 +383,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
   {/* Linked source badge — logo + connection status (single source of truth) */}
   {badgeProvider && (
   <div className={`ml-1 inline-flex items-center gap-1.5 h-7 px-1.5 bg-card border rounded-sm ${sourceStatusDisconnected ? "border-amber-300" : "border-border"}`}>
-  <img src={badgeProvider === "xero" ? xeroLogoFull : intuitQbLogo} alt={sourceLabel(badgeProvider)} className="h-4" />
+  <img src={accountingProviders[badgeProvider].logo} alt={sourceLabel(badgeProvider)} className="h-4" />
   {sourceStatusDisconnected ? (
   <span className="inline-flex items-center rounded-full border border-[#B4720A]/30 bg-[#FEF6E7] px-1.5 py-0.5 text-[10px] font-medium text-[#B4720A] whitespace-nowrap">Disconnected</span>
   ) : (

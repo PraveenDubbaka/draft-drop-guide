@@ -1,6 +1,7 @@
 import { clientsData } from "@/data/clientsData";
 
-export type ClientSourceIntegration = "xero" | "quickbooks" | null;
+export type AccountingProvider = "xero" | "quickbooks" | "sage";
+export type ClientSourceIntegration = AccountingProvider | null;
 
 const DEMO_DATA_SOURCES: Readonly<Record<string, "csv" | "source">> = {
   "COM-NEW-Dec312024": "csv",
@@ -36,7 +37,7 @@ export function getClientSourceIntegration(clientName: string): ClientSourceInte
 }
 
 export const sourceLabel = (t: ClientSourceIntegration) =>
-  t === "xero" ? "Xero" : t === "quickbooks" ? "QuickBooks Online" : "CSV";
+   t === "xero" ? "Xero" : t === "quickbooks" ? "QuickBooks Online" : t === "sage" ? "Sage" : "CSV";
 
 /**
  * Resolve the source shown for an engagement: it reflects the Data Source the
@@ -75,7 +76,7 @@ export function filterVisibleEngagements<T extends { id: string }>(list: T[]): T
 const CONN_OVERRIDE_KEY = "client-connection-overrides";
 export const CLIENT_CONNECTION_EVENT = "client-connection-changed";
 
-function readOverrides(): Record<string, "xero" | "quickbooks"> {
+function readOverrides(): Record<string, AccountingProvider | null> {
   try {
     return JSON.parse(localStorage.getItem(CONN_OVERRIDE_KEY) || "{}");
   } catch {
@@ -84,7 +85,7 @@ function readOverrides(): Record<string, "xero" | "quickbooks"> {
 }
 
 /** Connection the user made from the Clients page or inline on Edit Engagement. */
-export function getClientConnectionOverride(...names: (string | undefined | null)[]): "xero" | "quickbooks" | null {
+export function getClientConnectionOverride(...names: (string | undefined | null)[]): ClientSourceIntegration {
   const overrides = readOverrides();
   for (const raw of names) {
     const n = (raw || "").trim().toLowerCase();
@@ -99,11 +100,11 @@ export function getClientConnectionOverride(...names: (string | undefined | null
 const engagementConnKey = (engagementId: string) => `engagement-connection-${engagementId}`;
 
 /** Connection made inline for one specific engagement ("Connect here →"). */
-export function getEngagementConnectionOverride(engagementId?: string | null): "xero" | "quickbooks" | null {
+export function getEngagementConnectionOverride(engagementId?: string | null): ClientSourceIntegration {
   if (!engagementId) return null;
   try {
     const v = localStorage.getItem(engagementConnKey(engagementId));
-    return v === "xero" || v === "quickbooks" ? v : null;
+    return v === "xero" || v === "quickbooks" || v === "sage" ? v : null;
   } catch {
     return null;
   }
@@ -111,7 +112,7 @@ export function getEngagementConnectionOverride(engagementId?: string | null): "
 
 export function connectClientSource(
   clientName: string,
-  provider: "xero" | "quickbooks" = "quickbooks",
+  provider: AccountingProvider = "quickbooks",
   engagementId?: string
 ) {
   if (engagementId) {
@@ -121,5 +122,18 @@ export function connectClientSource(
     overrides[clientName.trim().toLowerCase()] = provider;
     localStorage.setItem(CONN_OVERRIDE_KEY, JSON.stringify(overrides));
   }
+  window.dispatchEvent(new Event(CLIENT_CONNECTION_EVENT));
+}
+
+/** Remove only prototype overrides; never disconnect a real accounting service. */
+export function disconnectClientSource(clientName: string, engagementId?: string) {
+  if (engagementId) localStorage.removeItem(engagementConnKey(engagementId));
+  const overrides = readOverrides();
+  const normalized = clientName.trim().toLowerCase();
+  const client = clientsData.find(c => c.entityName.toLowerCase() === normalized || c.legalEntityName.toLowerCase() === normalized);
+  for (const name of [clientName, client?.entityName, client?.legalEntityName]) {
+    if (name) delete overrides[name.trim().toLowerCase()];
+  }
+  localStorage.setItem(CONN_OVERRIDE_KEY, JSON.stringify(overrides));
   window.dispatchEvent(new Event(CLIENT_CONNECTION_EVENT));
 }
