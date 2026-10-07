@@ -1016,7 +1016,9 @@ export default function CreateEngagement() {
      if (!saved || saved >= maxSourceYears) return "all";
      return String(saved) as YearsChoice;
    });
-   const [ackChecked, setAckChecked] = useState(false);
+   const [ackText, setAckText] = useState("");
+    const ackChecked = ackText.trim() === "accept";
+    const setAckChecked = (_v: boolean) => setAckText("");
    // Connecting to source defaults to all available years (user can only reduce)
    useEffect(() => {
      if (isEditMode && originalDataSource === "csv" && dataSource === "source") {
@@ -1444,131 +1446,79 @@ const performSave = () => {
    {/* Engagement Source — full year: editable; stub period: locked to CSV */}
    {(isFullYearPeriod || isStubPeriod) && (
   <SectionCard icon={<Link2 className="h-5 w-5" />} title="Engagement Source">
-  <div className="grid grid-cols-2 gap-8 items-start">
-  <div className="flex flex-col gap-1.5 py-2.5">
-  <span className="text-sm text-foreground whitespace-nowrap">Data Source Type</span>
-    <div className="min-w-0">
-    {isSourceLockedStub || isRollForwardNoSource ? (
-    <Select value="csv" disabled>
-    <SelectTrigger className="h-9 w-fit min-w-max text-sm opacity-70 cursor-not-allowed gap-3">
-    <span>{CSV_LABEL}</span>
-    </SelectTrigger>
-    </Select>
-    ) : (
-    <RadioGroup value={dataSource} onValueChange={v => setDataSource(v as "csv" | "source")} className="gap-3 pt-1.5">
-    {(!isEditMode
-      ? [
-          { value: "csv", label: "Non-Source Connected", desc: "Trial balance data will be manually imported via CSV or Excel." },
-          { value: "source", label: "Connect to Source", desc: "Pull trial balance data directly from your accounting software." },
-        ]
-      : originalDataSource === "csv"
-      ? [
-          { value: "csv", label: "Keep as CSV", desc: "Trial balance data will be manually imported via CSV or Excel." },
-          { value: "source", label: "Connect to Source", desc: "Pull trial balance data directly from your accounting software." },
-        ]
-      : [
-          { value: "source", label: "Keep as is", desc: `Connected to ${sourceLabel(savedSourceProvider ?? clientSourceIntegration)}` },
-          { value: "csv", label: "Disconnect", desc: "Remove source connection. All years will revert to CSV." },
-        ]
-    ).map(o => (
-    <label key={o.value} className="flex items-start gap-2.5 cursor-pointer">
-    <RadioGroupItem value={o.value} className="mt-0.5" />
-    <span className="min-w-0">
-    <span className="block text-sm font-medium text-foreground">{o.label}</span>
-    <span className="block text-xs text-muted-foreground">{o.desc}</span>
-    </span>
-    </label>
-    ))}
-    </RadioGroup>
-    )}
-    </div>
+  {(() => {
+  const needsSwitch = (isSourceProviderMismatch || isReconnectFlow) && !hasSelectedActiveConnection;
+  const statusProvider = needsSwitch ? dropdownSavedProvider : clientSourceIntegration;
+  const pill = (cls: string, text: string) => <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium whitespace-nowrap ${cls}`}>{text}</span>;
+  const showYears = dataSource === "source" && clientHasSourceConnection && !isSourceLockedStub && !isRollForwardNoSource;
+  const yearOpts = ([["1", "Current Year only"], ["2", "Current Year + Prior Year 1"], ["3", "Current Year + Prior Year 1 + Prior Year 2"]] as const)
+    .filter(([n]) => Number(n) <= maxSourceYears && Number(n) >= yearLockedCount);
+  return (
+  <div className="space-y-4 py-1">
+  <div className="flex flex-wrap items-start gap-x-10 gap-y-3">
+  <span className="text-sm text-foreground w-24 shrink-0 pt-0.5">Data Source Type</span>
+  {isSourceLockedStub || isRollForwardNoSource ? (
+  <div className="flex items-center gap-8 opacity-60 cursor-not-allowed pt-0.5">
+  <label className="flex items-center gap-2 text-sm text-foreground"><span className="h-4 w-4 rounded-full border-2 border-primary flex items-center justify-center"><span className="h-2 w-2 rounded-full bg-primary" /></span>Import Data from CSV/Excel/PDF</label>
+  <label className="flex items-center gap-2 text-sm text-foreground"><span className="h-4 w-4 rounded-full border-2 border-primary" />Integrate with Accounting Software</label>
   </div>
-  {dataSource === "source" && (
-  <div className="flex flex-col gap-1.5 py-2.5">
-  <span className="text-sm text-foreground">Source Connection Status<span className="text-destructive ml-0.5">*</span></span>
-  <div className="w-fit max-w-full min-w-0">
-  {clientHasSourceConnection ? (
-  showConnectionDropdown ? (
-  <Select value={hasSelectedActiveConnection? "active" : "saved"} onValueChange={v => { if (v === "active") setHasSelectedActiveConnection(true); }}>
-  <SelectTrigger className="h-9 w-fit min-w-max text-sm gap-3">
-  <span className="inline-flex items-center gap-2.5 pr-1">
-  <img
-  src={(hasSelectedActiveConnection ? clientSourceIntegration : dropdownSavedProvider) === "xero" ? xeroLogo : intuitQuickbooksLogo}
-  alt={sourceLabel(hasSelectedActiveConnection ? clientSourceIntegration : dropdownSavedProvider ?? null)}
-  className="h-5 object-contain shrink-0"
-  />
-  <span className="whitespace-nowrap shrink-0">{clientInfo?.entityLegalName || clientName}</span>
-  <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium shrink-0 ${hasSelectedActiveConnection ? "border-[#2E7D52]/30 bg-[#EAF4EE] text-[#2E7D52]" : "border-[#B4720A]/30 bg-[#FEF6E7] text-[#B4720A]"}`}>
-  {hasSelectedActiveConnection ? "Connected" : "Disconnected"}
-  </span>
-  </span>
-  </SelectTrigger>
+  ) : (
+  <RadioGroup value={dataSource} onValueChange={v => setDataSource(v as "csv" | "source")} className="flex flex-wrap items-center gap-x-16 gap-y-2 pt-0.5">
+  {[{ value: "csv", label: "Import Data from CSV/Excel/PDF" }, { value: "source", label: "Integrate with Accounting Software" }].map(o => (
+  <label key={o.value} className="flex items-center gap-2 cursor-pointer text-sm text-foreground whitespace-nowrap">
+  <RadioGroupItem value={o.value} />{o.label}
+  </label>
+  ))}
+  </RadioGroup>
+  )}
+  <div className="flex flex-col gap-1">
+  <div className="flex items-center gap-3">
+  <span className="text-sm text-foreground whitespace-nowrap">Source status</span>
+  {!clientHasSourceConnection ? pill("border-border bg-muted text-foreground", "Not Connected") : (
+  <>
+  <span className="inline-flex items-center rounded-[10px] border border-border px-2 py-1"><img src={statusProvider === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={sourceLabel(statusProvider ?? null)} className="h-4 object-contain" /></span>
+  {needsSwitch
+    ? pill("border-[#B4720A]/30 bg-[#FEF6E7] text-[#B4720A]", "Disconnected")
+    : pill("border-[#2E7D52]/30 bg-[#EAF4EE] text-[#2E7D52]", "Connected")}
+  {needsSwitch && dataSource === "source" && (
+  <Button type="button" size="sm" variant="secondary" className="h-8 text-xs" onClick={() => setHasSelectedActiveConnection(true)}>Switch Connection</Button>
+  )}
+  </>
+  )}
+  </div>
+  {clientHasSourceConnection && !needsSwitch && dataSource === "source" && (
+  <span className="text-xs text-foreground pl-[5.5rem]">{sourceLabel(clientSourceIntegration)} has {maxSourceYears} year{maxSourceYears === 1 ? "" : "s"} of data available.</span>
+  )}
+  </div>
+  </div>
+  {isRollForwardSource && clientHasSourceConnection && !isSourceLockedStub && dataSource === "source" && (
+  <div className="flex items-center gap-x-10">
+  <span className="text-sm text-foreground w-24 shrink-0">Prior Year (FY{cyYear - 1})</span>
+  <div className="inline-flex w-fit items-center gap-2.5 rounded-[10px] border border-border bg-muted/40 px-3 py-1.5 opacity-70">
+  <img src={rollForwardPriorProvider === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={sourceLabel(rollForwardPriorProvider)} className="h-5 object-contain shrink-0 grayscale" />
+  <span className="text-sm text-foreground whitespace-nowrap">{clientInfo?.entityLegalName || clientName}</span>
+  {pill("border-border bg-muted text-foreground", "Disconnected")}
+  </div>
+  </div>
+  )}
+  {showYears && (
+  <div className="flex items-start gap-x-10">
+  <span className="text-sm text-foreground w-24 shrink-0 pt-2">Years to connect</span>
+  <div className="flex flex-col gap-1">
+  <Select value={yearsChoice} disabled={needsSwitch} onValueChange={v => { const c = v as YearsChoice; setYearsChoice(c); setSourceYears(c === "all" ? maxSourceYears : Number(c)); }}>
+  <SelectTrigger className="h-9 w-fit min-w-64 text-sm"><SelectValue /></SelectTrigger>
   <SelectContent>
-  <SelectItem value="saved" disabled className="text-muted-foreground">
-  <span className="inline-flex items-center gap-2.5">
-  <img src={dropdownSavedProvider === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={sourceLabel(dropdownSavedProvider ?? null)} className="h-5 object-contain shrink-0" />
-  <span className="whitespace-nowrap shrink-0">{clientInfo?.entityLegalName || clientName}</span>
-  <span className="inline-flex items-center rounded-full border border-[#B4720A]/30 bg-[#FEF6E7] px-2 py-0.5 text-[11px] font-medium text-[#B4720A] shrink-0">Disconnected</span>
-  </span>
-  </SelectItem>
-  <SelectItem value="active" onPointerUp={() => setHasSelectedActiveConnection(true)} onKeyDown={() => setHasSelectedActiveConnection(true)}>
-  <span className="inline-flex items-center gap-2.5">
-  <img src={clientSourceIntegration === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={sourceLabel(clientSourceIntegration)} className="h-5 object-contain shrink-0" />
-  <span className="whitespace-nowrap shrink-0">{clientInfo?.entityLegalName || clientName}</span>
-  <span className="inline-flex items-center rounded-full border border-[#2E7D52]/30 bg-[#EAF4EE] px-2 py-0.5 text-[11px] font-medium text-[#2E7D52] shrink-0">Connected</span>
-  </span>
-  </SelectItem>
+  <SelectItem value="all">All available years</SelectItem>
+  {yearOpts.map(([n, l]) => <SelectItem key={n} value={n}>{l}</SelectItem>)}
   </SelectContent>
   </Select>
-  ) : (() => {
-   const content = (
-   <span className="inline-flex items-center gap-2.5 pr-1">
-   <img src={clientSourceIntegration === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={sourceLabel(clientSourceIntegration)} className="h-5 object-contain shrink-0" />
-   <span className="whitespace-nowrap shrink-0">{clientInfo?.entityLegalName || clientName}</span>
-   {isConnectionDisconnected ? (
-   <span className="inline-flex items-center rounded-full border border-[#B4720A]/30 bg-[#FEF6E7] px-2 py-0.5 text-[11px] font-medium text-[#B4720A] shrink-0">Disconnected</span>
-   ) : (
-   <span className="inline-flex items-center rounded-full border border-[#2E7D52]/30 bg-[#EAF4EE] px-2 py-0.5 text-[11px] font-medium text-[#2E7D52] shrink-0">Connected</span>
-   )}
-   </span>
-   );
-   return (
-   <Select value="current">
-   <SelectTrigger className={`h-9 w-fit min-w-max text-sm gap-3 ${isConnectionDisconnected ? "border-amber-300" : ""}`}>{content}</SelectTrigger>
-   <SelectContent><SelectItem value="current">{content}</SelectItem></SelectContent>
-   </Select>
-   );
-  })()
-  ) : (() => {
-   const content = (
-   <span className="inline-flex items-center gap-2.5 pr-1">
-   <span className="h-2.5 w-2.5 rounded-full bg-gray-400" />
-   <span>Not connected</span>
-   </span>
-   );
-   return (
-   <Select value="none">
-   <SelectTrigger className="h-9 w-fit min-w-max text-sm gap-3">{content}</SelectTrigger>
-   <SelectContent><SelectItem value="none">{content}</SelectItem></SelectContent>
-   </Select>
-   );
+  {needsSwitch && <span className="text-xs text-foreground">Update connection above to select available years.</span>}
+  </div>
+  </div>
+  )}
+  </div>
+  );
   })()}
-  </div>
-  {isRollForwardSource && clientHasSourceConnection && !isSourceLockedStub && (
-  <div className="flex flex-col gap-1.5 py-2.5">
-  <span className="text-sm text-foreground">Prior Year (FY{cyYear - 1})</span>
-  <div className="inline-flex w-fit max-w-full items-center gap-2.5 rounded-[10px] border border-border bg-muted/40 px-3 py-1.5 opacity-70">
-  <img src={rollForwardPriorProvider === "xero" ? xeroLogo : intuitQuickbooksLogo} alt={sourceLabel(rollForwardPriorProvider)} className="h-5 object-contain shrink-0 grayscale" />
-  <span className="text-sm text-foreground whitespace-nowrap shrink-0">{clientInfo?.entityLegalName || clientName}</span>
-  <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] font-medium text-foreground shrink-0">
-  <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />Disconnected
-  </span>
-  </div>
-  </div>
-  )}
-  </div>
-  )}
-   </div>
     {showSourceSectionSeparator && <div className="mt-2" />}
   {isSourceLockedStub && (
     <div className="w-full mt-2">
@@ -1677,26 +1627,11 @@ const performSave = () => {
    <div className="flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
    <span className="text-sm text-amber-800 dark:text-amber-200">
-   Your client's source connection has changed. This engagement is still linked to {sourceLabel(savedSourceProvider ?? null)}. Select the new active connection above to continue pulling data.
+   Your client's source connection has changed. This engagement is still linked to {sourceLabel(savedSourceProvider ?? null)}. Click Switch Connection to pull data from the new source.
    </span>
   </div>
   </div>
   )}
-   {/* Year selection — system detects available years, user can only reduce */}
-   {showYearSelection && (
-   <div className="w-full mt-2">
-   <div className="space-y-2">
-   <SourceYearSelection
-   available={yearsAvailable}
-   minYears={yearLockedCount}
-   choice={yearsChoice}
-   onChange={(c, n) => { setYearsChoice(c); setSourceYears(n); }}
-   sourceName={sourceLabel(clientSourceIntegration)}
-   cyYear={cyYear}
-   />
-   </div>
-   </div>
-   )}
    {/* Edit mode — inline acknowledgment whenever the source setup changes */}
    {showAck && (
    <div className="w-full mt-2">
@@ -1704,21 +1639,16 @@ const performSave = () => {
    <div className="flex items-start gap-2">
    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
    <div className="min-w-0 flex-1">
-   <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">Action required before proceeding</p>
-   {isDisconnecting ? (
-   <p className="mt-1.5 text-sm text-amber-900 dark:text-amber-100">Disconnecting will remove source data for all years. Import will re-enable. Documents will only move after you upload a CSV file.</p>
-   ) : (
-   <ul className="mt-1.5 list-disc pl-5 space-y-0.5 text-sm text-amber-900 dark:text-amber-100">
-   <li>Adjusting entries will be deleted</li>
-   <li>Manually added accounts will be deleted</li>
-   <li>Issues, comments and requests will be deleted</li>
-   <li>Documents will only move after data is imported from source</li>
-   </ul>
-   )}
-   <label className="mt-3 flex items-center gap-2 text-sm font-medium text-foreground cursor-pointer">
-   <Checkbox checked={ackChecked} onCheckedChange={v => setAckChecked(!!v)} />
-   I understand and want to proceed
-   </label>
+   <p className="text-base font-bold text-amber-900 dark:text-amber-100">Please read carefully — this action is irreversible and will impact your file.</p>
+    <ul className="mt-1.5 list-disc pl-5 space-y-0.5 text-sm text-amber-900 dark:text-amber-100">
+    <li>Adjusting entries will be deleted</li>
+    <li>Manually added accounts will be deleted</li>
+    <li>Issues, comments and requests will be deleted</li>
+    <li>Documents will only move after data is imported</li>
+    </ul>
+    <input type="text" value={ackText} onChange={e => setAckText(e.target.value)} placeholder="Type accept to confirm"
+    className="input-double-border mt-3 h-9 w-64 rounded-[10px] border border-border bg-card px-3 text-sm text-foreground outline-none" />
+    {ackChecked && <p className="mt-1 text-xs font-medium text-[#2E7D52]">Confirmed</p>}
    </div>
    </div>
    </div>
@@ -1853,7 +1783,7 @@ const performSave = () => {
  <X className="h-4 w-4" />
  Cancel
  </Button>
- <Button disabled={!isFormValid || (showAck && !ackChecked)} onClick={handleCreate}>
+ <Button disabled={!isFormValid || (showAck && !ackChecked) || (isSourceProviderMismatch && !hasSelectedActiveConnection)} onClick={handleCreate}>
  {isEditMode ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
  {isEditMode ? "Update Engagement" : "Create Engagement"}
  </Button>
