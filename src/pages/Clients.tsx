@@ -91,9 +91,8 @@ const IntegrationCell = ({ type, onConnect }: { type: string; onConnect?: () => 
  
  if (type === "xero") {
  return (
- <div className={`${badgeClasses} gap-1`}>
+ <div className={badgeClasses}>
   <img src={accountingProviders.xero.badgeLogo} alt="Xero" className="h-4" />
- <span className="text-xs font-medium text-foreground dark:text-[hsl(var(--m3-inverse-on-surface))]">Xero</span>
  </div>
  );
  }
