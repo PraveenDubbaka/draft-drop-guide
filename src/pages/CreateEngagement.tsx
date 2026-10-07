@@ -1504,8 +1504,8 @@ const performSave = () => {
   {isRollForwardSource && clientHasSourceConnection && !isSourceLockedStub && dataSource === "source" && (
   <div className="flex items-center gap-x-10">
   <span className="text-sm text-foreground w-24 shrink-0">Prior Year (FY{cyYear - 1})</span>
-  <div className="inline-flex w-fit items-center gap-2.5 rounded-[10px] border border-border bg-muted/40 px-3 py-1.5 opacity-70">
-   <img src={accountingProviders[rollForwardPriorProvider].badgeLogo} alt={sourceLabel(rollForwardPriorProvider)} className="h-5 object-contain shrink-0 grayscale" />
+  <div className="flex items-center gap-3 opacity-70">
+   <span className="inline-flex items-center rounded-[10px] border border-border px-2 py-1"><img src={accountingProviders[rollForwardPriorProvider].badgeLogo} alt={sourceLabel(rollForwardPriorProvider)} className="h-4 object-contain grayscale" /></span>
   {pill("border-border bg-muted text-foreground", "Disconnected")}
   </div>
   </div>
