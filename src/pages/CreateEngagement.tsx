@@ -1261,7 +1261,7 @@ const performSave = () => {
               {Array.isArray(col.value) ? (
                 <div className="flex items-center gap-1.5">
                   {clientSourceIntegration ? (
-                    <img src={accountingProviders[clientSourceIntegration].logo} alt={sourceLabel(clientSourceIntegration)} className="h-5 object-contain" />
+                    <img src={accountingProviders[clientSourceIntegration].badgeLogo} alt={sourceLabel(clientSourceIntegration)} className="h-5 object-contain" />
                   ) : (
                     <span className="text-sm text-foreground">—</span>
                   )}
@@ -1485,7 +1485,7 @@ const performSave = () => {
    </span>}
    </> : (
   <>
-   <span className="inline-flex items-center rounded-[10px] border border-border px-2 py-1"><img src={accountingProviders[statusProvider ?? "quickbooks"].logo} alt={sourceLabel(statusProvider ?? null)} className="h-4 object-contain" /></span>
+   <span className="inline-flex items-center rounded-[10px] border border-border px-2 py-1"><img src={accountingProviders[statusProvider ?? "quickbooks"].badgeLogo} alt={sourceLabel(statusProvider ?? null)} className="h-4 object-contain" /></span>
   {needsSwitch
     ? pill("border-[#B4720A]/30 bg-[#FEF6E7] text-[#B4720A]", "Disconnected")
      : pill("border-connection-success/30 bg-connection-success-surface text-connection-success", "Connected")}
@@ -1504,7 +1504,7 @@ const performSave = () => {
   <div className="flex items-center gap-x-10">
   <span className="text-sm text-foreground w-24 shrink-0">Prior Year (FY{cyYear - 1})</span>
   <div className="inline-flex w-fit items-center gap-2.5 rounded-[10px] border border-border bg-muted/40 px-3 py-1.5 opacity-70">
-   <img src={accountingProviders[rollForwardPriorProvider].logo} alt={sourceLabel(rollForwardPriorProvider)} className="h-5 object-contain shrink-0 grayscale" />
+   <img src={accountingProviders[rollForwardPriorProvider].badgeLogo} alt={sourceLabel(rollForwardPriorProvider)} className="h-5 object-contain shrink-0 grayscale" />
   <span className="text-sm text-foreground whitespace-nowrap">{clientInfo?.entityLegalName || clientName}</span>
   {pill("border-border bg-muted text-foreground", "Disconnected")}
   </div>

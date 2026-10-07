@@ -383,7 +383,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
   {/* Linked source badge — logo + connection status (single source of truth) */}
   {badgeProvider && (
   <div className={`ml-1 inline-flex items-center gap-1.5 h-7 px-1.5 bg-card border rounded-sm ${sourceStatusDisconnected ? "border-amber-300" : "border-border"}`}>
-  <img src={accountingProviders[badgeProvider].logo} alt={sourceLabel(badgeProvider)} className="h-4" />
+  <img src={accountingProviders[badgeProvider].badgeLogo} alt={sourceLabel(badgeProvider)} className="h-4" />
   {sourceStatusDisconnected ? (
   <span className="inline-flex items-center rounded-full border border-[#B4720A]/30 bg-[#FEF6E7] px-1.5 py-0.5 text-[10px] font-medium text-[#B4720A] whitespace-nowrap">Disconnected</span>
   ) : (
