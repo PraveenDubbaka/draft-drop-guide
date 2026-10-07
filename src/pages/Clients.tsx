@@ -118,6 +118,8 @@ export default function Clients() {
  const [clientList, setClientList] = useState(clientsData);
  const [, setConnVersion] = useState(0);
   const [connectingClient, setConnectingClient] = useState<(typeof clientsData)[number] | null>(null);
+  const connectingType = connectingClient ? (getClientConnectionOverride(connectingClient.legalEntityName, connectingClient.entityName) ?? connectingClient.integration) : "none";
+  const connectingProvider = connectingType === "quickbooks" || connectingType === "xero" || connectingType === "sage" ? connectingType : null;
   useEffect(() => {
     const bump = () => setConnVersion(v => v + 1);
     window.addEventListener(CLIENT_CONNECTION_EVENT, bump);
@@ -455,7 +457,7 @@ export default function Clients() {
  clientName={selectedClientData?.entityName || 'Select a client'}
  />
  </div>
-  <SourceConnectionModal open={connectingClient !== null} onOpenChange={open => { if (!open) setConnectingClient(null); }} clientName={connectingClient?.entityName ?? ""} connectionName={connectingClient?.legalEntityName} onComplete={() => setConnVersion(v => v + 1)} />
+  <SourceConnectionModal open={connectingClient !== null} onOpenChange={open => { if (!open) setConnectingClient(null); }} clientName={connectingClient?.entityName ?? ""} connectionName={connectingClient?.legalEntityName} onComplete={() => setConnVersion(v => v + 1)} initialStep={connectingProvider ? "connected" : "select"} initialProvider={connectingProvider} />
   </Layout>
  );
 }
