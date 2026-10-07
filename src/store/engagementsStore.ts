@@ -11,7 +11,7 @@ export type EngagementRecord = {
  firstYearAudit: boolean;
 };
 
-const ENG_KEY = 'cds_engagements_v1';
+const ENG_KEY = 'cds_engagements_v2';
 const META_KEY = (id: string) => `engagement-meta-${id}`;
 
 export const SEED_ENGAGEMENTS: EngagementRecord[] = [
