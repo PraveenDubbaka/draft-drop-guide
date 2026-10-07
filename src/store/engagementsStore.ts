@@ -45,7 +45,7 @@ function seedDemoEngagementMeta() {
   ]);
 
   const seeds: Record<string, { dataSource: 'csv' | 'source'; sourceProvider?: 'xero' | 'quickbooks'; sourceYearsAvailable?: number; sourceYears?: number; sourceRollForward?: boolean; periodType?: 'stub' | 'full'; firstYearOfOperations?: boolean }> = {
-    'COM-NEW-Dec312024': { dataSource: 'source', sourceProvider: 'xero' },
+    'COM-NEW-Dec312024': { dataSource: 'csv' },
     'COM-INPROGRESS-Dec312024': { dataSource: 'csv', sourceYearsAvailable: 3 },
   };
   Object.entries(seeds).forEach(([id, seed]) => {
