@@ -1,5 +1,5 @@
 # Roadmap — Sep 24 data source flows
-- [ ] Shared prototype connection flow in Create/Edit and Clients, reference provider selection, loading, confirmation and disconnect
+- [x] Shared prototype connection flow in Create/Edit and Clients, reference provider selection, loading, confirmation and disconnect
 
 - [x] P1 Edit: CSV→Source, not connected → red error + connect links, Update disabled, detect connection when returning from Clients page
 - [x] P2 Edit: CSV→Source connected → blue info + static notes
