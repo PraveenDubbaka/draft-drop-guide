@@ -9,7 +9,7 @@ import { clientsData as appClientsData } from "@/data/clientsData";
 import { getClientSourceIntegration, sourceLabel, getClientConnectionOverride, getEngagementConnectionOverride, CLIENT_CONNECTION_EVENT, type AccountingProvider } from "@/lib/clientSource";
 import { accountingProviders } from "@/lib/accountingProviders";
 import { SourceConnectionModal } from "@/components/SourceConnectionModal";
-import { ArrowLeft, Briefcase, Calendar, Users, ChevronDown, Plus, Pencil, Trash2, Search, ExternalLink, X, Building2, FileText, Settings2, Check, UserPlus, Link2, AlertTriangle, XCircle, Info } from "lucide-react";
+import { ArrowLeft, Briefcase, Calendar, Users, ChevronDown, Plus, Pencil, Trash2, Search, ExternalLink, X, Building2, FileText, Settings2, Check, UserPlus, Link2, AlertTriangle, XCircle, Info, FilePen, FolderPlus, MessageSquareText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
