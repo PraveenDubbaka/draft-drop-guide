@@ -1634,19 +1634,19 @@ const performSave = () => {
    {/* Edit mode — inline acknowledgment whenever the source setup changes */}
    {showAck && (
    <div className="w-full mt-2">
-   <div className="rounded-[10px] border border-amber-300 border-l-4 border-l-amber-500 bg-amber-50 dark:bg-amber-950/30 px-3 py-2.5">
-   <div className="flex items-start gap-2">
-   <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-   <div className="min-w-0 flex-1">
-   <p className="text-base font-bold text-amber-900 dark:text-amber-100">Please read carefully — this action is irreversible and will impact your file.</p>
-    <ul className="mt-1.5 list-disc pl-5 space-y-0.5 text-sm text-amber-900 dark:text-amber-100">
-    <li>Adjusting entries will be deleted</li>
-    <li>Manually added accounts will be deleted</li>
-    <li>Issues, comments and requests will be deleted</li>
-    <li>Documents will only move after data is imported</li>
-    </ul>
-    <input type="text" value={ackText} onChange={e => setAckText(e.target.value)} placeholder="Type accept to confirm"
-    className="input-double-border mt-3 h-9 w-64 rounded-[10px] border border-border bg-card px-3 text-sm text-foreground outline-none" />
+    <div className="rounded-[10px] border border-red-200 border-l-4 border-l-red-500 bg-red-50 dark:bg-red-950/30 px-3 py-2.5">
+    <div className="flex items-start gap-2">
+    <XCircle className="h-4 w-4 text-red-500 shrink-0 mt-1" />
+    <div className="min-w-0 flex-1">
+    <p className="text-lg font-bold leading-snug text-red-700 dark:text-red-300">Please read carefully — this action is irreversible and will impact your file.</p>
+     <ul className="mt-2 space-y-1.5">
+     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><XCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Adjusting entries will be deleted</span></li>
+     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><XCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Manually added accounts will be deleted</span></li>
+     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><XCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Issues, comments and requests will be deleted</span></li>
+     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><XCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Documents will only move after data is imported</span></li>
+     </ul>
+     <input type="text" value={ackText} onChange={e => setAckText(e.target.value)} placeholder="Type accept to confirm"
+     className="input-double-border mt-3 h-9 w-64 rounded-[10px] border border-border bg-card px-3 text-sm text-foreground outline-none" />
     {ackChecked && <p className="mt-1 text-xs font-medium text-[#2E7D52]">Confirmed</p>}
    </div>
    </div>
