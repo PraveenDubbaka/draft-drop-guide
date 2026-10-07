@@ -12,14 +12,12 @@ interface SourceConnectionModalProps {
   connectionName?: string;
   engagementId?: string;
   onComplete?: () => void;
-  initialStep?: "select" | "connected";
-  initialProvider?: AccountingProvider;
 }
 
-export function SourceConnectionModal({ open, onOpenChange, clientName, connectionName = clientName, engagementId, onComplete, initialStep = "select", initialProvider }: SourceConnectionModalProps) {
+export function SourceConnectionModal({ open, onOpenChange, clientName, connectionName = clientName, engagementId, onComplete }: SourceConnectionModalProps) {
   const [step, setStep] = useState<"select" | "loading" | "connected">("select");
   const [provider, setProvider] = useState<AccountingProvider>("quickbooks");
-  useEffect(() => { if (open) { setStep(initialStep ?? "select"); if (initialProvider) setProvider(initialProvider); } }, [open, initialStep, initialProvider]);
+  useEffect(() => { if (open) setStep("select"); }, [open]);
   useEffect(() => {
     if (!open || step !== "loading") return;
     const timer = window.setTimeout(() => setStep("connected"), 1000);

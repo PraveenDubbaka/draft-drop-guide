@@ -1485,13 +1485,10 @@ const performSave = () => {
    </span>}
    </> : (
   <>
-   <button type="button" onClick={() => setShowSourceConnection(true)} title="Click to manage connection" className="inline-flex items-center gap-2 rounded-[10px] border border-border px-2 py-1.5 hover:bg-muted/50 transition-colors cursor-pointer">
-   <img src={accountingProviders[statusProvider ?? "quickbooks"].badgeLogo} alt={sourceLabel(statusProvider ?? null)} className="h-4 object-contain" />
+   <span className="inline-flex items-center rounded-[10px] border border-border px-2 py-1"><img src={accountingProviders[statusProvider ?? "quickbooks"].badgeLogo} alt={sourceLabel(statusProvider ?? null)} className="h-4 object-contain" /></span>
   {needsSwitch
     ? pill("border-[#B4720A]/30 bg-[#FEF6E7] text-[#B4720A]", "Disconnected")
      : pill("border-connection-success/30 bg-connection-success-surface text-connection-success", "Connected")}
-   </button>
-   {!needsSwitch && <span className="text-[11px] text-muted-foreground">Click to manage connection</span>}
   {needsSwitch && dataSource === "source" && (
   <Button type="button" size="sm" variant="secondary" className="h-8 text-xs" onClick={() => setHasSelectedActiveConnection(true)}>Switch Connection</Button>
   )}
@@ -1780,7 +1777,7 @@ const performSave = () => {
  </div>
  </div>
  </div>
-  <SourceConnectionModal open={showSourceConnection} onOpenChange={setShowSourceConnection} clientName={clientName} connectionName={clientInfo?.entityLegalName || clientName} engagementId={routeEngagementId} onComplete={() => setConnVersion(v => v + 1)} initialStep={clientHasSourceConnection ? "connected" : "select"} initialProvider={clientHasSourceConnection ? ((clientSourceIntegration as AccountingProvider | null) ?? undefined) : undefined} />
+  <SourceConnectionModal open={showSourceConnection} onOpenChange={setShowSourceConnection} clientName={clientName} connectionName={clientInfo?.entityLegalName || clientName} engagementId={routeEngagementId} onComplete={() => setConnVersion(v => v + 1)} />
   <Dialog open={showAddRoleModal} onOpenChange={setShowAddRoleModal}>
  <DialogContent className="max-w-sm">
  <DialogHeader>
