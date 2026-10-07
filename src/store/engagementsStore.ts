@@ -76,18 +76,36 @@ function seedDemoEngagementMeta() {
 }
 
 
+const OLD_IDS = new Set([
+  "AUD-NPM-Dec312025", "AUD-US-Dec312024",
+  "AUD-SL-Mar312024", "COM-CON-Dec312024",
+  "COM-PSP-Dec312023", "COM-QB-Dec312025",
+  "COM-QB-Dec312024", "COM-CHE-Dec252024",
+  "COM-OTH-Dec312024", "COM-CAS-Dec312024",
+  "COM-QB-Jan142026", "COM-SHR-Dec302023",
+  "COM-HF-Dec312024", "COM-HFRF-Dec312024",
+  "COM-QB-STCSV-Dec312024",
+  "COM-STUB-FOO-Dec312024",
+  "COM-STUB-NOFOO-Dec312024",
+  "COM-HFRF-STCSV-Dec312024",
+  "COM-FULL-TO-STUB-Dec312024",
+  "COM-STUB-TO-FULL-Dec312024",
+  "COM-STUB-SRC-TO-CSV-Dec312024",
+]);
+
 export function loadEngagements(): EngagementRecord[] {
  seedDemoEngagementMeta();
  try {
    const raw = localStorage.getItem(ENG_KEY);
    if (raw) {
-     const stored: EngagementRecord[] = JSON.parse(raw);
+     const parsed: EngagementRecord[] = JSON.parse(raw);
+     const stored = parsed.filter((e) => !OLD_IDS.has(e.id));
      const storedById = new Map(stored.map((engagement) => [engagement.id, engagement]));
      const repaired = SEED_ENGAGEMENTS.map((seed) => storedById.get(seed.id) ?? seed);
      const seedIds = new Set(SEED_ENGAGEMENTS.map((seed) => seed.id));
      const custom = stored.filter((engagement) => !seedIds.has(engagement.id));
      const next = [...repaired, ...custom];
-     if (next.length !== stored.length) localStorage.setItem(ENG_KEY, JSON.stringify(next));
+     if (next.length !== parsed.length) localStorage.setItem(ENG_KEY, JSON.stringify(next));
      return next;
    }
  } catch {}
