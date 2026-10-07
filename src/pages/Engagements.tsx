@@ -31,10 +31,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Layout } from "@/components/Layout";
 import { StyledCard } from "@/components/ui/card";
 import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
-import { getEngagementSourceIntegration, filterVisibleEngagements } from "@/lib/clientSource";
+import { getEngagementSourceIntegration, filterVisibleEngagements, type ClientSourceIntegration } from "@/lib/clientSource";
+import { accountingProviders } from "@/lib/accountingProviders";
 
 
-function SourceBadge({ type }: { type: 'xero' | 'quickbooks' | null }) {
+function SourceBadge({ type }: { type: ClientSourceIntegration }) {
   if (!type) {
     return (
       <span className="inline-flex items-center justify-center h-8 px-3 rounded-lg border border-border bg-muted text-xs font-medium text-foreground">
@@ -43,6 +44,7 @@ function SourceBadge({ type }: { type: 'xero' | 'quickbooks' | null }) {
     );
   }
   const badgeClasses = "inline-flex items-center justify-center h-8 w-24 px-1 rounded-lg bg-white border border-border";
+  if (type === 'sage') return <div className={badgeClasses}><img src={accountingProviders.sage.logo} alt="Sage" className="h-5" /></div>;
   if (type === 'xero') {
     return (
       <div className={`${badgeClasses} gap-1.5`}>
