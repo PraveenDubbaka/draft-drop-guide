@@ -1485,7 +1485,7 @@ const performSave = () => {
    </span>}
    </> : (
   <>
-   <img src={accountingProviders[statusProvider ?? "quickbooks"].logo} alt={sourceLabel(statusProvider ?? null)} className="h-4 object-contain" />
+   <span className="inline-flex items-center rounded-[10px] border border-border px-2 py-1"><img src={accountingProviders[statusProvider ?? "quickbooks"].logo} alt={sourceLabel(statusProvider ?? null)} className="h-4 object-contain" /></span>
   {needsSwitch
     ? pill("border-[#B4720A]/30 bg-[#FEF6E7] text-[#B4720A]", "Disconnected")
      : pill("border-connection-success/30 bg-connection-success-surface text-connection-success", "Connected")}
