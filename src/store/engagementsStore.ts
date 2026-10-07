@@ -11,7 +11,7 @@ export type EngagementRecord = {
  firstYearAudit: boolean;
 };
 
-const ENG_KEY = 'cds_engagements_v1';
+const ENG_KEY = 'cds_engagements_v2';
 const META_KEY = (id: string) => `engagement-meta-${id}`;
 
 export const SEED_ENGAGEMENTS: EngagementRecord[] = [
@@ -111,7 +111,8 @@ export function loadEngagements(): EngagementRecord[] {
        const created = new Date(e.dateCreated);
        return created >= new Date("2026-10-01");
      });
-     const next = [...repaired, ...custom];
+     const next = [...repaired, ...custom]
+       .map((e) => (e.id === "COM-INPROGRESS-Dec312024" ? { ...e, hasRF: true } : e));
      localStorage.setItem(ENG_KEY, JSON.stringify(next));
      return next;
    }
