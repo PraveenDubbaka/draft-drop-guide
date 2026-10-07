@@ -2320,7 +2320,7 @@ export default function EngagementDetail() {
   {/* Engagement source badge — shows the linked source and its connection status */}
   {headerSourceProvider && (
   <div className={`ml-1 inline-flex items-center gap-1.5 h-7 px-1.5 bg-card border rounded-sm ${isHeaderSourceDisconnected ? "border-amber-300" : "border-border"}`}>
-  <img src={accountingProviders[headerSourceProvider].logo} alt={accountingProviders[headerSourceProvider].name} className="h-4 shrink-0" />
+  <img src={accountingProviders[headerSourceProvider].badgeLogo} alt={accountingProviders[headerSourceProvider].name} className="h-4 shrink-0" />
   {isHeaderSourceDisconnected ? (
   <span className="inline-flex items-center rounded-full border border-[#B4720A]/30 bg-[#FEF6E7] px-1.5 py-0.5 text-[10px] font-medium text-[#B4720A] whitespace-nowrap">Disconnected</span>
   ) : (
