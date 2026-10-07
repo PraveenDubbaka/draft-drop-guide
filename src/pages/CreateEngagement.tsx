@@ -787,7 +787,8 @@ export default function CreateEngagement() {
           : getClientSourceIntegration(clientName));
         setSourceConnected(integ !== null);
         // Keep the initial data source until the user picks a different client
-        if (clientName === initialClientRef.current) return;
+        // Never change the data type on a live connection change while editing
+        if (isEditMode || clientName === initialClientRef.current) return;
         // Default: connected client → Source, not connected → CSV
         setDataSource(integ ? "source" : "csv");
       }
@@ -1114,7 +1115,8 @@ export default function CreateEngagement() {
    // either the connection isn't active or the engagement is linked to a different source.
    const showConnectionDropdown = isSourceProviderMismatch || isReconnectFlow;
    const dropdownSavedProvider = isReconnectFlow ? savedDisconnectedFrom : savedSourceProvider;
-    const isConnectionDisconnected = clientHasSourceConnection&& (!sourceConnected || isSourceProviderMismatch);
+    const isExternallyDisconnected = isEditMode && !clientHasSourceConnection && originalDataSource === "source" && dataSource === "source" && !isSourceLockedStub && !isRollForwardSource;
+     const isConnectionDisconnected = clientHasSourceConnection&& (!sourceConnected || isSourceProviderMismatch);
     // Roll forward with no client connection → auto CSV, locked
     const isRollForwardNoSource = isRollForwardSource && !clientHasSourceConnection;
     const rollForwardPriorProvider: AccountingProvider = savedDisconnectedFrom ?? savedSourceProvider
@@ -1477,7 +1479,11 @@ const performSave = () => {
   <div className="flex flex-col gap-1">
   <div className="flex flex-row flex-nowrap items-center gap-3 whitespace-nowrap">
   <span className="text-sm text-foreground whitespace-nowrap">Source status</span>
-   {!clientHasSourceConnection ? <>
+   {isExternallyDisconnected ? <>
+    <span onClick={() => setShowSourceConnection(true)} className="inline-flex items-center rounded-[10px] border border-border px-2 py-1 cursor-pointer"><img src={accountingProviders[savedSourceProvider ?? "quickbooks"].badgeLogo} alt={sourceLabel(savedSourceProvider ?? null)} className="h-4 object-contain" /></span>
+    {pill("border-[#B4720A]/30 bg-[#FEF6E7] text-[#B4720A]", "Disconnected")}
+    <Button type="button" size="sm" variant="secondary" className="h-8 text-xs" onClick={() => setShowSourceConnection(true)}>Switch Connection</Button>
+   </> : !clientHasSourceConnection ? <>
    {pill("border-border bg-muted text-foreground", "Not Connected")}
    {dataSource === "source" && !isSourceLockedStub && !isRollForwardNoSource && <span className="inline-flex items-center whitespace-nowrap">
      <button type="button" onClick={() => setShowSourceConnection(true)} className="text-sm text-primary underline underline-offset-2 hover:text-primary/80 transition-colors">Connect Source</button>
@@ -1510,18 +1516,18 @@ const performSave = () => {
   </div>
   </div>
   )}
-  {showYears && (
+  {(showYears || isExternallyDisconnected) && (
   <div className="flex items-start gap-x-10">
   <span className="text-sm text-foreground w-24 shrink-0 pt-2">Years to connect</span>
   <div className="flex flex-col gap-1">
-  <Select value={yearsChoice} disabled={needsSwitch} onValueChange={v => { const c = v as YearsChoice; setYearsChoice(c); setSourceYears(c === "all" ? maxSourceYears : Number(c)); }}>
+  <Select value={yearsChoice} disabled={needsSwitch || isExternallyDisconnected} onValueChange={v => { const c = v as YearsChoice; setYearsChoice(c); setSourceYears(c === "all" ? maxSourceYears : Number(c)); }}>
   <SelectTrigger className="h-9 w-fit min-w-64 text-sm"><SelectValue /></SelectTrigger>
   <SelectContent>
   <SelectItem value="all">All available years</SelectItem>
   {yearOpts.map(([n, l]) => <SelectItem key={n} value={n}>{l}</SelectItem>)}
   </SelectContent>
   </Select>
-  {needsSwitch && <span className="text-xs text-foreground">Update connection above to select available years.</span>}
+  {(needsSwitch || isExternallyDisconnected) && <span className="text-xs text-foreground">Update connection above to select available years.</span>}
   </div>
   </div>
   )}
@@ -1606,7 +1612,17 @@ const performSave = () => {
  </div>
  </div>
  )}
- {isSourceProviderMismatch && !hasSelectedActiveConnection && (
+ {isExternallyDisconnected && (
+    <div className="w-full mt-2">
+    <div className="flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+    <span className="text-sm text-amber-800 dark:text-amber-200">
+    Your client's source connection has changed. This engagement is still linked to {sourceLabel(savedSourceProvider ?? null)}. Click Switch Connection to pull data from a new source, or change Data Source Type to CSV.
+    </span>
+   </div>
+   </div>
+   )}
+   {isSourceProviderMismatch && !hasSelectedActiveConnection && (
    <div className="w-full mt-2">
    <div className="flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
