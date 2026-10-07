@@ -103,9 +103,16 @@ export function loadEngagements(): EngagementRecord[] {
      const storedById = new Map(stored.map((engagement) => [engagement.id, engagement]));
      const repaired = SEED_ENGAGEMENTS.map((seed) => storedById.get(seed.id) ?? seed);
      const seedIds = new Set(SEED_ENGAGEMENTS.map((seed) => seed.id));
-     const custom = stored.filter((engagement) => !seedIds.has(engagement.id));
+     const KNOWN_SEED_IDS = seedIds;
+     const custom = stored.filter((e) => {
+       if (OLD_IDS.has(e.id)) return false;
+       if (KNOWN_SEED_IDS.has(e.id)) return false;
+       // Only keep user-created engagements from Oct 2026+
+       const created = new Date(e.dateCreated);
+       return created >= new Date("2026-10-01");
+     });
      const next = [...repaired, ...custom];
-     if (next.length !== parsed.length) localStorage.setItem(ENG_KEY, JSON.stringify(next));
+     localStorage.setItem(ENG_KEY, JSON.stringify(next));
      return next;
    }
  } catch {}
