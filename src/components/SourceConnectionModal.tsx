@@ -72,7 +72,7 @@ export function SourceConnectionModal({ open, onOpenChange, clientName, connecti
             </div>
             <div className="mt-5 flex items-start gap-2 rounded-[10px] border border-connection-warning/30 bg-connection-warning-surface p-3 text-connection-warning">
               <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
-              <p className="text-sm"><strong>Action Required:</strong> For CSV engagements, go to Edit Engagement and change Data Source Type to Source to start pulling data.</p>
+              <p className="text-sm"><strong>Action Required:</strong> For CSV engagements, go to Edit Engagement and change Data Source Type to Integrate with Accounting Software to start pulling data.</p>
             </div>
           </>}
         </div>
