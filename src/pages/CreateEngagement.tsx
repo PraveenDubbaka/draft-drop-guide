@@ -1108,7 +1108,7 @@ export default function CreateEngagement() {
    const isSourceToCsvSwitch = isEditMode && clientHasSourceConnection && originalDataSource === "source" && dataSource === "csv";
    // Edit-mode scenario 5: the client's source connection changed since the engagement was set up
    const savedSourceProvider = editingMeta?.sourceProvider;
-   const isSourceProviderMismatch = isEditMode && clientHasSourceConnection
+   const isSourceProviderMismatch = isEditMode && !isRollForwardSource && clientHasSourceConnection
      && originalDataSource === "source" && dataSource === "source"
      && !!savedSourceProvider && savedSourceProvider !== clientSourceIntegration;
    // The client's connection can't be used by this engagement right now:
@@ -1490,7 +1490,7 @@ const performSave = () => {
   {needsSwitch
     ? pill("border-[#B4720A]/30 bg-[#FEF6E7] text-[#B4720A]", "Disconnected")
      : pill("border-connection-success/30 bg-connection-success-surface text-connection-success", "Connected")}
-  {needsSwitch && dataSource === "source" && (
+  {needsSwitch && dataSource === "source" && !isRollForwardSource && (
   <Button type="button" size="sm" variant="secondary" className="h-8 text-xs" onClick={() => setHasSelectedActiveConnection(true)}>Switch Connection</Button>
   )}
   </>
@@ -1506,7 +1506,6 @@ const performSave = () => {
   <span className="text-sm text-foreground w-24 shrink-0">Prior Year (FY{cyYear - 1})</span>
   <div className="inline-flex w-fit items-center gap-2.5 rounded-[10px] border border-border bg-muted/40 px-3 py-1.5 opacity-70">
    <img src={accountingProviders[rollForwardPriorProvider].badgeLogo} alt={sourceLabel(rollForwardPriorProvider)} className="h-5 object-contain shrink-0 grayscale" />
-  <span className="text-sm text-foreground whitespace-nowrap">{clientInfo?.entityLegalName || clientName}</span>
   {pill("border-border bg-muted text-foreground", "Disconnected")}
   </div>
   </div>
@@ -1515,11 +1514,13 @@ const performSave = () => {
   <div className="flex items-start gap-x-10">
   <span className="text-sm text-foreground w-24 shrink-0 pt-2">Years to connect</span>
   <div className="flex flex-col gap-1">
-  <Select value={yearsChoice} disabled={needsSwitch || isExternallyDisconnected} onValueChange={v => { const c = v as YearsChoice; setYearsChoice(c); setSourceYears(c === "all" ? maxSourceYears : Number(c)); }}>
+  <Select value={isRollForwardSource ? "1" : yearsChoice} disabled={(needsSwitch || isExternallyDisconnected) && !isRollForwardSource} onValueChange={v => { const c = v as YearsChoice; setYearsChoice(c); setSourceYears(c === "all" ? maxSourceYears : Number(c)); }}>
   <SelectTrigger className="h-9 w-fit min-w-64 text-sm"><SelectValue /></SelectTrigger>
   <SelectContent>
-  <SelectItem value="all">All available years</SelectItem>
-  {yearOpts.map(([n, l]) => <SelectItem key={n} value={n}>{l}</SelectItem>)}
+  {!isRollForwardSource && <SelectItem value="all">All available years</SelectItem>}
+  {isRollForwardSource
+    ? <SelectItem value="1">Current Year only</SelectItem>
+    : yearOpts.map(([n, l]) => <SelectItem key={n} value={n}>{l}</SelectItem>)}
   </SelectContent>
   </Select>
   {(needsSwitch || isExternallyDisconnected) && <span className="text-xs text-foreground">Update connection above to select available years.</span>}
