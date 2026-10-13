@@ -1627,7 +1627,7 @@ const performSave = () => {
     <div className="flex items-start gap-2">
     <XCircle className="h-4 w-4 text-red-500 shrink-0 mt-1" />
     <div className="min-w-0 flex-1">
-    <p className="text-lg font-bold leading-snug text-red-700 dark:text-red-300">Please read carefully — this action is irreversible and will impact your file.</p>
+    <p className="text-lg font-bold leading-snug text-red-700 dark:text-red-300">Please read carefully — THIS ACTION CANNOT BE UNDONE</p>
      <ul className="mt-2 space-y-1.5">
       <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><FilePen className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Adjusting entries will be deleted</span></li>
       <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><FolderPlus className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Manually added accounts will be deleted</span></li>
