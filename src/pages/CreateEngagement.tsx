@@ -1601,14 +1601,14 @@ const performSave = () => {
    {(isFullYearPeriod || isStubPeriod) && (
   <SectionCard icon={<Link2 className="h-5 w-5" />} title="Engagement Source">
   {isSourceLockedStub && (
-    <div className="w-full mt-2">
+    <div className="w-full mt-2 mb-4">
     <div className="rounded-[10px] border border-border bg-muted/50 px-3 py-2">
     <p className="text-sm text-muted-foreground">Source connection not available for stub periods</p>
     </div>
     </div>
     )}
     {isStubPeriod && firstYearOfOperations && (
-    <div className="w-full mt-2">
+    <div className="w-full mt-2 mb-4">
     <div className="flex items-start gap-2 rounded-[10px] border border-blue-200 bg-blue-50 dark:bg-blue-950/30 px-3 py-2">
     <Info className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
     <span className="text-sm text-blue-900 dark:text-blue-100">First year of operations — short period treated as full year for source connection.</span>
@@ -1617,7 +1617,7 @@ const performSave = () => {
     )}
      {!isSourceLockedStub && !isRollForwardNoSource && (<>
    {dataSource === "source" && !clientHasSourceConnection && !isExternallyDisconnected && (
-  <div className="w-full mt-2">
+  <div className="w-full mt-2 mb-4">
    <div className="flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
    <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
    <span className="text-sm text-red-800 dark:text-red-200">
@@ -1630,7 +1630,7 @@ const performSave = () => {
   </div>
   )}
     {clientHasSourceConnection && dataSource === "csv" && !isSourceToCsvSwitch && (
-    <div className="w-full mt-2">
+    <div className="w-full mt-2 mb-4">
     <div className="flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">
@@ -1640,7 +1640,7 @@ const performSave = () => {
     </div>
     )}
     {isSourceToCsvSwitch && (
-    <div className="w-full mt-2">
+    <div className="w-full mt-2 mb-4">
     <div className="flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">
@@ -1652,7 +1652,7 @@ const performSave = () => {
     </div>
     )}
    {clientHasSourceConnection && dataSource === "source" && !sourceConnected && (
-  <div className="w-full mt-2">
+  <div className="w-full mt-2 mb-4">
   <div className="flex items-center justify-between gap-3 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
   <span className="text-sm text-amber-900 dark:text-amber-200">No source connection found for this client</span>
    <Button size="sm" variant="outline" className="shrink-0" onClick={() => setShowSourceConnection(true)}>Connect Source</Button>
@@ -1660,7 +1660,7 @@ const performSave = () => {
   </div>
   )}
  {isReconnectFlow && hasSelectedActiveConnection && (
- <div className="w-full mt-2">
+ <div className="w-full mt-2 mb-4">
  <div className="flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
  <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
  <span className="text-sm text-amber-800 dark:text-amber-200">
@@ -1670,7 +1670,7 @@ const performSave = () => {
  </div>
  )}
  {isExternallyDisconnected && (
-    <div className="w-full mt-2">
+    <div className="w-full mt-2 mb-4">
     <div className="flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">
@@ -1680,7 +1680,7 @@ const performSave = () => {
    </div>
    )}
    {isSourceProviderMismatch && !hasSelectedActiveConnection && (
-   <div className="w-full mt-2">
+   <div className="w-full mt-2 mb-4">
    <div className="flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
    <span className="text-sm text-amber-800 dark:text-amber-200">
@@ -1691,7 +1691,7 @@ const performSave = () => {
   )}
     </>)}
     {isRollForwardNoSource && (
-    <div className="w-full mt-2">
+    <div className="w-full mt-2 mb-4">
     <div className="rounded-[10px] border border-border bg-muted/50 px-3 py-2">
     <p className="text-sm text-foreground">No source connection found for this client. This engagement has been set to CSV. To connect a source, go to the client page and add an integration.</p>
     </div>
@@ -1705,8 +1705,8 @@ const performSave = () => {
   const yearOpts = ([["1", "Current Year only"], ["2", "Current Year + Prior Year 1"], ["3", "Current Year + Prior Year 1 + Prior Year 2"]] as const)
     .filter(([n]) => Number(n) <= maxSourceYears && Number(n) >= yearLockedCount);
   return (
-  <div className="space-y-4 py-1">
-  <div className="flex items-start gap-4">
+  <div>
+  <div className="flex items-start gap-4 mb-4">
   <span className="text-sm text-foreground w-44 shrink-0 pt-0.5">Source Data</span>
   <div className="flex flex-col gap-1">
   <div className="flex flex-row flex-nowrap items-center gap-3 whitespace-nowrap">
@@ -1732,7 +1732,7 @@ const performSave = () => {
   )}
   </div>
   </div>
-  <div className="flex flex-wrap items-start gap-4 gap-y-3">
+  <div className="flex flex-wrap items-start gap-4 gap-y-3 mb-4">
   <span className="text-sm text-foreground w-44 shrink-0 pt-0.5">Data Source Type</span>
   {isSourceLockedStub || isRollForwardNoSource ? (
   <div className="flex flex-col items-start gap-2 opacity-60 cursor-not-allowed pt-0.5">
@@ -1750,7 +1750,7 @@ const performSave = () => {
   )}
   </div>
   {isRollForwardSource && clientHasSourceConnection && !isSourceLockedStub && dataSource === "source" && (
-  <div className="flex items-center gap-4">
+  <div className="flex items-center gap-4 mb-4">
   <span className="text-sm text-foreground w-44 shrink-0">Prior Year (FY{cyYear - 1})</span>
   <div className="flex items-center gap-3 opacity-70">
    <span className="inline-flex items-center rounded-[10px] border border-border px-2 py-1"><img src={accountingProviders[rollForwardPriorProvider].badgeLogo} alt={sourceLabel(rollForwardPriorProvider)} className="h-4 object-contain grayscale" /></span>
@@ -1759,7 +1759,7 @@ const performSave = () => {
   </div>
   )}
   {(showYears || isExternallyDisconnected) && (
-  <div className="flex items-start gap-4">
+  <div className="flex items-start gap-4 mb-4">
   <span className="text-sm text-foreground w-44 shrink-0 pt-2">Years to connect</span>
   <div className="flex flex-col gap-1">
   <Select value={isRollForwardSource ? "1" : yearsChoice} disabled={(needsSwitch || isExternallyDisconnected) && !isRollForwardSource} onValueChange={v => { const c = v as YearsChoice; setYearsChoice(c); setSourceYears(c === "all" ? maxSourceYears : Number(c)); }}>
@@ -1776,7 +1776,7 @@ const performSave = () => {
   </div>
   )}
   {isEditMode && originalDataSource === "csv" && dataSource === "source" && showYearSelection && (
-  <div className="flex flex-col gap-2">
+  <div className="flex flex-col gap-2 mb-4">
   <span className="text-sm text-foreground">What would you like to do with data for years not connected to source?</span>
   <RadioGroup value={unconnectedYearsAction} onValueChange={v => setUnconnectedYearsAction(v as "keep" | "reset")} className="flex flex-col items-start gap-3 pl-48">
   {[
@@ -1795,7 +1795,7 @@ const performSave = () => {
   </div>
   )}
   {isEditMode && originalDataSource === "source" && dataSource === "csv" && (
-  <div className="flex flex-col gap-2">
+  <div className="flex flex-col gap-2 mb-4">
   <span className="text-sm text-foreground">What would you like to do with your existing source data?</span>
   <RadioGroup value={unconnectedYearsAction} onValueChange={v => setUnconnectedYearsAction(v as "keep" | "reset")} className="flex flex-col items-start gap-3 pl-48">
   {[
@@ -1814,7 +1814,7 @@ const performSave = () => {
   </div>
   )}
   {isSourceProviderMismatch && hasSelectedActiveConnection && (
-  <div className="flex flex-col gap-2">
+  <div className="flex flex-col gap-2 mb-4">
   <span className="text-sm text-foreground">What would you like to do with data for years not switching to the new source?</span>
   <RadioGroup value={unconnectedYearsAction} onValueChange={v => setUnconnectedYearsAction(v as "keep" | "reset")} className="flex flex-col items-start gap-3 pl-48">
   {[
@@ -1839,7 +1839,7 @@ const performSave = () => {
      {!isSourceLockedStub && !isRollForwardNoSource && (<>
    {/* Edit mode — inline acknowledgment whenever the source setup changes */}
    {showAck && (
-   <div className="w-full mt-2">
+   <div className="w-full mt-4">
     <div className="rounded-[10px] border border-red-200 border-l-4 border-l-red-500 bg-red-50 dark:bg-red-950/30 px-3 py-2.5">
     <div className="flex items-start gap-2">
     <XCircle className="h-4 w-4 text-red-500 shrink-0 mt-1" />
