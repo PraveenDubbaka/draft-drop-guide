@@ -204,7 +204,7 @@ const DateField = ({
  <DatePickerCalendar
  mode="single"
  selected={selected}
- onSelect={(d) => onChange(d ? formatDateFns(d, "MM/dd/yyyy") : "")}
+ onSelect={(d) => { console.log("[DateField] onSelect fired:", d); onChange(d ? formatDateFns(d, "MM/dd/yyyy") : ""); }}
  initialFocus
  className="p-3 pointer-events-auto"
  />
