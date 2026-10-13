@@ -17,6 +17,9 @@ import { Layout } from "@/components/Layout";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SourceYearSelection, type YearsChoice } from "@/components/SourceYearSelection";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as DatePickerCalendar } from "@/components/ui/calendar";
+import { format as formatDateFns } from "date-fns";
 
 const CSV_LABEL = "Non-Source Connected (CSV/Excel import required)";
 import { Switch } from "@/components/ui/switch";
@@ -1057,6 +1060,27 @@ export default function CreateEngagement() {
   }
   };
 
+  const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const clientIncorporation: Date | undefined = (() => {
+    const raw = (clientInfo as any)?.dateOfIncorporation ?? (appClient as any)?.dateOfIncorporation;
+    if (!raw) return undefined;
+    const d = new Date(raw);
+    return isNaN(d.getTime()) ? undefined : d;
+  })();
+  const [fooYeMonth, setFooYeMonth] = useState<string>("");
+  const [fooYeDay, setFooYeDay] = useState<string>("");
+  const [fooIncorporation, setFooIncorporation] = useState<Date | undefined>(clientIncorporation);
+  const fooDerived = isStubPeriod && firstYearOfOperations;
+  const fooDaysInMonth = fooYeMonth ? new Date(2001, Number(fooYeMonth), 0).getDate() : 31;
+  useEffect(() => {
+    if (!fooDerived || !fooYeMonth || !fooYeDay || !fooIncorporation) return;
+    const m = Number(fooYeMonth) - 1, d = Number(fooYeDay);
+    let end = new Date(fooIncorporation.getFullYear(), m, d);
+    if (end < fooIncorporation) end = new Date(fooIncorporation.getFullYear() + 1, m, d);
+    const fmt = (x: Date) => formatDateFns(x, "MM/dd/yyyy");
+    setCurrentYearStart(fmt(fooIncorporation));
+    setCurrentYearEnd(fmt(end));
+  }, [fooDerived, fooYeMonth, fooYeDay, fooIncorporation]);
   const handleFOOChange = (checked: boolean) => {
   setFirstYearOfOperations(checked);
   if (!checked && dataSource === "source") {
@@ -1419,7 +1443,46 @@ const performSave = () => {
  </label>
  </div>
  )}
- {isStubPeriod && (
+ {fooDerived && (
+ <>
+ <div className="flex items-start gap-4 py-2.5">
+ <span className="text-sm text-foreground w-44 shrink-0 whitespace-nowrap pt-2">Year-End Date<span className="text-destructive ml-0.5">*</span></span>
+ <div className="flex flex-col gap-1">
+ <div className="flex gap-3">
+ <Select value={fooYeMonth} onValueChange={v => { setFooYeMonth(v); const max = new Date(2001, Number(v), 0).getDate(); if (Number(fooYeDay) > max) setFooYeDay(String(max)); }}>
+ <SelectTrigger className="h-9 text-sm w-40"><SelectValue placeholder="Month" /></SelectTrigger>
+ <SelectContent>{MONTHS.map((m, i) => <SelectItem key={m} value={String(i + 1)}>{m}</SelectItem>)}</SelectContent>
+ </Select>
+ <Select value={fooYeDay} onValueChange={setFooYeDay}>
+ <SelectTrigger className="h-9 text-sm w-24"><SelectValue placeholder="Day" /></SelectTrigger>
+ <SelectContent>{Array.from({ length: fooDaysInMonth }, (_, i) => <SelectItem key={i + 1} value={String(i + 1)}>{i + 1}</SelectItem>)}</SelectContent>
+ </Select>
+ </div>
+ <p className="text-xs text-muted-foreground">e.g. December 31 — year rotates automatically each engagement</p>
+ </div>
+ </div>
+ <div className="flex items-start gap-4 py-2.5">
+ <span className="text-sm text-foreground w-44 shrink-0 whitespace-nowrap pt-2">Date of Incorporation</span>
+ <div className="flex flex-col gap-1">
+ <Popover>
+ <PopoverTrigger asChild>
+ <Button type="button" variant="outline" className={`h-9 w-[220px] justify-start text-left font-normal text-sm ${!fooIncorporation ? "text-muted-foreground" : ""}`}>
+ <Calendar className="h-4 w-4 mr-2" />
+ {fooIncorporation ? formatDateFns(fooIncorporation, "PPP") : <span>Pick a date</span>}
+ </Button>
+ </PopoverTrigger>
+ <PopoverContent className="w-auto p-0" align="start">
+ <DatePickerCalendar mode="single" selected={fooIncorporation} onSelect={setFooIncorporation} initialFocus className="p-3 pointer-events-auto" />
+ </PopoverContent>
+ </Popover>
+ <p className="text-xs text-muted-foreground">
+ {clientIncorporation && fooIncorporation?.getTime() === clientIncorporation.getTime() ? "Pre-filled from client page" : "Optional — auto-populates from client page if available"}
+ </p>
+ </div>
+ </div>
+ </>
+ )}
+ {isStubPeriod && !fooDerived && (
  <div className="flex items-start gap-4 pb-2.5">
  <span className="w-44 shrink-0" />
  <p className="text-xs text-muted-foreground max-w-lg">
@@ -1429,9 +1492,9 @@ const performSave = () => {
  )}
  {/* Year rows */}
   {[
-  { label: "Current Year", required: true, start: currentYearStart, setStart: handleCurrentYearStartChange, end: currentYearEnd, setEnd: handleCurrentYearEndChange, disabled: false },
-  { label: "Prior Year 1", required: false, start: priorYear1Start, setStart: setPriorYear1Start, end: priorYear1End, setEnd: setPriorYear1End, disabled: isFullYearPeriod },
-  { label: "Prior Year 2", required: false, start: priorYear2Start, setStart: setPriorYear2Start, end: priorYear2End, setEnd: setPriorYear2End, disabled: isFullYearPeriod },
+  { label: "Current Year", required: true, start: currentYearStart, setStart: handleCurrentYearStartChange, end: currentYearEnd, setEnd: handleCurrentYearEndChange, disabled: fooDerived, note: fooDerived ? "Auto-derived from Date of Incorporation and Year-End Date" : "" },
+  { label: "Prior Year 1", required: false, start: fooDerived ? "" : priorYear1Start, setStart: setPriorYear1Start, end: fooDerived ? "" : priorYear1End, setEnd: setPriorYear1End, disabled: isFullYearPeriod || fooDerived, note: fooDerived ? "No data for this period" : isFullYearPeriod ? "Auto-derived from Current Year dates" : "" },
+  { label: "Prior Year 2", required: false, start: fooDerived ? "" : priorYear2Start, setStart: setPriorYear2Start, end: fooDerived ? "" : priorYear2End, setEnd: setPriorYear2End, disabled: isFullYearPeriod || fooDerived, note: fooDerived ? "No data for this period" : isFullYearPeriod ? "Auto-derived from Current Year dates" : "" },
   ].map(row => (
   <div key={row.label} className="flex items-start gap-4 py-2.5">
   <span className="text-sm text-foreground w-44 shrink-0 whitespace-nowrap pt-5">
@@ -1442,7 +1505,7 @@ const performSave = () => {
   <div className="flex-1 min-w-0 max-w-44"><LabeledInput label="Start Date" value={row.start} onChange={row.setStart} required={row.required} icon={<Calendar className="h-4 w-4" />} disabled={row.disabled} /></div>
   <div className="flex-1 min-w-0 max-w-44"><LabeledInput label="End Date" value={row.end} onChange={row.setEnd} required={row.required} icon={<Calendar className="h-4 w-4" />} disabled={row.disabled} /></div>
   </div>
-  {row.disabled && <p className="text-xs text-muted-foreground">Auto-derived from Current Year dates</p>}
+  {row.note && <p className={`text-xs ${row.note === "No data for this period" ? "text-[#667085]" : "text-muted-foreground"}`}>{row.note}</p>}
   </div>
   </div>
   ))}
@@ -1774,7 +1837,7 @@ const performSave = () => {
  <X className="h-4 w-4" />
  Cancel
  </Button>
- <Button disabled={!isFormValid || (showAck && !ackChecked) || (isSourceProviderMismatch && !hasSelectedActiveConnection)} onClick={handleCreate}>
+ <Button disabled={!isFormValid || (fooDerived && (!fooYeMonth || !fooYeDay)) || (showAck && !ackChecked) || (isSourceProviderMismatch && !hasSelectedActiveConnection)} onClick={handleCreate}>
  {isEditMode ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
  {isEditMode ? "Update Engagement" : "Create Engagement"}
  </Button>
