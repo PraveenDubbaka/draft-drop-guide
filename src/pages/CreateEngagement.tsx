@@ -1575,14 +1575,6 @@ const performSave = () => {
  </div>
  </>
  )}
- {isStubPeriod && !fooDerived && (
- <div className="flex items-start gap-4 pb-2.5">
- <span className="w-44 shrink-0" />
- <p className="text-xs text-muted-foreground max-w-lg">
- Partial year selected — enter the exact start and end dates for this shorter period. Dates are not auto-derived and comparatives are not annualized.
- </p>
- </div>
- )}
  {/* Year rows */}
   {[
   { label: "Current Year", required: true, start: currentYearStart, setStart: handleCurrentYearStartChange, end: currentYearEnd, setEnd: handleCurrentYearEndChange, disabled: fooDerived, note: fooDerived ? "Auto-derived from Date of Incorporation and Year-End Date" : "" },
