@@ -1697,6 +1697,25 @@ const performSave = () => {
   </RadioGroup>
   </div>
   )}
+  {isEditMode && originalDataSource === "source" && dataSource === "csv" && (
+  <div className="flex flex-col gap-2">
+  <span className="text-sm text-foreground">What would you like to do with your existing source data?</span>
+  <RadioGroup value={unconnectedYearsAction} onValueChange={v => setUnconnectedYearsAction(v as "keep" | "reset")} className="flex flex-col items-start gap-3 pl-48">
+  {[
+  { value: "keep", label: "Keep existing data", description: "Your current trial balance data will be retained. You can import CSV files for any year." },
+  { value: "reset", label: "Reset data", description: "All existing trial balance data will be cleared. You can import fresh CSV files for all years." },
+  ].map(o => (
+  <label key={o.value} className="flex items-start gap-2 cursor-pointer text-sm text-foreground">
+  <RadioGroupItem value={o.value} className="mt-0.5" />
+  <span className="flex flex-col gap-0.5">
+  <span>{o.label}</span>
+  <span className="text-xs text-muted-foreground">{o.description}</span>
+  </span>
+  </label>
+  ))}
+  </RadioGroup>
+  </div>
+  )}
   </div>
   );
   })()}
