@@ -1672,6 +1672,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   background: linear-gradient(90deg, hsl(217 91% 60%), hsl(217 91% 72%));
 }
 
+.toast-progress-3s::before {
+  animation-duration: 3s;
+}
+
 /* Close button styling for sonner */
 [data-sonner-toaster] [data-close-button] {
   position: absolute !important;
