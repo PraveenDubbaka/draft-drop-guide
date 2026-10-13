@@ -1678,7 +1678,7 @@ const performSave = () => {
   </div>
   </div>
   )}
-  {(isCsvToSourceSwitch || (isReconnectFlow && hasSelectedActiveConnection)) && showYearSelection && (
+  {isEditMode && originalDataSource === "csv" && dataSource === "source" && showYearSelection && (
   <div className="flex flex-col gap-2">
   <span className="text-sm text-foreground">What would you like to do with data for years not connected to source?</span>
   <RadioGroup value={unconnectedYearsAction} onValueChange={v => setUnconnectedYearsAction(v as "keep" | "reset")} className="flex flex-col items-start gap-3 pl-48">
