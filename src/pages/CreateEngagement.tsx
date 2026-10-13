@@ -1556,15 +1556,8 @@ const performSave = () => {
  <div className="flex items-start gap-4 py-2.5">
  <span className="text-sm text-foreground w-44 shrink-0 whitespace-nowrap pt-2">Year-End Date<span className="text-destructive ml-0.5">*</span></span>
  <div className="flex flex-col gap-1">
- <div className="flex gap-3">
- <Select value={fooYeMonth} onValueChange={v => { setFooYeMonth(v); const max = new Date(2001, Number(v), 0).getDate(); if (Number(fooYeDay) > max) setFooYeDay(String(max)); }}>
- <SelectTrigger className="h-9 text-sm w-40"><SelectValue placeholder="Month" /></SelectTrigger>
- <SelectContent>{MONTHS.map((m, i) => <SelectItem key={m} value={String(i + 1)}>{m}</SelectItem>)}</SelectContent>
- </Select>
- <Select value={fooYeDay} onValueChange={setFooYeDay}>
- <SelectTrigger className="h-9 text-sm w-24"><SelectValue placeholder="Day" /></SelectTrigger>
- <SelectContent>{Array.from({ length: fooDaysInMonth }, (_, i) => <SelectItem key={i + 1} value={String(i + 1)}>{i + 1}</SelectItem>)}</SelectContent>
- </Select>
+ <div className="w-44">
+ <MMDDDateField value={fooYearEnd} onChange={setFooYearEnd} required />
  </div>
  <p className="text-xs text-muted-foreground">e.g. December 31 — year rotates automatically each engagement</p>
  </div>
