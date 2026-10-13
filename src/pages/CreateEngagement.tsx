@@ -158,6 +158,63 @@ const LabeledInput = ({
  );
 };
 
+// Calendar date field styled to match the global form inputs (h-9, 10px radius, double-border focus)
+const DateField = ({
+ label,
+ value,
+ onChange,
+ required = false,
+ disabled = false,
+}: {
+ label?: string;
+ value: string; // MM/dd/yyyy
+ onChange: (value: string) => void;
+ required?: boolean;
+ disabled?: boolean;
+}) => {
+ const m = value ? value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/) : null;
+ const parsed = m ? new Date(Number(m[3]), Number(m[1]) - 1, Number(m[2])) : undefined;
+ const selected = parsed && !isNaN(parsed.getTime()) ? parsed : undefined;
+ return (
+ <div className="flex flex-col gap-1">
+ {label && (
+ <label className="text-xs font-medium text-foreground">
+ {label}
+ {required && <span className="text-destructive ml-0.5">*</span>}
+ </label>
+ )}
+ <Popover>
+ <PopoverTrigger asChild disabled={disabled}>
+ <button
+ type="button"
+ disabled={disabled}
+ className={`
+ input-double-border w-full h-9 px-3 py-2 text-sm rounded-[10px] outline-none transition-all duration-200 flex items-center text-left
+ ${disabled
+ ? 'bg-muted border border-transparent text-muted-foreground opacity-60 cursor-not-allowed'
+ : 'bg-white border border-[#C3CBD6] dark:border-[hsl(220_15%_30%)] dark:bg-card hover:border-[hsl(210_25%_75%)] dark:hover:border-[hsl(220_15%_40%)]'
+ }
+ ${selected ? 'text-foreground' : 'text-muted-foreground'}
+ `}
+ >
+ <span className="flex-1 truncate">{selected ? formatDateFns(selected, "MM/dd/yyyy") : "Pick a date"}</span>
+ <Calendar className="h-4 w-4 ml-auto shrink-0 text-muted-foreground" />
+ </button>
+ </PopoverTrigger>
+ <PopoverContent className="w-auto p-0" align="start">
+ <DatePickerCalendar
+ mode="single"
+ selected={selected}
+ onSelect={(d) => onChange(d ? formatDateFns(d, "MM/dd/yyyy") : "")}
+ initialFocus
+ className="p-3 pointer-events-auto"
+ />
+ </PopoverContent>
+ </Popover>
+ </div>
+ );
+};
+
 // Standard select component with label above - matching design system
 const LabeledSelect = ({ 
  label, 
@@ -1464,17 +1521,9 @@ const performSave = () => {
  <div className="flex items-start gap-4 py-2.5">
  <span className="text-sm text-foreground w-44 shrink-0 whitespace-nowrap pt-2">Date of Incorporation</span>
  <div className="flex flex-col gap-1">
- <Popover>
- <PopoverTrigger asChild>
- <Button type="button" variant="outline" className={`h-9 w-[220px] justify-start text-left font-normal text-sm ${!fooIncorporation ? "text-muted-foreground" : ""}`}>
- <Calendar className="h-4 w-4 mr-2" />
- {fooIncorporation ? formatDateFns(fooIncorporation, "PPP") : <span>Pick a date</span>}
- </Button>
- </PopoverTrigger>
- <PopoverContent className="w-auto p-0" align="start">
- <DatePickerCalendar mode="single" selected={fooIncorporation} onSelect={setFooIncorporation} initialFocus className="p-3 pointer-events-auto" />
- </PopoverContent>
- </Popover>
+ <div className="w-[220px]">
+ <DateField value={fooIncorporation ? formatDateFns(fooIncorporation, "MM/dd/yyyy") : ""} onChange={v => { const m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); setFooIncorporation(m ? new Date(Number(m[3]), Number(m[1]) - 1, Number(m[2])) : undefined); }} />
+ </div>
  <p className="text-xs text-muted-foreground">
  {clientIncorporation && fooIncorporation?.getTime() === clientIncorporation.getTime() ? "Pre-filled from client page" : "Optional — auto-populates from client page if available"}
  </p>
@@ -1502,8 +1551,8 @@ const performSave = () => {
   </span>
   <div className="flex flex-col gap-1 flex-1 min-w-0">
   <div className={`flex gap-3 ${row.disabled ? "opacity-60" : ""}`}>
-  <div className="flex-1 min-w-0 max-w-44"><LabeledInput label="Start Date" value={row.start} onChange={row.setStart} required={row.required} icon={<Calendar className="h-4 w-4" />} disabled={row.disabled} /></div>
-  <div className="flex-1 min-w-0 max-w-44"><LabeledInput label="End Date" value={row.end} onChange={row.setEnd} required={row.required} icon={<Calendar className="h-4 w-4" />} disabled={row.disabled} /></div>
+ <div className="flex-1 min-w-0 max-w-44"><DateField label="Start Date" value={row.start} onChange={row.setStart} required={row.required} disabled={row.disabled} /></div>
+ <div className="flex-1 min-w-0 max-w-44"><DateField label="End Date" value={row.end} onChange={row.setEnd} required={row.required} disabled={row.disabled} /></div>
   </div>
   {row.note && <p className={`text-xs ${row.note === "No data for this period" ? "text-[#667085]" : "text-muted-foreground"}`}>{row.note}</p>}
   </div>
