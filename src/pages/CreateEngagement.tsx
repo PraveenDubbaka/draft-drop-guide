@@ -1132,7 +1132,8 @@ export default function CreateEngagement() {
      if (!saved || saved >= maxSourceYears) return "all";
      return String(saved) as YearsChoice;
    });
-   const [ackText, setAckText] = useState("");
+      const [unconnectedYearsAction, setUnconnectedYearsAction] = useState<"keep" | "reset">("keep");
+const [ackText, setAckText] = useState("");
     const ackChecked = ackText.trim() === "Delete";
     const setAckChecked = (_v: boolean) => setAckText("");
    // Connecting to source defaults to all available years (user can only reduce)
@@ -1675,6 +1676,25 @@ const performSave = () => {
   </Select>
   {(needsSwitch || isExternallyDisconnected) && <span className="text-xs text-foreground">Update connection above to select available years.</span>}
   </div>
+  </div>
+  )}
+  {isEditMode && originalDataSource === "csv" && dataSource === "source" && showYearSelection && (
+  <div className="flex flex-col gap-2">
+  <span className="text-sm text-foreground">What would you like to do with data for years not connected to source?</span>
+  <RadioGroup value={unconnectedYearsAction} onValueChange={v => setUnconnectedYearsAction(v as "keep" | "reset")} className="flex flex-col items-start gap-3 pl-48">
+  {[
+  { value: "keep", label: "Keep existing data", description: "Prior year data already in this engagement will be retained. If duplicates are found they will appear in the merge function." },
+  { value: "reset", label: "Reset data", description: "All existing trial balance data for unselected years will be cleared." },
+  ].map(o => (
+  <label key={o.value} className="flex items-start gap-2 cursor-pointer text-sm text-foreground">
+  <RadioGroupItem value={o.value} className="mt-0.5" />
+  <span className="flex flex-col gap-0.5">
+  <span>{o.label}</span>
+  <span className="text-xs text-muted-foreground">{o.description}</span>
+  </span>
+  </label>
+  ))}
+  </RadioGroup>
   </div>
   )}
   </div>
