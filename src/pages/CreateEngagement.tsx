@@ -1155,6 +1155,12 @@ const [ackText, setAckText] = useState("");
 
   const handlePeriodTypeChange = (val: string) => {
   setPeriodType(val);
+  if (isEditMode && val !== periodType) {
+  toast.info("Period type updated. Please review your engagement dates.", {
+  duration: 3000,
+  classNames: { toast: "toast-progress-3s" },
+  });
+  }
   const isNowFull = val === "Full Year" || val === "Full year";
   const isNowStub = val === "Partial Year" || val === "Partial year";
   if (isNowFull) {
