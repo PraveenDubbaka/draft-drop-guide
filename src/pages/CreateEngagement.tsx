@@ -1460,25 +1460,10 @@ const performSave = () => {
     .filter(([n]) => Number(n) <= maxSourceYears && Number(n) >= yearLockedCount);
   return (
   <div className="space-y-4 py-1">
-  <div className="flex flex-wrap items-start gap-x-10 gap-y-3">
-  <span className="text-sm text-foreground w-24 shrink-0 pt-0.5">Data Source Type</span>
-  {isSourceLockedStub || isRollForwardNoSource ? (
-  <div className="flex items-center gap-8 opacity-60 cursor-not-allowed pt-0.5">
-  <label className="flex items-center gap-2 text-sm text-foreground"><span className="h-4 w-4 rounded-full border-2 border-primary flex items-center justify-center"><span className="h-2 w-2 rounded-full bg-primary" /></span>Import Data from CSV/Excel/PDF</label>
-  <label className="flex items-center gap-2 text-sm text-foreground"><span className="h-4 w-4 rounded-full border-2 border-primary" />Integrate with Accounting Software</label>
-  </div>
-  ) : (
-  <RadioGroup value={dataSource} onValueChange={v => setDataSource(v as "csv" | "source")} className="flex flex-wrap items-center gap-x-16 gap-y-2 pt-0.5">
-  {[{ value: "csv", label: "Import Data from CSV/Excel/PDF" }, { value: "source", label: "Integrate with Accounting Software" }].map(o => (
-  <label key={o.value} className="flex items-center gap-2 cursor-pointer text-sm text-foreground whitespace-nowrap">
-  <RadioGroupItem value={o.value} />{o.label}
-  </label>
-  ))}
-  </RadioGroup>
-  )}
+  <div className="flex items-start gap-x-10">
+  <span className="text-sm text-foreground w-24 shrink-0 pt-0.5">Source Data</span>
   <div className="flex flex-col gap-1">
   <div className="flex flex-row flex-nowrap items-center gap-3 whitespace-nowrap">
-  <span className="text-sm text-foreground whitespace-nowrap">Source status</span>
    {isExternallyDisconnected ? <>
     <span onClick={() => setShowSourceConnection(true)} className="inline-flex items-center rounded-[10px] border border-border px-2 py-1 cursor-pointer"><img src={accountingProviders[savedSourceProvider ?? "quickbooks"].badgeLogo} alt={sourceLabel(savedSourceProvider ?? null)} className="h-4 object-contain" /></span>
     {pill("border-[#B4720A]/30 bg-[#FEF6E7] text-[#B4720A]", "Disconnected")}
@@ -1487,7 +1472,7 @@ const performSave = () => {
    </> : (
   <>
    <span onClick={() => setShowSourceConnection(true)} className="inline-flex items-center rounded-[10px] border border-border px-2 py-1 cursor-pointer"><img src={accountingProviders[statusProvider ?? "quickbooks"].badgeLogo} alt={sourceLabel(statusProvider ?? null)} className="h-4 object-contain" /></span>
-  {needsSwitch
+   {needsSwitch
     ? pill("border-[#B4720A]/30 bg-[#FEF6E7] text-[#B4720A]", "Disconnected")
      : pill("border-connection-success/30 bg-connection-success-surface text-connection-success", "Connected")}
   {needsSwitch && dataSource === "source" && !isRollForwardSource && (
@@ -1497,9 +1482,26 @@ const performSave = () => {
   )}
   </div>
   {clientHasSourceConnection && !needsSwitch && dataSource === "source" && (
-  <span className="text-xs text-foreground pl-[5.5rem]">{sourceLabel(clientSourceIntegration)} has {maxSourceYears} year{maxSourceYears === 1 ? "" : "s"} of data available.</span>
+   <span className="text-xs text-foreground">{sourceLabel(clientSourceIntegration)} has {maxSourceYears} year{maxSourceYears === 1 ? "" : "s"} of data available.</span>
   )}
   </div>
+  </div>
+  <div className="flex flex-wrap items-start gap-x-10 gap-y-3">
+  <span className="text-sm text-foreground w-24 shrink-0 pt-0.5">Data Source Type</span>
+  {isSourceLockedStub || isRollForwardNoSource ? (
+  <div className="flex flex-col items-start gap-2 opacity-60 cursor-not-allowed pt-0.5">
+  <label className="flex items-center gap-2 text-sm text-foreground"><span className="h-4 w-4 rounded-full border-2 border-primary flex items-center justify-center"><span className="h-2 w-2 rounded-full bg-primary" /></span>Import Data Manually (CSV / Excel / PDF)</label>
+  <label className="flex items-center gap-2 text-sm text-foreground"><span className="h-4 w-4 rounded-full border-2 border-primary" />Integrate with Accounting Software</label>
+  </div>
+   ) : (
+  <RadioGroup value={dataSource} onValueChange={v => setDataSource(v as "csv" | "source")} className="flex flex-col items-start gap-2 pt-0.5">
+  {[{ value: "csv", label: "Import Data Manually (CSV / Excel / PDF)" }, { value: "source", label: "Integrate with Accounting Software" }].map(o => (
+  <label key={o.value} className="flex items-center gap-2 cursor-pointer text-sm text-foreground whitespace-nowrap">
+  <RadioGroupItem value={o.value} />{o.label}
+  </label>
+  ))}
+  </RadioGroup>
+  )}
   </div>
   {isRollForwardSource && clientHasSourceConnection && !isSourceLockedStub && dataSource === "source" && (
   <div className="flex items-center gap-x-10">
