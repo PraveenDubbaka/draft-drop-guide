@@ -1600,6 +1600,103 @@ const performSave = () => {
    {/* Engagement Source — full year: editable; stub period: locked to CSV */}
    {(isFullYearPeriod || isStubPeriod) && (
   <SectionCard icon={<Link2 className="h-5 w-5" />} title="Engagement Source">
+  {isSourceLockedStub && (
+    <div className="w-full mt-2">
+    <div className="rounded-[10px] border border-border bg-muted/50 px-3 py-2">
+    <p className="text-sm text-muted-foreground">Source connection not available for stub periods</p>
+    </div>
+    </div>
+    )}
+    {isStubPeriod && firstYearOfOperations && (
+    <div className="w-full mt-2">
+    <div className="flex items-start gap-2 rounded-[10px] border border-blue-200 bg-blue-50 dark:bg-blue-950/30 px-3 py-2">
+    <Info className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+    <span className="text-sm text-blue-900 dark:text-blue-100">First year of operations — short period treated as full year for source connection.</span>
+    </div>
+    </div>
+    )}
+     {!isSourceLockedStub && !isRollForwardNoSource && (<>
+   {dataSource === "source" && !clientHasSourceConnection && !isExternallyDisconnected && (
+  <div className="w-full mt-2">
+   <div className="flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
+   <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
+   <span className="text-sm text-red-800 dark:text-red-200">
+    No source connection found for this client. Please go to the Clients page, click Connect under Integrations, and connect your accounting software. Then return here to continue.{" "}
+    <button type="button" onClick={() => setShowSourceConnection(true)} className="text-sm text-primary underline underline-offset-2 hover:text-primary/80 transition-colors">Connect Source</button>
+    {" "}
+    <button type="button" onClick={() => navigate("/clients")} className="text-sm text-primary underline underline-offset-2 hover:text-primary/80 transition-colors">Go to Clients →</button>
+    </span>
+   </div>
+  </div>
+  )}
+    {clientHasSourceConnection && dataSource === "csv" && !isSourceToCsvSwitch && (
+    <div className="w-full mt-2">
+    <div className="flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+    <span className="text-sm text-amber-800 dark:text-amber-200">
+    Your client is connected to {sourceLabel(clientSourceIntegration)}. This engagement will use manually imported CSV data. The source connection will remain active but won't be used for this engagement.
+    </span>
+    </div>
+    </div>
+    )}
+    {isSourceToCsvSwitch && (
+    <div className="w-full mt-2">
+    <div className="flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+    <span className="text-sm text-amber-800 dark:text-amber-200">
+    {isRollForwardSource
+    ? <>Switching to CSV will disconnect all years from {sourceLabel(clientSourceIntegration)}, including Prior Year 1 and Prior Year 2. You will need to import CSV files for all years.</>
+    : <>Switching to CSV means this engagement will no longer pull data from {sourceLabel(clientSourceIntegration)}. The source connection will stay active but won't be used.</>}
+    </span>
+    </div>
+    </div>
+    )}
+   {clientHasSourceConnection && dataSource === "source" && !sourceConnected && (
+  <div className="w-full mt-2">
+  <div className="flex items-center justify-between gap-3 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+  <span className="text-sm text-amber-900 dark:text-amber-200">No source connection found for this client</span>
+   <Button size="sm" variant="outline" className="shrink-0" onClick={() => setShowSourceConnection(true)}>Connect Source</Button>
+  </div>
+  </div>
+  )}
+ {isReconnectFlow && hasSelectedActiveConnection && (
+ <div className="w-full mt-2">
+ <div className="flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+ <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+ <span className="text-sm text-amber-800 dark:text-amber-200">
+ Switching back to Source will replace your current CSV trial balance data. Years available from {sourceLabel(clientSourceIntegration)} will be refreshed.
+ </span>
+ </div>
+ </div>
+ )}
+ {isExternallyDisconnected && (
+    <div className="w-full mt-2">
+    <div className="flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+    <span className="text-sm text-amber-800 dark:text-amber-200">
+    Your client has no active source connection. This engagement is still linked to {sourceLabel(savedSourceProvider ?? null)}. Connect a new source or change Data Source Type to CSV.{" "}<button type="button" onClick={() => setShowSourceConnection(true)} className="text-sm text-primary underline underline-offset-2 hover:text-primary/80 transition-colors">Connect Source</button>
+    </span>
+   </div>
+   </div>
+   )}
+   {isSourceProviderMismatch && !hasSelectedActiveConnection && (
+   <div className="w-full mt-2">
+   <div className="flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+   <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+   <span className="text-sm text-amber-800 dark:text-amber-200">
+   Your client's source connection has changed. This engagement is still linked to {sourceLabel(savedSourceProvider ?? null)}. Click Switch Connection to pull data from the new source.
+   </span>
+  </div>
+  </div>
+  )}
+    </>)}
+    {isRollForwardNoSource && (
+    <div className="w-full mt-2">
+    <div className="rounded-[10px] border border-border bg-muted/50 px-3 py-2">
+    <p className="text-sm text-foreground">No source connection found for this client. This engagement has been set to CSV. To connect a source, go to the client page and add an integration.</p>
+    </div>
+    </div>
+    )}
   {(() => {
   const needsSwitch = (isSourceProviderMismatch || isReconnectFlow) && !hasSelectedActiveConnection;
   const statusProvider = needsSwitch ? dropdownSavedProvider : clientSourceIntegration;
@@ -1739,95 +1836,7 @@ const performSave = () => {
   );
   })()}
     {showSourceSectionSeparator && <div className="mt-2" />}
-  {isSourceLockedStub && (
-    <div className="w-full mt-2">
-    <div className="rounded-[10px] border border-border bg-muted/50 px-3 py-2">
-    <p className="text-sm text-muted-foreground">Source connection not available for stub periods</p>
-    </div>
-    </div>
-    )}
-    {isStubPeriod && firstYearOfOperations && (
-    <div className="w-full mt-2">
-    <div className="flex items-start gap-2 rounded-[10px] border border-blue-200 bg-blue-50 dark:bg-blue-950/30 px-3 py-2">
-    <Info className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
-    <span className="text-sm text-blue-900 dark:text-blue-100">First year of operations — short period treated as full year for source connection.</span>
-    </div>
-    </div>
-    )}
      {!isSourceLockedStub && !isRollForwardNoSource && (<>
-   {dataSource === "source" && !clientHasSourceConnection && !isExternallyDisconnected && (
-  <div className="w-full mt-2">
-   <div className="flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
-   <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
-   <span className="text-sm text-red-800 dark:text-red-200">
-    No source connection found for this client. Please go to the Clients page, click Connect under Integrations, and connect your accounting software. Then return here to continue.{" "}
-    <button type="button" onClick={() => setShowSourceConnection(true)} className="text-sm text-primary underline underline-offset-2 hover:text-primary/80 transition-colors">Connect Source</button>
-    {" "}
-    <button type="button" onClick={() => navigate("/clients")} className="text-sm text-primary underline underline-offset-2 hover:text-primary/80 transition-colors">Go to Clients →</button>
-    </span>
-   </div>
-  </div>
-  )}
-    {clientHasSourceConnection && dataSource === "csv" && !isSourceToCsvSwitch && (
-    <div className="w-full mt-2">
-    <div className="flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
-    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-    <span className="text-sm text-amber-800 dark:text-amber-200">
-    Your client is connected to {sourceLabel(clientSourceIntegration)}. This engagement will use manually imported CSV data. The source connection will remain active but won't be used for this engagement.
-    </span>
-    </div>
-    </div>
-    )}
-    {isSourceToCsvSwitch && (
-    <div className="w-full mt-2">
-    <div className="flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
-    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-    <span className="text-sm text-amber-800 dark:text-amber-200">
-    {isRollForwardSource
-    ? <>Switching to CSV will disconnect all years from {sourceLabel(clientSourceIntegration)}, including Prior Year 1 and Prior Year 2. You will need to import CSV files for all years.</>
-    : <>Switching to CSV means this engagement will no longer pull data from {sourceLabel(clientSourceIntegration)}. The source connection will stay active but won't be used.</>}
-    </span>
-    </div>
-    </div>
-    )}
-   {clientHasSourceConnection && dataSource === "source" && !sourceConnected && (
-  <div className="w-full mt-2">
-  <div className="flex items-center justify-between gap-3 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
-  <span className="text-sm text-amber-900 dark:text-amber-200">No source connection found for this client</span>
-   <Button size="sm" variant="outline" className="shrink-0" onClick={() => setShowSourceConnection(true)}>Connect Source</Button>
-  </div>
-  </div>
-  )}
- {isReconnectFlow && hasSelectedActiveConnection && (
- <div className="w-full mt-2">
- <div className="flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
- <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
- <span className="text-sm text-amber-800 dark:text-amber-200">
- Switching back to Source will replace your current CSV trial balance data. Years available from {sourceLabel(clientSourceIntegration)} will be refreshed.
- </span>
- </div>
- </div>
- )}
- {isExternallyDisconnected && (
-    <div className="w-full mt-2">
-    <div className="flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
-    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-    <span className="text-sm text-amber-800 dark:text-amber-200">
-    Your client has no active source connection. This engagement is still linked to {sourceLabel(savedSourceProvider ?? null)}. Connect a new source or change Data Source Type to CSV.{" "}<button type="button" onClick={() => setShowSourceConnection(true)} className="text-sm text-primary underline underline-offset-2 hover:text-primary/80 transition-colors">Connect Source</button>
-    </span>
-   </div>
-   </div>
-   )}
-   {isSourceProviderMismatch && !hasSelectedActiveConnection && (
-   <div className="w-full mt-2">
-   <div className="flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
-   <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-   <span className="text-sm text-amber-800 dark:text-amber-200">
-   Your client's source connection has changed. This engagement is still linked to {sourceLabel(savedSourceProvider ?? null)}. Click Switch Connection to pull data from the new source.
-   </span>
-  </div>
-  </div>
-  )}
    {/* Edit mode — inline acknowledgment whenever the source setup changes */}
    {showAck && (
    <div className="w-full mt-2">
@@ -1854,13 +1863,6 @@ const performSave = () => {
    </div>
    )}
     </>)}
-    {isRollForwardNoSource && (
-    <div className="w-full mt-2">
-    <div className="rounded-[10px] border border-border bg-muted/50 px-3 py-2">
-    <p className="text-sm text-foreground">No source connection found for this client. This engagement has been set to CSV. To connect a source, go to the client page and add an integration.</p>
-    </div>
-    </div>
-    )}
    </SectionCard>
   )}
  </div>
