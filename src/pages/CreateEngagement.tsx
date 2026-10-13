@@ -197,7 +197,7 @@ const DateField = ({
  ${selected ? 'text-foreground' : 'text-muted-foreground'}
  `}
  >
- <span className="flex-1 truncate">{selected ? formatDateFns(selected, "MM/dd/yyyy") : "Pick a date"}</span>
+ <span className="flex-1 truncate">{selected ? formatDateFns(selected, "MM/dd/yyyy") : "MM/DD/YYYY"}</span>
  <Calendar className="h-4 w-4 ml-auto shrink-0 text-muted-foreground" />
  </button>
  </PopoverTrigger>
@@ -206,6 +206,58 @@ const DateField = ({
  mode="single"
  selected={selected}
  onSelect={(d) => onChange(d ? formatDateFns(d, "MM/dd/yyyy") : "")}
+ initialFocus
+ className="p-3 pointer-events-auto"
+ />
+ </PopoverContent>
+ </Popover>
+ </div>
+ );
+};
+
+// Month/Day-only date picker (no year) — same form styling as DateField
+const MMDDDateField = ({
+ label,
+ value,
+ onChange,
+ required = false,
+}: {
+ label?: string;
+ value: string; // MM/dd
+ onChange: (value: string) => void;
+ required?: boolean;
+}) => {
+ const m = value ? value.match(/^(\d{1,2})\/(\d{1,2})$/) : null;
+ const selected = m ? new Date(2024, Number(m[1]) - 1, Number(m[2])) : undefined;
+ return (
+ <div className="flex flex-col gap-1">
+ {label && (
+ <label className="text-xs font-medium text-foreground">
+ {label}
+ {required && <span className="text-destructive ml-0.5">*</span>}
+ </label>
+ )}
+ <Popover>
+ <PopoverTrigger asChild>
+ <button
+ type="button"
+ className={`
+ input-double-border w-full h-9 px-3 py-2 text-sm rounded-[10px] outline-none transition-all duration-200 flex items-center text-left
+ bg-white border border-[#C3CBD6] dark:border-[hsl(220_15%_30%)] dark:bg-card hover:border-[hsl(210_25%_75%)] dark:hover:border-[hsl(220_15%_40%)]
+ ${selected ? 'text-foreground' : 'text-muted-foreground'}
+ `}
+ >
+ <span className="flex-1 truncate">{selected ? formatDateFns(selected, "MM/dd") : "MM/DD"}</span>
+ <Calendar className="h-4 w-4 ml-auto shrink-0 text-muted-foreground" />
+ </button>
+ </PopoverTrigger>
+ <PopoverContent className="w-auto p-0" align="start">
+ <DatePickerCalendar
+ mode="single"
+ defaultMonth={selected ?? new Date(2024, 0, 1)}
+ selected={selected}
+ onSelect={(d) => onChange(d ? formatDateFns(d, "MM/dd") : "")}
+ formatters={{ formatCaption: (month) => formatDateFns(month, "MMMM") }}
  initialFocus
  className="p-3 pointer-events-auto"
  />
@@ -1117,27 +1169,26 @@ export default function CreateEngagement() {
   }
   };
 
-  const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const [fooYearEnd, setFooYearEnd] = useState<string>(""); // MM/dd
   const clientIncorporation: Date | undefined = (() => {
     const raw = (clientInfo as any)?.dateOfIncorporation ?? (appClient as any)?.dateOfIncorporation;
     if (!raw) return undefined;
     const d = new Date(raw);
     return isNaN(d.getTime()) ? undefined : d;
   })();
-  const [fooYeMonth, setFooYeMonth] = useState<string>("");
-  const [fooYeDay, setFooYeDay] = useState<string>("");
   const [fooIncorporation, setFooIncorporation] = useState<Date | undefined>(clientIncorporation);
   const fooDerived = isStubPeriod && firstYearOfOperations;
-  const fooDaysInMonth = fooYeMonth ? new Date(2001, Number(fooYeMonth), 0).getDate() : 31;
   useEffect(() => {
-    if (!fooDerived || !fooYeMonth || !fooYeDay || !fooIncorporation) return;
-    const m = Number(fooYeMonth) - 1, d = Number(fooYeDay);
+    if (!fooDerived || !fooYearEnd || !fooIncorporation) return;
+    const mm = fooYearEnd.match(/^(\d{1,2})\/(\d{1,2})$/);
+    if (!mm) return;
+    const m = Number(mm[1]) - 1, d = Number(mm[2]);
     let end = new Date(fooIncorporation.getFullYear(), m, d);
     if (end < fooIncorporation) end = new Date(fooIncorporation.getFullYear() + 1, m, d);
     const fmt = (x: Date) => formatDateFns(x, "MM/dd/yyyy");
     setCurrentYearStart(fmt(fooIncorporation));
     setCurrentYearEnd(fmt(end));
-  }, [fooDerived, fooYeMonth, fooYeDay, fooIncorporation]);
+  }, [fooDerived, fooYearEnd, fooIncorporation]);
   const handleFOOChange = (checked: boolean) => {
   setFirstYearOfOperations(checked);
   if (!checked && dataSource === "source") {
@@ -1505,15 +1556,8 @@ const performSave = () => {
  <div className="flex items-start gap-4 py-2.5">
  <span className="text-sm text-foreground w-44 shrink-0 whitespace-nowrap pt-2">Year-End Date<span className="text-destructive ml-0.5">*</span></span>
  <div className="flex flex-col gap-1">
- <div className="flex gap-3">
- <Select value={fooYeMonth} onValueChange={v => { setFooYeMonth(v); const max = new Date(2001, Number(v), 0).getDate(); if (Number(fooYeDay) > max) setFooYeDay(String(max)); }}>
- <SelectTrigger className="h-9 text-sm w-40"><SelectValue placeholder="Month" /></SelectTrigger>
- <SelectContent>{MONTHS.map((m, i) => <SelectItem key={m} value={String(i + 1)}>{m}</SelectItem>)}</SelectContent>
- </Select>
- <Select value={fooYeDay} onValueChange={setFooYeDay}>
- <SelectTrigger className="h-9 text-sm w-24"><SelectValue placeholder="Day" /></SelectTrigger>
- <SelectContent>{Array.from({ length: fooDaysInMonth }, (_, i) => <SelectItem key={i + 1} value={String(i + 1)}>{i + 1}</SelectItem>)}</SelectContent>
- </Select>
+ <div className="w-44">
+ <MMDDDateField value={fooYearEnd} onChange={setFooYearEnd} required />
  </div>
  <p className="text-xs text-muted-foreground">e.g. December 31 — year rotates automatically each engagement</p>
  </div>
@@ -1521,7 +1565,7 @@ const performSave = () => {
  <div className="flex items-start gap-4 py-2.5">
  <span className="text-sm text-foreground w-44 shrink-0 whitespace-nowrap pt-2">Date of Incorporation</span>
  <div className="flex flex-col gap-1">
- <div className="w-[220px]">
+ <div className="w-44">
  <DateField value={fooIncorporation ? formatDateFns(fooIncorporation, "MM/dd/yyyy") : ""} onChange={v => { const m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); setFooIncorporation(m ? new Date(Number(m[3]), Number(m[1]) - 1, Number(m[2])) : undefined); }} />
  </div>
  <p className="text-xs text-muted-foreground">
@@ -1886,7 +1930,7 @@ const performSave = () => {
  <X className="h-4 w-4" />
  Cancel
  </Button>
- <Button disabled={!isFormValid || (fooDerived && (!fooYeMonth || !fooYeDay)) || (showAck && !ackChecked) || (isSourceProviderMismatch && !hasSelectedActiveConnection)} onClick={handleCreate}>
+ <Button disabled={!isFormValid || (fooDerived && !fooYearEnd) || (showAck && !ackChecked) || (isSourceProviderMismatch && !hasSelectedActiveConnection)} onClick={handleCreate}>
  {isEditMode ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
  {isEditMode ? "Update Engagement" : "Create Engagement"}
  </Button>
