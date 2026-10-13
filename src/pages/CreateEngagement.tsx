@@ -172,7 +172,8 @@ const DateField = ({
  required?: boolean;
  disabled?: boolean;
 }) => {
- const parsed = value ? new Date(`${value}T00:00:00`) : undefined;
+ const m = value ? value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/) : null;
+ const parsed = m ? new Date(Number(m[3]), Number(m[1]) - 1, Number(m[2])) : undefined;
  const selected = parsed && !isNaN(parsed.getTime()) ? parsed : undefined;
  return (
  <div className="flex flex-col gap-1">
@@ -204,7 +205,7 @@ const DateField = ({
  <DatePickerCalendar
  mode="single"
  selected={selected}
- onSelect={(d) => { console.log("[DateField] onSelect fired:", d); onChange(d ? formatDateFns(d, "MM/dd/yyyy") : ""); }}
+ onSelect={(d) => onChange(d ? formatDateFns(d, "MM/dd/yyyy") : "")}
  initialFocus
  className="p-3 pointer-events-auto"
  />
