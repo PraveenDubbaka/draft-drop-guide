@@ -1169,7 +1169,7 @@ export default function CreateEngagement() {
   }
   };
 
-  const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const [fooYearEnd, setFooYearEnd] = useState<string>(""); // MM/dd
   const clientIncorporation: Date | undefined = (() => {
     const raw = (clientInfo as any)?.dateOfIncorporation ?? (appClient as any)?.dateOfIncorporation;
     if (!raw) return undefined;
