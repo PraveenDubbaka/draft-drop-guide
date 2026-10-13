@@ -1522,7 +1522,7 @@ const performSave = () => {
  <span className="text-sm text-foreground w-44 shrink-0 whitespace-nowrap pt-2">Date of Incorporation</span>
  <div className="flex flex-col gap-1">
  <div className="w-[220px]">
- <DateField value={fooIncorporation ? formatDateFns(fooIncorporation, "MM/dd/yyyy") : ""} onChange={v => { const d = v ? new Date(`${v}T00:00:00`) : undefined; setFooIncorporation(d && !isNaN(d.getTime()) ? d : undefined); }} />
+ <DateField value={fooIncorporation ? formatDateFns(fooIncorporation, "MM/dd/yyyy") : ""} onChange={v => { const m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); setFooIncorporation(m ? new Date(Number(m[3]), Number(m[1]) - 1, Number(m[2])) : undefined); }} />
  </div>
  <p className="text-xs text-muted-foreground">
  {clientIncorporation && fooIncorporation?.getTime() === clientIncorporation.getTime() ? "Pre-filled from client page" : "Optional — auto-populates from client page if available"}
