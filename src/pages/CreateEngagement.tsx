@@ -1716,6 +1716,25 @@ const performSave = () => {
   </RadioGroup>
   </div>
   )}
+  {isSourceProviderMismatch && hasSelectedActiveConnection && (
+  <div className="flex flex-col gap-2">
+  <span className="text-sm text-foreground">What would you like to do with data for years not switching to the new source?</span>
+  <RadioGroup value={unconnectedYearsAction} onValueChange={v => setUnconnectedYearsAction(v as "keep" | "reset")} className="flex flex-col items-start gap-3 pl-48">
+  {[
+  { value: "keep", label: "Keep existing data", description: "Prior year data from your previous source will be retained as non-refreshed data. If duplicates are found they will appear in the merge function." },
+  { value: "reset", label: "Reset data", description: "All existing data for unselected years will be cleared." },
+  ].map(o => (
+  <label key={o.value} className="flex items-start gap-2 cursor-pointer text-sm text-foreground">
+  <RadioGroupItem value={o.value} className="mt-0.5" />
+  <span className="flex flex-col gap-0.5">
+  <span>{o.label}</span>
+  <span className="text-xs text-muted-foreground">{o.description}</span>
+  </span>
+  </label>
+  ))}
+  </RadioGroup>
+  </div>
+  )}
   </div>
   );
   })()}
