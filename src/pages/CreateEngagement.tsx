@@ -1176,20 +1176,19 @@ export default function CreateEngagement() {
     const d = new Date(raw);
     return isNaN(d.getTime()) ? undefined : d;
   })();
-  const [fooYeMonth, setFooYeMonth] = useState<string>("");
-  const [fooYeDay, setFooYeDay] = useState<string>("");
   const [fooIncorporation, setFooIncorporation] = useState<Date | undefined>(clientIncorporation);
   const fooDerived = isStubPeriod && firstYearOfOperations;
-  const fooDaysInMonth = fooYeMonth ? new Date(2001, Number(fooYeMonth), 0).getDate() : 31;
   useEffect(() => {
-    if (!fooDerived || !fooYeMonth || !fooYeDay || !fooIncorporation) return;
-    const m = Number(fooYeMonth) - 1, d = Number(fooYeDay);
+    if (!fooDerived || !fooYearEnd || !fooIncorporation) return;
+    const mm = fooYearEnd.match(/^(\d{1,2})\/(\d{1,2})$/);
+    if (!mm) return;
+    const m = Number(mm[1]) - 1, d = Number(mm[2]);
     let end = new Date(fooIncorporation.getFullYear(), m, d);
     if (end < fooIncorporation) end = new Date(fooIncorporation.getFullYear() + 1, m, d);
     const fmt = (x: Date) => formatDateFns(x, "MM/dd/yyyy");
     setCurrentYearStart(fmt(fooIncorporation));
     setCurrentYearEnd(fmt(end));
-  }, [fooDerived, fooYeMonth, fooYeDay, fooIncorporation]);
+  }, [fooDerived, fooYearEnd, fooIncorporation]);
   const handleFOOChange = (checked: boolean) => {
   setFirstYearOfOperations(checked);
   if (!checked && dataSource === "source") {
