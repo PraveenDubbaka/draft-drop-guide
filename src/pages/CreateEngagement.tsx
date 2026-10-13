@@ -1760,8 +1760,10 @@ const performSave = () => {
    <div className="flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
    <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
    <span className="text-sm text-red-800 dark:text-red-200">
-    No source connection found for this client. Connect your accounting software before switching to source.{" "}
+    No source connection found for this client. Please go to the Clients page, click Connect under Integrations, and connect your accounting software. Then return here to continue.{" "}
     <button type="button" onClick={() => setShowSourceConnection(true)} className="text-sm text-primary underline underline-offset-2 hover:text-primary/80 transition-colors">Connect Source</button>
+    {" "}
+    <button type="button" onClick={() => navigate("/clients")} className="text-sm text-primary underline underline-offset-2 hover:text-primary/80 transition-colors">Go to Clients →</button>
     </span>
    </div>
   </div>
