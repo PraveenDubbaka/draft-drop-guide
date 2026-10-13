@@ -17,6 +17,9 @@ import { Layout } from "@/components/Layout";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SourceYearSelection, type YearsChoice } from "@/components/SourceYearSelection";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as DatePickerCalendar } from "@/components/ui/calendar";
+import { format as formatDateFns } from "date-fns";
 
 const CSV_LABEL = "Non-Source Connected (CSV/Excel import required)";
 import { Switch } from "@/components/ui/switch";
@@ -1057,6 +1060,27 @@ export default function CreateEngagement() {
   }
   };
 
+  const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const clientIncorporation: Date | undefined = (() => {
+    const raw = (clientInfo as any)?.dateOfIncorporation ?? (appClient as any)?.dateOfIncorporation;
+    if (!raw) return undefined;
+    const d = new Date(raw);
+    return isNaN(d.getTime()) ? undefined : d;
+  })();
+  const [fooYeMonth, setFooYeMonth] = useState<string>("");
+  const [fooYeDay, setFooYeDay] = useState<string>("");
+  const [fooIncorporation, setFooIncorporation] = useState<Date | undefined>(clientIncorporation);
+  const fooDerived = isStubPeriod && firstYearOfOperations;
+  const fooDaysInMonth = fooYeMonth ? new Date(2001, Number(fooYeMonth), 0).getDate() : 31;
+  useEffect(() => {
+    if (!fooDerived || !fooYeMonth || !fooYeDay || !fooIncorporation) return;
+    const m = Number(fooYeMonth) - 1, d = Number(fooYeDay);
+    let end = new Date(fooIncorporation.getFullYear(), m, d);
+    if (end < fooIncorporation) end = new Date(fooIncorporation.getFullYear() + 1, m, d);
+    const fmt = (x: Date) => formatDateFns(x, "MM/dd/yyyy");
+    setCurrentYearStart(fmt(fooIncorporation));
+    setCurrentYearEnd(fmt(end));
+  }, [fooDerived, fooYeMonth, fooYeDay, fooIncorporation]);
   const handleFOOChange = (checked: boolean) => {
   setFirstYearOfOperations(checked);
   if (!checked && dataSource === "source") {
