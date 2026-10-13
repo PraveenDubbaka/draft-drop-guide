@@ -1837,7 +1837,7 @@ const performSave = () => {
  <X className="h-4 w-4" />
  Cancel
  </Button>
- <Button disabled={!isFormValid || (showAck && !ackChecked) || (isSourceProviderMismatch && !hasSelectedActiveConnection)} onClick={handleCreate}>
+ <Button disabled={!isFormValid || (fooDerived && (!fooYeMonth || !fooYeDay)) || (showAck && !ackChecked) || (isSourceProviderMismatch && !hasSelectedActiveConnection)} onClick={handleCreate}>
  {isEditMode ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
  {isEditMode ? "Update Engagement" : "Create Engagement"}
  </Button>
