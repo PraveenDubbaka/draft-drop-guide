@@ -306,6 +306,8 @@ const LabeledSelect = ({
 };
 
 // Section card component
+const SourceGroupDivider = () => <div className="mt-6 border-t border-border opacity-50" />;
+
 const SectionCard = ({
  icon,
  title,
@@ -1708,11 +1710,30 @@ const performSave = () => {
   const statusProvider = needsSwitch ? dropdownSavedProvider : clientSourceIntegration;
   const pill = (cls: string, text: string) => <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium whitespace-nowrap ${cls}`}>{text}</span>;
   const showYears = dataSource === "source" && clientHasSourceConnection && sourceConnected && !isSourceLockedStub && !isRollForwardNoSource;
+  const hasSourceMessages = isSourceLockedStub || (isStubPeriod && firstYearOfOperations) || isRollForwardNoSource
+    || (!isSourceLockedStub && !isRollForwardNoSource && (
+      (dataSource === "source" && !clientHasSourceConnection)
+      || (clientHasSourceConnection && dataSource === "csv")
+      || isSourceToCsvSwitch
+      || (clientHasSourceConnection && dataSource === "source" && !sourceConnected)
+      || (isReconnectFlow && hasSelectedActiveConnection)
+      || isExternallyDisconnected
+      || (isSourceProviderMismatch && !hasSelectedActiveConnection)
+    ));
+  const hasPriorYearRow = isRollForwardSource && clientHasSourceConnection && !isSourceLockedStub && dataSource === "source";
+  const hasYearsRow = showYears || isExternallyDisconnected;
+  const hasKeepReset = (isEditMode && originalDataSource === "csv" && dataSource === "source" && showYearSelection)
+    || (isEditMode && originalDataSource === "source" && dataSource === "csv")
+    || (isSourceProviderMismatch && hasSelectedActiveConnection);
+  const hasAck = showAck && !isSourceLockedStub && !isRollForwardNoSource;
+  const hasAfterType = hasPriorYearRow || hasYearsRow || hasKeepReset || hasAck;
+  const hasAfterYears = hasKeepReset || hasAck;
   const yearOpts = ([["1", "Current Year only"], ["2", "Current Year + Prior Year 1"], ["3", "Current Year + Prior Year 1 + Prior Year 2"]] as const)
     .filter(([n]) => Number(n) <= maxSourceYears && Number(n) >= yearLockedCount);
   return (
   <div>
-  <div className="flex items-start gap-4 mt-6 mb-6">
+  {hasSourceMessages && <SourceGroupDivider />}
+  <div className="flex items-start gap-4 mt-8">
   <span className="text-sm text-foreground w-44 shrink-0 pt-0.5">Source Data</span>
   <div className="flex flex-col gap-1">
   <div className="flex flex-row flex-nowrap items-center gap-3 whitespace-nowrap">
@@ -1738,7 +1759,8 @@ const performSave = () => {
   )}
   </div>
   </div>
-  <div className="flex flex-wrap items-start gap-4 gap-y-3 mb-6">
+  <SourceGroupDivider />
+  <div className="flex flex-wrap items-start gap-4 gap-y-3 mt-8">
   <span className="text-sm text-foreground w-44 shrink-0 pt-0.5">Data Source Type</span>
   {isSourceLockedStub || isRollForwardNoSource ? (
   <div className="flex flex-col items-start gap-3 opacity-60 cursor-not-allowed pt-0.5">
@@ -1755,8 +1777,9 @@ const performSave = () => {
   </RadioGroup>
   )}
   </div>
+  {hasAfterType && <SourceGroupDivider />}
   {isRollForwardSource && clientHasSourceConnection && !isSourceLockedStub && dataSource === "source" && (
-  <div className="flex items-center gap-4 mb-6">
+  <div className="flex items-center gap-4 mt-8">
   <span className="text-sm text-foreground w-44 shrink-0">Prior Year (FY{cyYear - 1})</span>
   <div className="flex items-center gap-3 opacity-70">
    <span className="inline-flex items-center rounded-[10px] border border-border px-2 py-1"><img src={accountingProviders[rollForwardPriorProvider].badgeLogo} alt={sourceLabel(rollForwardPriorProvider)} className="h-4 object-contain grayscale" /></span>
@@ -1765,7 +1788,7 @@ const performSave = () => {
   </div>
   )}
   {(showYears || isExternallyDisconnected) && (
-  <div className="flex items-start gap-4 mb-6">
+  <div className="flex items-start gap-4 mt-8">
   <span className="text-sm text-foreground w-44 shrink-0 pt-2">Years to connect</span>
   <div className="flex flex-col gap-1">
   <Select value={isRollForwardSource ? "1" : yearsChoice} disabled={(needsSwitch || isExternallyDisconnected) && !isRollForwardSource} onValueChange={v => { const c = v as YearsChoice; setYearsChoice(c); setSourceYears(c === "all" ? maxSourceYears : Number(c)); }}>
@@ -1781,8 +1804,9 @@ const performSave = () => {
   </div>
   </div>
   )}
+  {hasYearsRow && hasAfterYears && <SourceGroupDivider />}
   {isEditMode && originalDataSource === "csv" && dataSource === "source" && showYearSelection && (
-  <div className="flex flex-col gap-2 mb-6">
+  <div className="flex flex-col gap-2 mt-8">
   <span className="text-sm text-foreground">What would you like to do with data for years not connected to source?</span>
   <RadioGroup value={unconnectedYearsAction} onValueChange={v => setUnconnectedYearsAction(v as "keep" | "reset")} className="flex flex-col items-start gap-3 pl-48">
   {[
@@ -1801,7 +1825,7 @@ const performSave = () => {
   </div>
   )}
   {isEditMode && originalDataSource === "source" && dataSource === "csv" && (
-  <div className="flex flex-col gap-2 mb-6">
+  <div className="flex flex-col gap-2 mt-8">
   <span className="text-sm text-foreground">What would you like to do with your existing source data?</span>
   <RadioGroup value={unconnectedYearsAction} onValueChange={v => setUnconnectedYearsAction(v as "keep" | "reset")} className="flex flex-col items-start gap-3 pl-48">
   {[
@@ -1820,7 +1844,7 @@ const performSave = () => {
   </div>
   )}
   {isSourceProviderMismatch && hasSelectedActiveConnection && (
-  <div className="flex flex-col gap-2 mb-6">
+  <div className="flex flex-col gap-2 mt-8">
   <span className="text-sm text-foreground">What would you like to do with data for years not switching to the new source?</span>
   <RadioGroup value={unconnectedYearsAction} onValueChange={v => setUnconnectedYearsAction(v as "keep" | "reset")} className="flex flex-col items-start gap-3 pl-48">
   {[
@@ -1838,6 +1862,7 @@ const performSave = () => {
   </RadioGroup>
   </div>
   )}
+  {hasKeepReset && hasAck && <SourceGroupDivider />}
   </div>
   );
   })()}
@@ -1845,7 +1870,7 @@ const performSave = () => {
      {!isSourceLockedStub && !isRollForwardNoSource && (<>
    {/* Edit mode — inline acknowledgment whenever the source setup changes */}
    {showAck && (
-   <div className="w-full mt-6">
+   <div className="w-full mt-8">
     <div className="rounded-[10px] border border-red-200 border-l-4 border-l-red-500 bg-red-50 dark:bg-red-950/30 px-3 py-2.5">
     <div className="flex items-start gap-2">
     <XCircle className="h-4 w-4 text-red-500 shrink-0 mt-1" />
