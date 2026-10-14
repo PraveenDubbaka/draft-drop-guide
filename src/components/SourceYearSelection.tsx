@@ -14,9 +14,9 @@ type Props = {
 };
 
 const OPTION_LABELS: Record<"1" | "2" | "3", string> = {
-  "1": "Current Year only",
-  "2": "Current Year + Prior Year 1",
-  "3": "Current Year + Prior Year 1 + Prior Year 2",
+  "1": "CY only",
+  "2": "CY + PY1",
+  "3": "CY + PY1 + PY2",
 };
 
 /** System detects the years in source; the user can only reduce. */

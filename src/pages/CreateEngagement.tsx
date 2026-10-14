@@ -1718,7 +1718,7 @@ const performSave = () => {
   const hasAck = showAck && !isSourceLockedStub && !isRollForwardNoSource;
   const hasAfterType = hasPriorYearRow || hasYearsRow || hasKeepReset || hasAck;
   const hasAfterYears = hasKeepReset || hasAck;
-  const yearOpts = ([["1", "Current Year only"], ["2", "Current Year + Prior Year 1"], ["3", "Current Year + Prior Year 1 + Prior Year 2"]] as const)
+  const yearOpts = ([["1", "CY only"], ["2", "CY + PY1"], ["3", "CY + PY1 + PY2"]] as const)
     .filter(([n]) => Number(n) <= maxSourceYears && Number(n) >= yearLockedCount);
   return (
   <div>
@@ -1785,7 +1785,7 @@ const performSave = () => {
   <SelectContent>
   {!isRollForwardSource && <SelectItem value="all">All available years</SelectItem>}
   {isRollForwardSource
-    ? <SelectItem value="1">Current Year only</SelectItem>
+    ? <SelectItem value="1">CY only</SelectItem>
     : yearOpts.map(([n, l]) => <SelectItem key={n} value={n}>{l}</SelectItem>)}
   </SelectContent>
   </Select>
