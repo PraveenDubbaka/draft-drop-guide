@@ -1741,7 +1741,7 @@ const performSave = () => {
   <div className="flex flex-wrap items-start gap-4 gap-y-3 mb-6">
   <span className="text-sm text-foreground w-44 shrink-0 pt-0.5">Data Source Type</span>
   {isSourceLockedStub || isRollForwardNoSource ? (
-  <div className="flex flex-col items-start gap-2 opacity-60 cursor-not-allowed pt-0.5">
+  <div className="flex flex-col items-start gap-3 opacity-60 cursor-not-allowed pt-0.5">
   <label className="flex items-center gap-2 text-sm text-foreground"><span className="h-4 w-4 rounded-full border-2 border-primary flex items-center justify-center"><span className="h-2 w-2 rounded-full bg-primary" /></span>Import Data Manually (CSV / Excel / PDF)</label>
   <label className="flex items-center gap-2 text-sm text-foreground"><span className="h-4 w-4 rounded-full border-2 border-primary" />Integrate with Accounting Software</label>
   </div>
