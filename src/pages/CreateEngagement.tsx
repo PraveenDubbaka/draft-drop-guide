@@ -1710,16 +1710,6 @@ const performSave = () => {
   const statusProvider = needsSwitch ? dropdownSavedProvider : clientSourceIntegration;
   const pill = (cls: string, text: string) => <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium whitespace-nowrap ${cls}`}>{text}</span>;
   const showYears = dataSource === "source" && clientHasSourceConnection && sourceConnected && !isSourceLockedStub && !isRollForwardNoSource;
-  const hasSourceMessages = isSourceLockedStub || (isStubPeriod && firstYearOfOperations) || isRollForwardNoSource
-    || (!isSourceLockedStub && !isRollForwardNoSource && (
-      (dataSource === "source" && !clientHasSourceConnection)
-      || (clientHasSourceConnection && dataSource === "csv")
-      || isSourceToCsvSwitch
-      || (clientHasSourceConnection && dataSource === "source" && !sourceConnected)
-      || (isReconnectFlow && hasSelectedActiveConnection)
-      || isExternallyDisconnected
-      || (isSourceProviderMismatch && !hasSelectedActiveConnection)
-    ));
   const hasPriorYearRow = isRollForwardSource && clientHasSourceConnection && !isSourceLockedStub && dataSource === "source";
   const hasYearsRow = showYears || isExternallyDisconnected;
   const hasKeepReset = (isEditMode && originalDataSource === "csv" && dataSource === "source" && showYearSelection)
@@ -1732,7 +1722,6 @@ const performSave = () => {
     .filter(([n]) => Number(n) <= maxSourceYears && Number(n) >= yearLockedCount);
   return (
   <div>
-  {hasSourceMessages && <SourceGroupDivider />}
   <div className="flex items-start gap-4 mt-8">
   <span className="text-sm text-foreground w-44 shrink-0 pt-0.5">Source Data</span>
   <div className="flex flex-col gap-1">
@@ -1862,7 +1851,6 @@ const performSave = () => {
   </RadioGroup>
   </div>
   )}
-  {hasKeepReset && hasAck && <SourceGroupDivider />}
   </div>
   );
   })()}
