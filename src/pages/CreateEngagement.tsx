@@ -1738,7 +1738,7 @@ const performSave = () => {
     ? pill("border-[#B4720A]/30 bg-[#FEF6E7] text-[#B4720A]", "Disconnected")
      : pill("border-connection-success/30 bg-connection-success-surface text-connection-success", "Connected")}
   {needsSwitch && dataSource === "source" && !isRollForwardSource && (
-  <Button type="button" size="sm" className="h-8 text-xs" onClick={() => setHasSelectedActiveConnection(true)}>Switch Connection</Button>
+  <Button type="button" size="sm" variant="secondary" className="h-8 text-xs" onClick={() => setHasSelectedActiveConnection(true)}>Switch Connection</Button>
   )}
   </>
   )}
