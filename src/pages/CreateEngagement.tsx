@@ -1804,7 +1804,7 @@ const performSave = () => {
   </div>
   </div>
   )}
-  {hasAfterYears && <SourceGroupDivider />}
+  {hasYearsRow && hasAfterYears && <SourceGroupDivider />}
   {isEditMode && originalDataSource === "csv" && dataSource === "source" && showYearSelection && (
   <div className="flex flex-col gap-2 mt-8">
   <span className="text-sm text-foreground">What would you like to do with data for years not connected to source?</span>
