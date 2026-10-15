@@ -1173,7 +1173,18 @@ const [ackText, setAckText] = useState("");
      setYearErrors(e => e.map((x, j) => (j === i ? err : x)));
      setYearSources(s => s.map((x, j) => (j === i ? (err ? "csv" : v) : x)));
    };
-   const isCyToCsv = isEditMode && originalCySource.startsWith("source:") && yearSources[0] === "csv";
+   const YEAR_LABELS = ["Current Year", "Prior Year 1", "Prior Year 2"];
+   const [originalYearSources] = useState<string[]>(initYearSources);
+   const [yearKeepReset, setYearKeepReset] = useState<("keep" | "reset")[]>(["keep", "keep", "keep"]);
+   const yearChangeKind = (i: number): "toCsv" | "toSource" | null => {
+     if (!isEditMode) return null;
+     const o = originalYearSources[i], c = yearSources[i];
+     if (!o || !c || o === c || o === "locked" || c === "locked") return null;
+     if (o.startsWith("source:") && c === "csv") return "toCsv";
+     if (o === "csv" && c.startsWith("source:") && c !== "source:none") return "toSource";
+     return null;
+   };
+   const isCyToCsv = [0, 1, 2].some(i => yearChangeKind(i) !== null);
 
  const applyFullYearPriors = (cyStart: string, cyEnd: string) => {
  setPriorYear1Start(shiftYearStr(cyStart, -1));
@@ -1618,12 +1629,22 @@ const performSave = () => {
    <span className="text-sm text-amber-800 dark:text-amber-200">Prior year rows are locked to their original source. Only Current Year can be changed.</span>
   </div>
  )}
- {isCyToCsv && (
-  <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
-   <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-   <span className="text-sm text-amber-800 dark:text-amber-200">Switching Current Year to CSV will disconnect it from {sourceLabel(originalCyProvider)}. Existing data will be affected.</span>
-  </div>
- )}
+ {YEAR_LABELS.map((lbl, i) => {
+  const k = yearChangeKind(i);
+  if (k === "toCsv") return (
+   <div key={lbl} className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+    <span className="text-sm text-amber-800 dark:text-amber-200">Switching to CSV will disconnect {lbl} from {sourceLabel(originalYearSources[i].slice(7) as AccountingProvider)}. Existing data for this year will be affected.</span>
+   </div>
+  );
+  if (k === "toSource") return (
+   <div key={lbl} className="mt-3 flex items-start gap-2 rounded-[10px] border border-blue-300 bg-blue-50 dark:bg-blue-950/30 px-3 py-2">
+    <Info className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+    <span className="text-sm text-blue-800 dark:text-blue-200">Switching {lbl} to source will replace existing CSV data for that year.</span>
+   </div>
+  );
+  return null;
+ })}
  {/* Year rows */}
  {[
  { label: "Current Year", required: true, start: currentYearStart, setStart: handleCurrentYearStartChange, end: currentYearEnd, setEnd: handleCurrentYearEndChange, disabled: fooDerived, note: fooDerived ? "Auto-derived from Date of Incorporation and Year-End Date" : "" },
@@ -1682,6 +1703,16 @@ const performSave = () => {
      </span>
     </div>
    )}
+   {yearChangeKind(i) && (
+    <div className="flex flex-col gap-2 mt-3">
+     <span className="text-sm text-foreground">What would you like to do with existing {row.label} data?</span>
+     <RadioGroup value={yearKeepReset[i]} onValueChange={v => setYearKeepReset(a => a.map((x, j) => (j === i ? (v as "keep" | "reset") : x)))} className="flex flex-col items-start gap-3">
+      {[{ value: "keep", label: "Keep existing data" }, { value: "reset", label: "Reset data" }].map(o => (
+       <label key={o.value} className="flex items-center gap-2 cursor-pointer text-sm text-foreground"><RadioGroupItem value={o.value} />{o.label}</label>
+      ))}
+     </RadioGroup>
+    </div>
+   )}
   </div>
   );
  })}
@@ -1689,16 +1720,6 @@ const performSave = () => {
   <div className="grid grid-cols-[176px_minmax(0,176px)_minmax(0,176px)_200px] gap-4 mt-1">
    <span className="col-span-3" />
    <p className="text-xs text-muted-foreground">Source connection not available for stub periods</p>
-  </div>
- )}
- {isCyToCsv && (
-  <div className="flex flex-col gap-2 mt-4">
-   <span className="text-sm text-foreground">What would you like to do with existing CY data?</span>
-   <RadioGroup value={unconnectedYearsAction} onValueChange={v => setUnconnectedYearsAction(v as "keep" | "reset")} className="flex flex-col items-start gap-3">
-    {[{ value: "keep", label: "Keep existing data" }, { value: "reset", label: "Reset data" }].map(o => (
-     <label key={o.value} className="flex items-center gap-2 cursor-pointer text-sm text-foreground"><RadioGroupItem value={o.value} />{o.label}</label>
-    ))}
-   </RadioGroup>
   </div>
  )}
  {/* Source Data status */}
