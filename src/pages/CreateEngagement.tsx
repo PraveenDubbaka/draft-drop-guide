@@ -1624,13 +1624,6 @@ const performSave = () => {
    <span className="text-sm text-amber-800 dark:text-amber-200">Switching Current Year to CSV will disconnect it from {sourceLabel(originalCyProvider)}. Existing data will be affected.</span>
   </div>
  )}
- {/* Column headers */}
- <div className="grid grid-cols-[160px_minmax(0,176px)_minmax(0,176px)_200px] gap-3 mt-4 pb-1">
-  <span />
-  <span className="text-xs font-medium text-foreground">Start Date</span>
-  <span className="text-xs font-medium text-foreground">End Date</span>
-  <span className="text-xs font-medium text-foreground">Data Source</span>
- </div>
  {/* Year rows */}
  {[
  { label: "Current Year", required: true, start: currentYearStart, setStart: handleCurrentYearStartChange, end: currentYearEnd, setEnd: handleCurrentYearEndChange, disabled: fooDerived, note: fooDerived ? "Auto-derived from Date of Incorporation and Year-End Date" : "" },
@@ -1641,19 +1634,21 @@ const performSave = () => {
   const noData = fooDerived && i > 0;
   const stubLocked = isSourceLockedStub;
   const val = yearSources[i] ?? "csv";
-  const isSrc = val.startsWith("source:");
-  const dot = (green: boolean, text: string) => (
-   <span className="inline-flex items-center gap-1.5 text-xs text-foreground">
-    <span className={`h-2 w-2 rounded-full ${green ? "bg-connection-success" : "bg-[#98A2B3]"}`} />{text}
-   </span>
-  );
   return (
   <div key={row.label} className="py-2">
-   <div className="grid grid-cols-[160px_minmax(0,176px)_minmax(0,176px)_200px] gap-3 items-center">
-    <span className="text-sm text-foreground whitespace-nowrap">{row.label}{row.required && <span className="text-destructive ml-0.5">*</span>}</span>
-    <div className={row.disabled ? "opacity-60" : ""}><DateField value={row.start} onChange={row.setStart} required={row.required} disabled={row.disabled} /></div>
-    <div className={row.disabled ? "opacity-60" : ""}><DateField value={row.end} onChange={row.setEnd} required={row.required} disabled={row.disabled} /></div>
-    <div>
+   <div className={`grid grid-cols-[176px_minmax(0,176px)_minmax(0,176px)_200px] gap-4 items-start ${i === 0 ? "mt-4" : ""}`}>
+    <div className="flex flex-col gap-1">
+     <span className="text-xs font-medium text-foreground opacity-0" aria-hidden="true">Period</span>
+     <span className="flex h-9 items-center text-sm text-foreground whitespace-nowrap">{row.label}{row.required && <span className="text-destructive ml-0.5">*</span>}</span>
+    </div>
+    <div className={row.disabled ? "opacity-60" : ""}>
+     <DateField label="Start Date" value={row.start} onChange={row.setStart} disabled={row.disabled} />
+    </div>
+    <div className={row.disabled ? "opacity-60" : ""}>
+     <DateField label="End Date" value={row.end} onChange={row.setEnd} disabled={row.disabled} />
+    </div>
+    <div className="flex flex-col gap-1">
+     <span className="text-xs font-medium text-foreground">Data Source</span>
      {locked ? (
       <Select value="locked" disabled><SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
        <SelectContent><SelectItem value="locked">Source — {sourceLabel("xero")} (prior year)</SelectItem></SelectContent></Select>
@@ -1672,17 +1667,12 @@ const performSave = () => {
      )}
     </div>
    </div>
-   <div className="grid grid-cols-[160px_minmax(0,176px)_minmax(0,176px)_200px] gap-3 mt-1">
-    <span />
-    <span className="col-span-2 text-xs text-muted-foreground">{row.note}</span>
-    <div>
-     {locked ? dot(false, "Locked — carried from prior engagement")
-      : noData ? <span className="text-xs text-[#667085]">No prior year data — first year of operations</span>
-      : stubLocked ? dot(false, "Locked — stub period")
-      : isSrc ? dot(true, "Refresh enabled · Import disabled")
-      : dot(false, "Import enabled · Refresh disabled")}
+   {row.note && (
+    <div className="grid grid-cols-[176px_minmax(0,176px)_minmax(0,176px)_200px] gap-4 mt-1">
+     <span />
+     <span className="col-span-2 text-xs text-muted-foreground">{row.note}</span>
     </div>
-   </div>
+   )}
    {yearErrors[i] && (
     <div className="mt-2 flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
      <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
@@ -1696,7 +1686,7 @@ const performSave = () => {
   );
  })}
  {isSourceLockedStub && (
-  <div className="grid grid-cols-[160px_minmax(0,176px)_minmax(0,176px)_200px] gap-3 mt-1">
+  <div className="grid grid-cols-[176px_minmax(0,176px)_minmax(0,176px)_200px] gap-4 mt-1">
    <span className="col-span-3" />
    <p className="text-xs text-muted-foreground">Source connection not available for stub periods</p>
   </div>
@@ -1724,7 +1714,6 @@ const performSave = () => {
      <span className="inline-flex items-center rounded-full border border-connection-success/30 bg-connection-success-surface px-2.5 py-0.5 text-[11px] font-medium text-connection-success">Connected</span>
     </span>
    ))}
-   {connectedProviders.length === 1 && <span className="text-xs text-muted-foreground">{maxSourceYears} year{maxSourceYears === 1 ? "" : "s"} of data available</span>}
   </div>
  </div>
  </SectionCard>
