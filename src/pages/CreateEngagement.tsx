@@ -1584,6 +1584,11 @@ const performSave = () => {
   <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
   <span className="text-sm text-muted-foreground">Source connection not available for stub periods</span>
  </div>
+) : isStubPeriod && firstYearOfOperations ? (
+ <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-blue-300 bg-blue-50 dark:bg-blue-950/30 px-3 py-2">
+  <Info className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+  <span className="text-sm text-blue-800 dark:text-blue-200">First year of operations — short period treated as full year for source connection.</span>
+ </div>
 ) : (
  <>
   {isRollForwardSource && (
