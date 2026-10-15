@@ -1994,6 +1994,26 @@ const performSave = () => {
  }}
  />
 
+ {isCyToCsv && (
+ <div className="mt-5 rounded-[10px] border border-red-200 border-l-4 border-l-red-500 bg-red-50 dark:bg-red-950/30 px-3 py-2.5">
+  <div className="flex items-start gap-2">
+   <XCircle className="h-4 w-4 text-red-500 shrink-0 mt-1" />
+   <div className="min-w-0 flex-1">
+    <p className="text-lg font-bold leading-snug text-red-700 dark:text-red-300">Please read carefully — THIS ACTION CANNOT BE UNDONE</p>
+    <ul className="mt-2 space-y-1.5">
+     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><FilePen className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Adjusting entries will be deleted</span></li>
+     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><FolderPlus className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Manually added accounts will be deleted</span></li>
+     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><MessageSquareText className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Issues, comments and requests will be deleted</span></li>
+     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><FileText className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Documents will only move after data is imported</span></li>
+    </ul>
+    <label className="mt-3 flex items-center gap-1 text-sm font-semibold text-red-800 dark:text-red-200">Confirmation<span className="text-destructive">*</span></label>
+    <input type="text" value={ackText} onChange={e => setAckText(e.target.value)} placeholder="Type Delete to confirm" required aria-required="true"
+     className="input-double-border mt-1 h-9 w-64 rounded-[10px] border border-border bg-card px-3 text-sm text-foreground outline-none" />
+    {ackChecked && <p className="mt-1 text-xs font-medium text-[#2E7D52]">Confirmed</p>}
+   </div>
+  </div>
+ </div>
+ )}
  {/* Footer Actions */}
  <div className="flex items-center justify-end gap-3 mt-6 pb-6">
  <Button 
@@ -2003,7 +2023,7 @@ const performSave = () => {
  <X className="h-4 w-4" />
  Cancel
  </Button>
- <Button disabled={!isFormValid || (fooDerived && !fooYearEnd) || (showAck && !ackChecked) || (isSourceProviderMismatch && !hasSelectedActiveConnection)} onClick={handleCreate}>
+ <Button disabled={!isFormValid || (fooDerived && !fooYearEnd) || (isCyToCsv && !ackChecked)} onClick={handleCreate}>
  {isEditMode ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
  {isEditMode ? "Update Engagement" : "Create Engagement"}
  </Button>
