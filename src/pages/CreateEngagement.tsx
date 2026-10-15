@@ -1709,12 +1709,6 @@ const performSave = () => {
   </div>
   );
  })}
- {isSourceLockedStub && (
-  <div className="grid grid-cols-[176px_minmax(0,176px)_minmax(0,176px)_200px] gap-4 mt-1">
-   <span className="col-span-3" />
-   <p className="text-xs text-muted-foreground">Source connection not available for stub periods</p>
-  </div>
- )}
  {/* Source Data status */}
  <div className="mt-5 pt-4 border-t border-border/50 flex items-center gap-4">
   <span className="text-sm text-foreground w-[160px] shrink-0">Source Data</span>
