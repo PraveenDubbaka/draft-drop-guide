@@ -1147,6 +1147,33 @@ const [ackText, setAckText] = useState("");
      setAckChecked(false);
    }, [dataSource]);
    useEffect(() => { setAckChecked(false); }, [sourceYears, hasSelectedActiveConnection]);
+   // Per-year data source (V2): "csv" | "source:<provider>" | "locked"
+   const connectedProviders: AccountingProvider[] = clientSourceIntegration ? [clientSourceIntegration] : [];
+   const initYearSources = (): string[] => {
+     const p = clientSourceIntegration;
+     if (isRollForwardSource) return [p ? `source:${p}` : "csv", "locked", "locked"];
+     if (isEditMode) {
+       const n = editingMeta?.dataSource === "source" && p ? (editingMeta?.sourceYears ?? 1) : 0;
+       return [0, 1, 2].map(i => (i < n ? `source:${p}` : "csv"));
+     }
+     return [p ? `source:${p}` : "csv", "csv", "csv"];
+   };
+   const [yearSources, setYearSources] = useState<string[]>(initYearSources);
+   const [originalCySource] = useState<string>(() => initYearSources()[0]);
+   const originalCyProvider = (originalCySource.startsWith("source:") ? originalCySource.slice(7) : null) as AccountingProvider | null;
+   const [yearErrors, setYearErrors] = useState<boolean[]>([false, false, false]);
+   useEffect(() => { if (!isEditMode) setYearSources(initYearSources()); }, [clientSourceIntegration]); // eslint-disable-line react-hooks/exhaustive-deps
+   useEffect(() => {
+     setDataSource(yearSources[0]?.startsWith("source:") ? "source" : "csv");
+     let n = 0; for (const s of yearSources) { if (s.startsWith("source:")) n++; else break; }
+     if (n) setSourceYears(n);
+   }, [yearSources]);
+   const setYearSource = (i: number, v: string) => {
+     const err = v === "source:none";
+     setYearErrors(e => e.map((x, j) => (j === i ? err : x)));
+     setYearSources(s => s.map((x, j) => (j === i ? (err ? "csv" : v) : x)));
+   };
+   const isCyToCsv = isEditMode && originalCySource.startsWith("source:") && yearSources[0] === "csv";
 
  const applyFullYearPriors = (cyStart: string, cyEnd: string) => {
  setPriorYear1Start(shiftYearStr(cyStart, -1));
