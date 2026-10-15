@@ -1151,10 +1151,11 @@ const [ackText, setAckText] = useState("");
    const connectedProviders: AccountingProvider[] = clientSourceIntegration ? [clientSourceIntegration] : [];
    const initYearSources = (): string[] => {
      const p = clientSourceIntegration;
-     if (isRollForwardSource) return [p ? `source:${p}` : "csv", "locked", "locked"];
+     if (isRollForwardSource) return [editingMeta?.sourceProvider ? `source:${editingMeta.sourceProvider}` : p ? `source:${p}` : "csv", "locked", "locked"];
      if (isEditMode) {
-       const n = editingMeta?.dataSource === "source" && p ? (editingMeta?.sourceYears ?? 1) : 0;
-       return [0, 1, 2].map(i => (i < n ? `source:${p}` : "csv"));
+       const savedProvider = editingMeta?.sourceProvider ?? p;
+       const n = editingMeta?.dataSource === "source" && savedProvider ? (editingMeta?.sourceYears ?? 1) : 0;
+       return [0, 1, 2].map(i => (i < n ? `source:${savedProvider}` : "csv"));
      }
      return [p ? `source:${p}` : "csv", "csv", "csv"];
    };
@@ -1169,13 +1170,13 @@ const [ackText, setAckText] = useState("");
      if (n) setSourceYears(n);
    }, [yearSources]);
    const setYearSource = (i: number, v: string) => {
+     setAckText("");
      const err = v === "source:none";
      setYearErrors(e => e.map((x, j) => (j === i ? err : x)));
      setYearSources(s => s.map((x, j) => (j === i ? (err ? "csv" : v) : x)));
    };
    const YEAR_LABELS = ["Current Year", "Prior Year 1", "Prior Year 2"];
    const [originalYearSources] = useState<string[]>(initYearSources);
-   const [yearKeepReset, setYearKeepReset] = useState<("keep" | "reset")[]>(["keep", "keep", "keep"]);
    const yearChangeKind = (i: number): "toCsv" | "toSource" | null => {
      if (!isEditMode) return null;
      const o = originalYearSources[i], c = yearSources[i];
@@ -1629,22 +1630,33 @@ const performSave = () => {
    <span className="text-sm text-amber-800 dark:text-amber-200">Prior year rows are locked to their original source. Only Current Year can be changed.</span>
   </div>
  )}
- {YEAR_LABELS.map((lbl, i) => {
-  const k = yearChangeKind(i);
-  if (k === "toCsv") return (
-   <div key={lbl} className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
-    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-    <span className="text-sm text-amber-800 dark:text-amber-200">Switching to CSV will disconnect {lbl} from {sourceLabel(originalYearSources[i].slice(7) as AccountingProvider)}. Existing data for this year will be affected.</span>
-   </div>
-  );
-  if (k === "toSource") return (
-   <div key={lbl} className="mt-3 flex items-start gap-2 rounded-[10px] border border-blue-300 bg-blue-50 dark:bg-blue-950/30 px-3 py-2">
-    <Info className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
-    <span className="text-sm text-blue-800 dark:text-blue-200">Switching {lbl} to source will replace existing CSV data for that year.</span>
-   </div>
-  );
-  return null;
- })}
+ {isEditMode && clientHasSourceConnection && yearChangeKind(0) === "toCsv" && originalCyProvider && (
+  <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+   <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+   <span className="text-sm text-amber-800 dark:text-amber-200">Switching to CSV means this engagement will no longer pull data from {sourceLabel(originalCyProvider)}. The source connection will stay active but won't be used.</span>
+  </div>
+ )}
+ {isEditMode && clientHasSourceConnection && [0, 1, 2].some(i => yearChangeKind(i) === "toSource") && (
+  <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-blue-300 bg-blue-50 dark:bg-blue-950/30 px-3 py-2">
+   <Info className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+   <span className="text-sm text-blue-800 dark:text-blue-200">Switching to Source will replace your existing CSV trial balance data based on what years are available in {sourceLabel(clientSourceIntegration)}.</span>
+  </div>
+ )}
+ {isEditMode && !isRollForwardSource && !isSourceLockedStub && originalCyProvider && yearSources[0]?.startsWith("source:") && yearSources[0] !== `source:${clientSourceIntegration}` && (
+  <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+   <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+   <span className="text-sm text-amber-800 dark:text-amber-200">Your client's source connection has changed. This engagement is still linked to {sourceLabel(originalCyProvider)}. Select a new connection to continue pulling data.</span>
+  </div>
+ )}
+ {isEditMode && !clientHasSourceConnection && yearErrors.some(Boolean) && (
+  <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
+   <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
+   <span className="text-sm text-red-800 dark:text-red-200">
+    No source connection found for this client. Please go to the Clients page, click Connect under Integrations, and connect your accounting software. Then return here to continue.{" "}
+    <Button variant="link" onClick={() => navigate("/clients")} className="h-auto p-0 text-sm underline underline-offset-2">Go to Clients →</Button>
+   </span>
+  </div>
+ )}
  {/* Year rows */}
  {[
  { label: "Current Year", required: true, start: currentYearStart, setStart: handleCurrentYearStartChange, end: currentYearEnd, setEnd: handleCurrentYearEndChange, disabled: fooDerived, note: fooDerived ? "Auto-derived from Date of Incorporation and Year-End Date" : "" },
@@ -1694,25 +1706,6 @@ const performSave = () => {
      <span className="col-span-2 text-xs text-muted-foreground">{row.note}</span>
     </div>
    )}
-   {yearErrors[i] && (
-    <div className="mt-2 flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
-     <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
-     <span className="text-sm text-red-800 dark:text-red-200">
-      No source connection found for this client. Please go to the Clients page, click Connect under Integrations, and connect your accounting software. Then return here to continue.{" "}
-      <button type="button" onClick={() => navigate("/clients")} className="text-sm text-primary underline underline-offset-2 hover:text-primary/80">Go to Clients →</button>
-     </span>
-    </div>
-   )}
-   {yearChangeKind(i) && (
-    <div className="flex flex-col gap-2 mt-3">
-     <span className="text-sm text-foreground">What would you like to do with existing {row.label} data?</span>
-     <RadioGroup value={yearKeepReset[i]} onValueChange={v => setYearKeepReset(a => a.map((x, j) => (j === i ? (v as "keep" | "reset") : x)))} className="flex flex-col items-start gap-3">
-      {[{ value: "keep", label: "Keep existing data" }, { value: "reset", label: "Reset data" }].map(o => (
-       <label key={o.value} className="flex items-center gap-2 cursor-pointer text-sm text-foreground"><RadioGroupItem value={o.value} />{o.label}</label>
-      ))}
-     </RadioGroup>
-    </div>
-   )}
   </div>
   );
  })}
@@ -1739,6 +1732,27 @@ const performSave = () => {
  </div>
  </SectionCard>
  </div>
+
+ {isCyToCsv && (
+ <div className="mt-5 rounded-[10px] border border-red-200 border-l-4 border-l-red-500 bg-red-50 dark:bg-red-950/30 px-3 py-2.5">
+  <div className="flex items-start gap-2">
+   <XCircle className="h-4 w-4 text-red-500 shrink-0 mt-1" />
+   <div className="min-w-0 flex-1">
+    <p className="text-lg font-bold leading-snug text-red-700 dark:text-red-300">Please read carefully — THIS ACTION CANNOT BE UNDONE</p>
+    <ul className="mt-2 space-y-1.5">
+     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><FilePen className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Adjusting entries will be deleted</span></li>
+     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><FolderPlus className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Manually added accounts will be deleted</span></li>
+     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><MessageSquareText className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Issues, comments and requests will be deleted</span></li>
+     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><FileText className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Documents will only move after data is imported</span></li>
+    </ul>
+    <label className="mt-3 flex items-center gap-1 text-sm font-semibold text-red-800 dark:text-red-200">Confirmation<span className="text-destructive">*</span></label>
+    <input type="text" value={ackText} onChange={e => setAckText(e.target.value)} placeholder="Type Delete to confirm" required aria-required="true"
+     className="input-double-border mt-1 h-9 w-64 rounded-[10px] border border-border bg-card px-3 text-sm text-foreground outline-none" />
+    {ackChecked && <p className="mt-1 text-xs font-medium text-[#2E7D52]">Confirmed</p>}
+   </div>
+  </div>
+ </div>
+ )}
 
  {/* Assigned Team — full page width, gated */}
  {engagementDetailsValid && (
@@ -1848,26 +1862,6 @@ const performSave = () => {
  }}
  />
 
- {isCyToCsv && (
- <div className="mt-5 rounded-[10px] border border-red-200 border-l-4 border-l-red-500 bg-red-50 dark:bg-red-950/30 px-3 py-2.5">
-  <div className="flex items-start gap-2">
-   <XCircle className="h-4 w-4 text-red-500 shrink-0 mt-1" />
-   <div className="min-w-0 flex-1">
-    <p className="text-lg font-bold leading-snug text-red-700 dark:text-red-300">Please read carefully — THIS ACTION CANNOT BE UNDONE</p>
-    <ul className="mt-2 space-y-1.5">
-     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><FilePen className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Adjusting entries will be deleted</span></li>
-     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><FolderPlus className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Manually added accounts will be deleted</span></li>
-     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><MessageSquareText className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Issues, comments and requests will be deleted</span></li>
-     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><FileText className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Documents will only move after data is imported</span></li>
-    </ul>
-    <label className="mt-3 flex items-center gap-1 text-sm font-semibold text-red-800 dark:text-red-200">Confirmation<span className="text-destructive">*</span></label>
-    <input type="text" value={ackText} onChange={e => setAckText(e.target.value)} placeholder="Type Delete to confirm" required aria-required="true"
-     className="input-double-border mt-1 h-9 w-64 rounded-[10px] border border-border bg-card px-3 text-sm text-foreground outline-none" />
-    {ackChecked && <p className="mt-1 text-xs font-medium text-[#2E7D52]">Confirmed</p>}
-   </div>
-  </div>
- </div>
- )}
  {/* Footer Actions */}
  <div className="flex items-center justify-end gap-3 mt-6 pb-6">
  <Button 
