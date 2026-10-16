@@ -1176,6 +1176,7 @@ const [ackText, setAckText] = useState("");
    const [yearErrors, setYearErrors] = useState<boolean[]>([false, false, false]);
    useEffect(() => { if (!isEditMode) setYearSources(initYearSources()); }, [clientSourceIntegration]); // eslint-disable-line react-hooks/exhaustive-deps
    useEffect(() => {
+     console.log("[dbg] yearSources effect:", JSON.stringify(yearSources));
      setDataSource(yearSources.some(s => s?.startsWith("source:")) ? "source" : "csv");
      let n = 0; for (const s of yearSources) { if (s.startsWith("source:")) n++; else break; }
      if (n) setSourceYears(n);
@@ -1357,6 +1358,7 @@ const [ackText, setAckText] = useState("");
       ))
       || isRollForwardNoSource;
 const performSave = () => {
+   console.log("[dbg] performSave dataSource:", dataSource, "yearSources:", JSON.stringify(yearSources));
    // Stub period without first year of operations locks Data Source Type to CSV
    const savedDataSource: "csv" | "source" = isSourceLockedStub || isRollForwardNoSource ? "csv" : dataSource;
  const record: EngagementRecord = {
