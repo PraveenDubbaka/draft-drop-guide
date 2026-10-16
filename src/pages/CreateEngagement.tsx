@@ -1361,6 +1361,7 @@ const performSave = () => {
    console.log("[dbg] performSave dataSource:", dataSource, "yearSources:", JSON.stringify(yearSources));
    // Stub period without first year of operations locks Data Source Type to CSV
    const savedDataSource: "csv" | "source" = isSourceLockedStub || isRollForwardNoSource ? "csv" : dataSource;
+   console.log("[dbg] savedDataSource:", savedDataSource, "isSourceLockedStub:", isSourceLockedStub, "isRollForwardNoSource:", isRollForwardNoSource, "isRollForwardSource:", isRollForwardSource, "clientHasSourceConnection:", clientHasSourceConnection);
  const record: EngagementRecord = {
  id: engagementId,
  client: clientName,
