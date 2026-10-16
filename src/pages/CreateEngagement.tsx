@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
 import xeroLogo from "@/assets/xero-logo-full.svg";
 import { clientsData as appClientsData } from "@/data/clientsData";
-import { getClientSourceIntegration, sourceLabel, getClientConnectionOverride, getEngagementConnectionOverride, CLIENT_CONNECTION_EVENT, type AccountingProvider } from "@/lib/clientSource";
+import { getClientSourceIntegration, getClientSourceConnections, sourceLabel, getClientConnectionOverride, getEngagementConnectionOverride, CLIENT_CONNECTION_EVENT, type AccountingProvider } from "@/lib/clientSource";
 import { accountingProviders } from "@/lib/accountingProviders";
 import { SourceConnectionModal } from "@/components/SourceConnectionModal";
 import { ArrowLeft, Briefcase, Calendar, Users, ChevronDown, Plus, Pencil, Trash2, Search, ExternalLink, X, Building2, FileText, Settings2, Check, UserPlus, Link2, AlertTriangle, XCircle, Info, FilePen, FolderPlus, MessageSquareText } from "lucide-react";
@@ -1148,7 +1148,7 @@ const [ackText, setAckText] = useState("");
    }, [dataSource]);
    useEffect(() => { setAckChecked(false); }, [sourceYears, hasSelectedActiveConnection]);
    // Per-year data source (V2): "csv" | "source:<provider>" | "locked"
-   const connectedProviders: AccountingProvider[] = clientSourceIntegration ? [clientSourceIntegration] : [];
+   const connectedProviders: AccountingProvider[] = getClientSourceConnections(clientName, clientSourceIntegration);
    const [cyDataSource, setCyDataSource] = useState<"csv" | "source">(() =>
      editingMeta?.yearDataSources?.cy ?? (editingMeta?.dataSource === "source" ? "source" : "csv")
    );
@@ -1161,9 +1161,11 @@ const [ackText, setAckText] = useState("");
        const savedProvider = editingMeta?.sourceProvider ?? p;
        const yds = editingMeta?.yearDataSources;
        if (yds) {
-         return [yds.cy, yds.py1, yds.py2].map(v =>
-           v === "source" ? (savedProvider ? `source:${savedProvider}` : "source:none") : "csv"
-         );
+         const ysp = editingMeta?.yearSourceProviders;
+         return [yds.cy, yds.py1, yds.py2].map((v, i) => {
+           const yp = ysp?.[(["cy", "py1", "py2"] as const)[i]] ?? savedProvider;
+           return v === "source" ? (yp ? `source:${yp}` : "source:none") : "csv";
+         });
        }
        const n = editingMeta?.dataSource === "source" && savedProvider ? (editingMeta?.sourceYears ?? 1) : 0;
        return [0, 1, 2].map(i => (i < n ? `source:${savedProvider}` : "csv"));
@@ -1388,6 +1390,7 @@ const performSave = () => {
  periodEnd: currentYearEnd,
 dataSource: savedDataSource,
 yearDataSources: { cy: cyDataSource, py1: py1DataSource, py2: py2DataSource },
+yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, i) => [k, yearSources[i]?.startsWith("source:") && yearSources[i] !== "source:none" ? yearSources[i].slice(7) : undefined]).filter(([, v]) => v)) as EngagementMeta["yearSourceProviders"],
  sourceYears: savedDataSource === "source" ? sourceYears : undefined,
  teamMembers,
  sourceProvider: savedDataSource === "source" ? (clientSourceIntegration ?? undefined) : (editingMeta?.sourceDisconnectedFrom ? editingMeta.sourceProvider : undefined),
@@ -1689,6 +1692,21 @@ yearDataSources: { cy: cyDataSource, py1: py1DataSource, py2: py2DataSource },
   )}
  </>
 )}
+ {/* Source Data status */}
+ <div className="mt-3 pb-4 mb-2 border-b border-border/50 flex items-center gap-4">
+  <span className="text-sm text-foreground w-[160px] shrink-0">Source Data</span>
+  <div className="flex flex-wrap items-center gap-3">
+   {connectedProviders.length === 0 ? (<>
+    <span className="inline-flex items-center rounded-full border border-border bg-muted px-2.5 py-0.5 text-[11px] font-medium text-foreground">Not Connected</span>
+    <button type="button" onClick={() => setShowSourceConnection(true)} className="text-sm text-primary underline underline-offset-2 hover:text-primary/80">Connect Source</button>
+   </>) : connectedProviders.map(p => (
+    <span key={p} className="inline-flex items-center gap-2">
+     <span onClick={() => setShowSourceConnection(true)} className="inline-flex items-center rounded-[10px] border border-border px-2 py-1 cursor-pointer"><img src={accountingProviders[p].badgeLogo} alt={sourceLabel(p)} className="h-4 object-contain" /></span>
+     <span className="inline-flex items-center rounded-full border border-connection-success/30 bg-connection-success-surface px-2.5 py-0.5 text-[11px] font-medium text-connection-success">Connected</span>
+    </span>
+   ))}
+  </div>
+ </div>
 {/* Period Type */}
  <div className="flex items-center gap-4 py-2.5">
  <span className="text-sm text-foreground w-44 shrink-0 whitespace-nowrap">Period Type<span className="text-destructive ml-0.5">*</span></span>
@@ -1766,10 +1784,17 @@ yearDataSources: { cy: cyDataSource, py1: py1DataSource, py2: py2DataSource },
       <Select value="nodata" disabled><SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
        <SelectContent><SelectItem value="nodata">No data</SelectItem></SelectContent></Select>
      ) : (
-      <Select value={stubLocked ? "csv" : (val.startsWith("source:") ? "source" : "csv")} disabled={stubLocked} onValueChange={v => setYearSource(i, v === "source" ? `source:${connectedProviders[0] ?? "none"}` : v)}>
+      <Select value={stubLocked ? "csv" : (val.startsWith("source:") ? val : "csv")} disabled={stubLocked} onValueChange={v => setYearSource(i, v)}>
        <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
        <SelectContent>
-        <SelectItem value="source">Source — {(() => { const lp = (isEditMode && savedSourceProvider && !hasSelectedActiveConnection) ? savedSourceProvider : connectedProviders[0]; return lp ? sourceLabel(lp) : "Accounting software"; })()}</SelectItem>
+        {(() => {
+         const opts: string[] = connectedProviders.length ? [...connectedProviders] : [];
+         const cur = val.startsWith("source:") ? val.slice(7) : null;
+         if (cur && cur !== "none" && !opts.includes(cur as AccountingProvider)) opts.unshift(cur as AccountingProvider);
+         return opts.length
+          ? opts.map(p => <SelectItem key={p} value={`source:${p}`}>Source — {sourceLabel(p as AccountingProvider)}</SelectItem>)
+          : <SelectItem value="source:none">Source — Accounting software</SelectItem>;
+        })()}
         <SelectItem value="csv">CSV / Excel / PDF</SelectItem>
        </SelectContent>
       </Select>
@@ -1785,21 +1810,6 @@ yearDataSources: { cy: cyDataSource, py1: py1DataSource, py2: py2DataSource },
   </div>
   );
  })}
- {/* Source Data status */}
- <div className="mt-5 pt-4 border-t border-border/50 flex items-center gap-4">
-  <span className="text-sm text-foreground w-[160px] shrink-0">Source Data</span>
-  <div className="flex flex-wrap items-center gap-3">
-   {connectedProviders.length === 0 ? (<>
-    <span className="inline-flex items-center rounded-full border border-border bg-muted px-2.5 py-0.5 text-[11px] font-medium text-foreground">Not Connected</span>
-    <button type="button" onClick={() => setShowSourceConnection(true)} className="text-sm text-primary underline underline-offset-2 hover:text-primary/80">Connect Source</button>
-   </>) : connectedProviders.map(p => (
-    <span key={p} className="inline-flex items-center gap-2">
-     <span onClick={() => setShowSourceConnection(true)} className="inline-flex items-center rounded-[10px] border border-border px-2 py-1 cursor-pointer"><img src={accountingProviders[p].badgeLogo} alt={sourceLabel(p)} className="h-4 object-contain" /></span>
-     <span className="inline-flex items-center rounded-full border border-connection-success/30 bg-connection-success-surface px-2.5 py-0.5 text-[11px] font-medium text-connection-success">Connected</span>
-    </span>
-   ))}
-  </div>
- </div>
  </SectionCard>
  </div>
 
@@ -1948,7 +1958,7 @@ yearDataSources: { cy: cyDataSource, py1: py1DataSource, py2: py2DataSource },
  </div>
  </div>
  </div>
-  <SourceConnectionModal open={showSourceConnection} onOpenChange={setShowSourceConnection} clientName={clientName} connectionName={clientInfo?.entityLegalName || clientName} engagementId={routeEngagementId} onComplete={() => setConnVersion(v => v + 1)} initialStep={clientHasSourceConnection ? "connected" : "select"} initialProvider={clientSourceIntegration} />
+  <SourceConnectionModal open={showSourceConnection} onOpenChange={setShowSourceConnection} clientName={clientName} connectionName={clientInfo?.entityLegalName || clientName} engagementId={routeEngagementId} onComplete={() => setConnVersion(v => v + 1)} initialStep={clientHasSourceConnection ? "connected" : "select"} initialProvider={clientSourceIntegration} providers={connectedProviders} />
   <Dialog open={showAddRoleModal} onOpenChange={setShowAddRoleModal}>
  <DialogContent className="max-w-sm">
  <DialogHeader>
