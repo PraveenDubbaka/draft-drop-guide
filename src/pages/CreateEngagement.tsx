@@ -1283,7 +1283,7 @@ const [ackText, setAckText] = useState("");
  (!isReconnectFlow || hasSelectedActiveConnection);
 
   // Edit-mode scenario: engagement was CSV, client has a source connection, user switched to Source
-  const isCsvToSourceSwitch = isEditMode && clientHasSourceConnection && originalDataSource === "csv" && dataSource === "source" && sourceConnected && !savedDisconnectedFrom;
+  const isCsvToSourceSwitch = isEditMode && clientHasSourceConnection && originalDataSource === "csv" && dataSource === "source" && sourceConnected && !savedDisconnectedFrom && !(isStubPeriod && firstYearOfOperations);
    // Edit-mode scenario 2: engagement was Source, user switched to CSV
    const isSourceToCsvSwitch = isEditMode && clientHasSourceConnection && originalDataSource === "source" && dataSource === "csv";
    // Edit-mode scenario 5: the client's source connection changed since the engagement was set up
