@@ -1286,6 +1286,18 @@ const [ackText, setAckText] = useState("");
   const isCsvToSourceSwitch = isEditMode && clientHasSourceConnection && originalDataSource === "csv" && dataSource === "source" && sourceConnected && !savedDisconnectedFrom && !(isStubPeriod && firstYearOfOperations);
    // Edit-mode scenario 2: engagement was Source, user switched to CSV
    const isSourceToCsvSwitch = isEditMode && clientHasSourceConnection && originalDataSource === "source" && dataSource === "csv";
+   // Per-year mix of CSV vs Source (locked prior years count as Source; "No data" rows are skipped)
+   const yearSourceMix = (() => {
+     let csv = 0, src = 0;
+     for (let i = 0; i < 3; i++) {
+       if (isRollForwardSource && i > 0) { src++; continue; }
+       if (fooDerived && i > 0) continue;
+       const v = yearSources[i] ?? "csv";
+       if (v === "locked" || (v.startsWith("source:") && v !== "source:none")) src++;
+       else csv++;
+     }
+     return { csv, src };
+   })();
    // Edit-mode scenario 5: the client's source connection changed since the engagement was set up
    const savedSourceProvider = editingMeta?.sourceProvider;
    const isSourceProviderMismatch = isEditMode && !isRollForwardSource && clientHasSourceConnection
@@ -1607,10 +1619,14 @@ const performSave = () => {
     </span>
    </div>
   )}
-  {clientHasSourceConnection && dataSource === "csv" && !isSourceToCsvSwitch && (
+  {clientHasSourceConnection && !isSourceToCsvSwitch && yearSourceMix.csv > 0 && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-    <span className="text-sm text-amber-800 dark:text-amber-200">Your client is connected to {sourceLabel(clientSourceIntegration)}. This engagement will use manually imported CSV data. The source connection will remain active but won't be used for this engagement.</span>
+    <span className="text-sm text-amber-800 dark:text-amber-200">
+     {yearSourceMix.src === 0
+      ? "All years are set to CSV. The source connection will remain active but won't be used for this engagement."
+      : "Years set to Source will pull data from the connected source. Years set to CSV will use manually imported data."}
+    </span>
    </div>
   )}
   {isSourceToCsvSwitch && originalCyProvider && (
