@@ -1603,13 +1603,13 @@ const performSave = () => {
  </div>
 ) : (
  <>
-  {isRollForwardSource && (
+  {isRollForwardSource && !isSourceLockedStub && !(isStubPeriod && firstYearOfOperations) && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">Prior year rows are locked to their original source. Only Current Year can be changed.</span>
    </div>
   )}
-  {((dataSource === "source" && !clientHasSourceConnection && !isExternallyDisconnected) || (isEditMode && !clientHasSourceConnection && yearErrors.some(Boolean))) && (
+  {((dataSource === "source" && !clientHasSourceConnection && !isExternallyDisconnected && !isSourceLockedStub && !(isStubPeriod && firstYearOfOperations)) || (isEditMode && !clientHasSourceConnection && !isExternallyDisconnected && !isSourceLockedStub && !(isStubPeriod && firstYearOfOperations) && yearErrors.some(Boolean))) && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
     <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
     <span className="text-sm text-red-800 dark:text-red-200">
@@ -1619,7 +1619,7 @@ const performSave = () => {
     </span>
    </div>
   )}
-  {clientHasSourceConnection && !isSourceToCsvSwitch && yearSourceMix.csv > 0 && (
+  {clientHasSourceConnection && !isSourceToCsvSwitch && yearSourceMix.csv > 0 && !isSourceLockedStub && !(isStubPeriod && firstYearOfOperations) && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">
@@ -1629,7 +1629,7 @@ const performSave = () => {
     </span>
    </div>
   )}
-  {isSourceToCsvSwitch && originalCyProvider && (
+  {isSourceToCsvSwitch && originalCyProvider && !isSourceLockedStub && !(isStubPeriod && firstYearOfOperations) && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">
@@ -1639,13 +1639,13 @@ const performSave = () => {
     </span>
    </div>
   )}
-  {isReconnectFlow && hasSelectedActiveConnection && (
+  {isReconnectFlow && hasSelectedActiveConnection && !isSourceLockedStub && !(isStubPeriod && firstYearOfOperations) && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">Switching back to Source will replace your current CSV trial balance data. Years available from {sourceLabel(clientSourceIntegration)} will be refreshed.</span>
    </div>
   )}
-  {isExternallyDisconnected && originalCyProvider && (
+  {isExternallyDisconnected && originalCyProvider && !isSourceLockedStub && !(isStubPeriod && firstYearOfOperations) && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">
@@ -1654,13 +1654,13 @@ const performSave = () => {
     </span>
    </div>
   )}
-  {isSourceProviderMismatch && !hasSelectedActiveConnection && originalCyProvider && (
+  {isSourceProviderMismatch && !hasSelectedActiveConnection && originalCyProvider && !isSourceLockedStub && !(isStubPeriod && firstYearOfOperations) && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">Your client's source connection has changed. This engagement is still linked to {sourceLabel(originalCyProvider)}. Click Switch Connection to pull data from the new source.</span>
    </div>
   )}
-  {isEditMode && clientHasSourceConnection && !(isStubPeriod && firstYearOfOperations) && [0, 1, 2].some(i => yearChangeKind(i) === "toSource") && (
+  {isEditMode && clientHasSourceConnection && !isSourceLockedStub && !(isStubPeriod && firstYearOfOperations) && [0, 1, 2].some(i => yearChangeKind(i) === "toSource") && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">Switching to Source will replace your existing CSV trial balance data. Years selected for source will be refreshed.</span>
