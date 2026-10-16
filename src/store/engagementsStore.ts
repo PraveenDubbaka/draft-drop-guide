@@ -147,6 +147,11 @@ export type EngagementMeta = {
  firstYearOfOperations?: boolean; // stub period that is the entity's first year — allows source
  firstTimeAdoption?: boolean; // first-time adoption of accounting standard
  dataSource?: "csv" | "source";
+ yearDataSources?: {
+   cy: "csv" | "source";
+   py1: "csv" | "source";
+   py2: "csv" | "source";
+ };
  sourceYears?: number; // 1 = CY only, 2 = CY + PY1, 3 = all years connected to source
  sourceDisconnectedFrom?: "xero" | "quickbooks" | "sage"; // set when a CSV import disconnected a source engagement
  sourceRollForward?: boolean; // roll forward: CY from source, prior years stay CSV
