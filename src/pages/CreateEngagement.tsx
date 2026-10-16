@@ -1763,11 +1763,10 @@ yearDataSources: { cy: cyDataSource, py1: py1DataSource, py2: py2DataSource },
       <Select value="nodata" disabled><SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
        <SelectContent><SelectItem value="nodata">No data</SelectItem></SelectContent></Select>
      ) : (
-      <Select value={stubLocked ? "csv" : val} disabled={stubLocked} onValueChange={v => setYearSource(i, v)}>
+      <Select value={stubLocked ? "csv" : (val.startsWith("source:") ? "source" : "csv")} disabled={stubLocked} onValueChange={v => setYearSource(i, v === "source" ? `source:${connectedProviders[0] ?? "none"}` : v)}>
        <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
        <SelectContent>
-        {connectedProviders.map(p => <SelectItem key={p} value={`source:${p}`}>Source — {sourceLabel(p)}</SelectItem>)}
-        {connectedProviders.length === 0 && <SelectItem value="source:none">Source — Accounting software</SelectItem>}
+        <SelectItem value="source">Source — {connectedProviders[0] ? sourceLabel(connectedProviders[0]) : "Accounting software"}</SelectItem>
         <SelectItem value="csv">CSV / Excel / PDF</SelectItem>
        </SelectContent>
       </Select>
