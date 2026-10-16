@@ -52,12 +52,16 @@ function seedDemoEngagementMeta() {
     try {
       const raw = localStorage.getItem(META_KEY(id));
       const meta: EngagementMeta = raw ? JSON.parse(raw) : { firstYearAudit: false };
-      meta.dataSource = seed.dataSource;
-      if (seed.sourceProvider) meta.sourceProvider = seed.sourceProvider; else delete meta.sourceProvider;
-      delete meta.sourceDisconnectedFrom;
+      // Respect a user-saved data source (Edit Engagement writes dataSource + yearDataSources);
+      // only apply seed defaults when the user has never saved this engagement's data source.
+      if (meta.dataSource === undefined) {
+        meta.dataSource = seed.dataSource;
+        if (seed.sourceProvider) meta.sourceProvider = seed.sourceProvider; else delete meta.sourceProvider;
+        delete meta.sourceDisconnectedFrom;
+        if (seed.sourceYears) meta.sourceYears = seed.sourceYears; else delete meta.sourceYears;
+        if (seed.sourceRollForward) meta.sourceRollForward = true; else delete meta.sourceRollForward;
+      }
       meta.sourceYearsAvailable = seed.sourceYearsAvailable ?? 3;
-      if (seed.sourceYears) meta.sourceYears = seed.sourceYears; else delete meta.sourceYears;
-      if (seed.sourceRollForward) meta.sourceRollForward = true; else delete meta.sourceRollForward;
       if (seed.periodType === 'stub') {
         meta.auditPeriodType = 'Partial year';
         meta.firstYearOfOperations = !!seed.firstYearOfOperations;
