@@ -1149,11 +1149,22 @@ const [ackText, setAckText] = useState("");
    useEffect(() => { setAckChecked(false); }, [sourceYears, hasSelectedActiveConnection]);
    // Per-year data source (V2): "csv" | "source:<provider>" | "locked"
    const connectedProviders: AccountingProvider[] = clientSourceIntegration ? [clientSourceIntegration] : [];
+   const [cyDataSource, setCyDataSource] = useState<"csv" | "source">(() =>
+     editingMeta?.yearDataSources?.cy ?? (editingMeta?.dataSource === "source" ? "source" : "csv")
+   );
+   const [py1DataSource, setPy1DataSource] = useState<"csv" | "source">(() => editingMeta?.yearDataSources?.py1 ?? "csv");
+   const [py2DataSource, setPy2DataSource] = useState<"csv" | "source">(() => editingMeta?.yearDataSources?.py2 ?? "csv");
    const initYearSources = (): string[] => {
      const p = clientSourceIntegration;
      if (isRollForwardSource) return [editingMeta?.sourceProvider ? `source:${editingMeta.sourceProvider}` : p ? `source:${p}` : "csv", "locked", "locked"];
      if (isEditMode) {
        const savedProvider = editingMeta?.sourceProvider ?? p;
+       const yds = editingMeta?.yearDataSources;
+       if (yds) {
+         return [yds.cy, yds.py1, yds.py2].map(v =>
+           v === "source" ? (savedProvider ? `source:${savedProvider}` : "source:none") : "csv"
+         );
+       }
        const n = editingMeta?.dataSource === "source" && savedProvider ? (editingMeta?.sourceYears ?? 1) : 0;
        return [0, 1, 2].map(i => (i < n ? `source:${savedProvider}` : "csv"));
      }
@@ -1165,9 +1176,16 @@ const [ackText, setAckText] = useState("");
    const [yearErrors, setYearErrors] = useState<boolean[]>([false, false, false]);
    useEffect(() => { if (!isEditMode) setYearSources(initYearSources()); }, [clientSourceIntegration]); // eslint-disable-line react-hooks/exhaustive-deps
    useEffect(() => {
-     setDataSource(yearSources[0]?.startsWith("source:") ? "source" : "csv");
+     setDataSource(yearSources.some(s => s?.startsWith("source:")) ? "source" : "csv");
      let n = 0; for (const s of yearSources) { if (s.startsWith("source:")) n++; else break; }
      if (n) setSourceYears(n);
+   }, [yearSources]);
+   // Keep the per-year persistence states in sync with the year rows (locked/nodata rows map to csv)
+   useEffect(() => {
+     const toKind = (v?: string) => (v && v.startsWith("source:") ? "source" : "csv") as "csv" | "source";
+     setCyDataSource(toKind(yearSources[0]));
+     setPy1DataSource(toKind(yearSources[1]));
+     setPy2DataSource(toKind(yearSources[2]));
    }, [yearSources]);
    const setYearSource = (i: number, v: string) => {
      setAckText("");
@@ -1339,7 +1357,6 @@ const [ackText, setAckText] = useState("");
       ))
       || isRollForwardNoSource;
 const performSave = () => {
-   // Stub period without first year of operations locks Data Source Type to CSV
    const savedDataSource: "csv" | "source" = isSourceLockedStub || isRollForwardNoSource ? "csv" : dataSource;
  const record: EngagementRecord = {
  id: engagementId,
@@ -1369,7 +1386,8 @@ const performSave = () => {
  budget,
  periodStart: currentYearStart,
  periodEnd: currentYearEnd,
- dataSource: savedDataSource,
+dataSource: savedDataSource,
+yearDataSources: { cy: cyDataSource, py1: py1DataSource, py2: py2DataSource },
  sourceYears: savedDataSource === "source" ? sourceYears : undefined,
  teamMembers,
  sourceProvider: savedDataSource === "source" ? (clientSourceIntegration ?? undefined) : (editingMeta?.sourceDisconnectedFrom ? editingMeta.sourceProvider : undefined),
