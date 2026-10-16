@@ -1286,6 +1286,18 @@ const [ackText, setAckText] = useState("");
   const isCsvToSourceSwitch = isEditMode && clientHasSourceConnection && originalDataSource === "csv" && dataSource === "source" && sourceConnected && !savedDisconnectedFrom && !(isStubPeriod && firstYearOfOperations);
    // Edit-mode scenario 2: engagement was Source, user switched to CSV
    const isSourceToCsvSwitch = isEditMode && clientHasSourceConnection && originalDataSource === "source" && dataSource === "csv";
+   // Per-year mix of CSV vs Source (locked prior years count as Source; "No data" rows are skipped)
+   const yearSourceMix = (() => {
+     let csv = 0, src = 0;
+     for (let i = 0; i < 3; i++) {
+       if (isRollForwardSource && i > 0) { src++; continue; }
+       if (fooDerived && i > 0) continue;
+       const v = yearSources[i] ?? "csv";
+       if (v === "locked" || (v.startsWith("source:") && v !== "source:none")) src++;
+       else csv++;
+     }
+     return { csv, src };
+   })();
    // Edit-mode scenario 5: the client's source connection changed since the engagement was set up
    const savedSourceProvider = editingMeta?.sourceProvider;
    const isSourceProviderMismatch = isEditMode && !isRollForwardSource && clientHasSourceConnection
