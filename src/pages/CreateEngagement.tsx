@@ -1766,7 +1766,7 @@ yearDataSources: { cy: cyDataSource, py1: py1DataSource, py2: py2DataSource },
       <Select value={stubLocked ? "csv" : (val.startsWith("source:") ? "source" : "csv")} disabled={stubLocked} onValueChange={v => setYearSource(i, v === "source" ? `source:${connectedProviders[0] ?? "none"}` : v)}>
        <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
        <SelectContent>
-        <SelectItem value="source">Source — {connectedProviders[0] ? sourceLabel(connectedProviders[0]) : "Accounting software"}</SelectItem>
+        <SelectItem value="source">Source — {(() => { const lp = (isEditMode && savedSourceProvider && !hasSelectedActiveConnection) ? savedSourceProvider : connectedProviders[0]; return lp ? sourceLabel(lp) : "Accounting software"; })()}</SelectItem>
         <SelectItem value="csv">CSV / Excel / PDF</SelectItem>
        </SelectContent>
       </Select>
