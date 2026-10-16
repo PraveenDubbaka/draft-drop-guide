@@ -162,7 +162,7 @@ export function getClientSourceConnections(clientName: string, primary?: ClientS
   const first = primary === undefined ? getClientSourceIntegration(clientName) : primary;
   if (!first) return [];
   const removed = readRemoved()[n] ?? [];
-  const extras = (DEMO_EXTRA_CONNECTIONS[n] ?? []).filter(p => !removed.includes(p));
+  const extras = [...(DEMO_EXTRA_CONNECTIONS[n] ?? []), ...getAddedExtraConnections(n)].filter(p => !removed.includes(p));
   return Array.from(new Set([first, ...extras]));
 }
 
@@ -172,5 +172,26 @@ export function disconnectExtraClientSource(clientName: string, provider: Accoun
   const removed = readRemoved();
   removed[n] = Array.from(new Set([...(removed[n] ?? []), provider]));
   localStorage.setItem(EXTRA_REMOVED_KEY, JSON.stringify(removed));
+  const added = readAdded();
+  if (added[n]) { added[n] = added[n].filter(p => p !== provider); localStorage.setItem(EXTRA_ADDED_KEY, JSON.stringify(added)); }
+  window.dispatchEvent(new Event(CLIENT_CONNECTION_EVENT));
+}
+
+// ── User-added secondary connections (from "Add another source" in the modal) ──
+const EXTRA_ADDED_KEY = "client-extra-connections-added";
+function readAdded(): Record<string, AccountingProvider[]> {
+  try { return JSON.parse(localStorage.getItem(EXTRA_ADDED_KEY) || "{}"); } catch { return {}; }
+}
+export function getAddedExtraConnections(clientName: string): AccountingProvider[] {
+  return readAdded()[(clientName || "").trim().toLowerCase()] ?? [];
+}
+/** Add a secondary connection for a client (prototype only). */
+export function connectExtraClientSource(clientName: string, provider: AccountingProvider) {
+  const n = clientName.trim().toLowerCase();
+  const added = readAdded();
+  added[n] = Array.from(new Set([...(added[n] ?? []), provider]));
+  localStorage.setItem(EXTRA_ADDED_KEY, JSON.stringify(added));
+  const removed = readRemoved();
+  if (removed[n]) { removed[n] = removed[n].filter(p => p !== provider); localStorage.setItem(EXTRA_REMOVED_KEY, JSON.stringify(removed)); }
   window.dispatchEvent(new Event(CLIENT_CONNECTION_EVENT));
 }
