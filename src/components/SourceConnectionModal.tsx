@@ -3,7 +3,7 @@ import { AlertTriangle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { accountingProviders } from "@/lib/accountingProviders";
-import { connectClientSource, disconnectClientSource, type AccountingProvider } from "@/lib/clientSource";
+import { connectClientSource, disconnectClientSource, disconnectExtraClientSource, type AccountingProvider } from "@/lib/clientSource";
 
 interface SourceConnectionModalProps {
   open: boolean;
@@ -14,9 +14,11 @@ interface SourceConnectionModalProps {
   onComplete?: () => void;
   initialStep?: "select" | "connected";
   initialProvider?: AccountingProvider | null;
+  /** All active connections for the client (primary first). */
+  providers?: AccountingProvider[];
 }
 
-export function SourceConnectionModal({ open, onOpenChange, clientName, connectionName = clientName, engagementId, onComplete, initialStep, initialProvider }: SourceConnectionModalProps) {
+export function SourceConnectionModal({ open, onOpenChange, clientName, connectionName = clientName, engagementId, onComplete, initialStep, initialProvider, providers }: SourceConnectionModalProps) {
   const [step, setStep] = useState<"select" | "loading" | "connected">("select");
   const [provider, setProvider] = useState<AccountingProvider>("quickbooks");
   useEffect(() => {
@@ -65,16 +67,28 @@ export function SourceConnectionModal({ open, onOpenChange, clientName, connecti
           </div>}
           {step === "connected" && <>
             <h3 className="text-sm font-semibold mb-4">Connected to:</h3>
-            <div className="flex flex-wrap items-center gap-4 border border-border rounded-[8px] px-5 py-5">
-              <img src={platform.logo} alt={platform.name} className="h-8 w-12 object-contain shrink-0" />
-              <span className="font-medium text-sm">{platform.name}</span>
+            <div className="flex flex-col gap-3">
+            {(providers && providers.length ? providers : [provider]).map((p, idx) => {
+              const pl = accountingProviders[p];
+              return (
+            <div key={p} className="flex flex-wrap items-center gap-4 border border-border rounded-[8px] px-5 py-5">
+              <img src={pl.logo} alt={pl.name} className="h-8 w-12 object-contain shrink-0" />
+              <span className="font-medium text-sm">{pl.name}</span>
               <span className="text-sm break-words">{clientName}</span>
               <Button variant="link" className="ml-auto px-0 h-auto whitespace-normal text-left" onClick={() => {
-                disconnectClientSource(connectionName, engagementId);
-                disconnectClientSource(clientName);
-                setStep("select");
+                if (providers && providers.length > 1 && idx > 0) {
+                  disconnectExtraClientSource(clientName, p);
+                  if (connectionName !== clientName) disconnectExtraClientSource(connectionName, p);
+                } else {
+                  disconnectClientSource(connectionName, engagementId);
+                  disconnectClientSource(clientName);
+                  setStep("select");
+                }
                 onComplete?.();
-              }}>Disconnect from {platform.name}</Button>
+              }}>Disconnect from {pl.name}</Button>
+            </div>
+              );
+            })}
             </div>
             <div className="mt-5 flex items-start gap-2 rounded-[10px] border border-connection-warning/30 bg-connection-warning-surface p-3 text-connection-warning">
               <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
