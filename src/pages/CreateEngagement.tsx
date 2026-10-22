@@ -1773,6 +1773,7 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
   const stubLocked = isSourceLockedStub;
   const val = yearSources[i] ?? "csv";
   const disconnectedP = yearDisconnectedProvider(i);
+  
   return (
   <div key={row.label} className="py-2">
    <div className={`grid grid-cols-[176px_minmax(0,176px)_minmax(0,176px)_200px] gap-4 items-start ${i === 0 ? "mt-4" : ""}`}>
@@ -1795,8 +1796,17 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
       <Select value="nodata" disabled><SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
        <SelectContent><SelectItem value="nodata">No data</SelectItem></SelectContent></Select>
      ) : (!stubLocked && disconnectedP) ? (
-      <Select value="disconnected" disabled><SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-       <SelectContent><SelectItem value="disconnected">Source — {accountingProviders[disconnectedP].buttonName} (Disconnected)</SelectItem></SelectContent></Select>
+      <Select value="disconnected" onValueChange={v => setYearSource(i, v)}>
+       <SelectTrigger className="h-9 text-sm border-amber-300 text-amber-700" title={`Source — ${accountingProviders[disconnectedP].buttonName} (Disconnected)`}>
+        <SelectValue>Source — {accountingProviders[disconnectedP].buttonName} (Disconnected)</SelectValue>
+       </SelectTrigger>
+       <SelectContent>
+        {connectedProviders.filter(p => p !== disconnectedP).map(p => (
+         <SelectItem key={p} value={`source:${p}`}>Source — {sourceLabel(p)}</SelectItem>
+        ))}
+        <SelectItem value="csv">CSV / Excel / PDF</SelectItem>
+       </SelectContent>
+      </Select>
      ) : (
       <Select value={stubLocked ? "csv" : (val.startsWith("source:") ? val : "csv")} disabled={stubLocked} onValueChange={v => setYearSource(i, v)}>
        <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
@@ -1824,17 +1834,21 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
    {!locked && !noData && !stubLocked && disconnectedP && (
     <div className="grid grid-cols-[176px_minmax(0,1fr)] gap-4 mt-2">
      <span />
-     <div className="flex flex-wrap items-center gap-2" role="status">
-      <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0" aria-hidden="true" />
-      <span className="text-xs text-foreground">{accountingProviders[disconnectedP].buttonName} disconnected. Switch to another source:</span>
-      {connectedProviders.filter(p => p !== disconnectedP).map(p => (
-       <Button key={p} type="button" variant="outline" size="sm" className="h-7 px-2.5 text-xs" onClick={() => setYearSource(i, `source:${p}`)}>
-        Source — {accountingProviders[p].buttonName}
-       </Button>
-      ))}
-      <Button type="button" variant="outline" size="sm" className="h-7 px-2.5 text-xs" onClick={() => setYearSource(i, "csv")}>
-       CSV / Excel / PDF
-      </Button>
+     <div className="flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 px-3 py-2 text-amber-800" role="status">
+      <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+      <p className="text-sm">{accountingProviders[disconnectedP].buttonName} is disconnected for this year. Please select a new data source above.</p>
+     </div>
+    </div>
+   )}
+   {!locked && !noData && !stubLocked && origDisconnectedProvider(i) && val === "csv" && (
+    <div className="grid grid-cols-[176px_minmax(0,1fr)] gap-4 mt-2">
+     <span />
+     <div>
+      <p className="text-sm font-medium text-foreground mb-2">What would you like to do with existing {row.label} data?</p>
+      <RadioGroup value={yearKeepReset[i] ?? "keep"} onValueChange={v => setYearKeepReset(k => ({ ...k, [i]: v as "keep" | "reset" }))} className="flex flex-col gap-2">
+       <label className="flex items-center gap-2 text-sm cursor-pointer"><RadioGroupItem value="keep" />Keep existing data</label>
+       <label className="flex items-center gap-2 text-sm cursor-pointer"><RadioGroupItem value="reset" />Reset data</label>
+      </RadioGroup>
      </div>
     </div>
    )}
