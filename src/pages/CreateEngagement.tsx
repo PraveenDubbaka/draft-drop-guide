@@ -1771,6 +1771,7 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
   const noData = fooDerived && i > 0;
   const stubLocked = isSourceLockedStub;
   const val = yearSources[i] ?? "csv";
+  const disconnectedP = yearDisconnectedProvider(i);
   return (
   <div key={row.label} className="py-2">
    <div className={`grid grid-cols-[176px_minmax(0,176px)_minmax(0,176px)_200px] gap-4 items-start ${i === 0 ? "mt-4" : ""}`}>
@@ -1792,6 +1793,9 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
      ) : noData ? (
       <Select value="nodata" disabled><SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
        <SelectContent><SelectItem value="nodata">No data</SelectItem></SelectContent></Select>
+     ) : (!stubLocked && disconnectedP) ? (
+      <Select value="disconnected" disabled><SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+       <SelectContent><SelectItem value="disconnected">Source — {accountingProviders[disconnectedP].buttonName} (Disconnected)</SelectItem></SelectContent></Select>
      ) : (
       <Select value={stubLocked ? "csv" : (val.startsWith("source:") ? val : "csv")} disabled={stubLocked} onValueChange={v => setYearSource(i, v)}>
        <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
@@ -1814,6 +1818,23 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
     <div className="grid grid-cols-[176px_minmax(0,176px)_minmax(0,176px)_200px] gap-4 mt-1">
      <span />
      <span className="col-span-2 text-xs text-muted-foreground">{row.note}</span>
+    </div>
+   )}
+   {!locked && !noData && !stubLocked && disconnectedP && (
+    <div className="grid grid-cols-[176px_minmax(0,1fr)] gap-4 mt-2">
+     <span />
+     <div className="flex flex-wrap items-center gap-2" role="status">
+      <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0" aria-hidden="true" />
+      <span className="text-xs text-foreground">{accountingProviders[disconnectedP].buttonName} disconnected. Switch to another source:</span>
+      {connectedProviders.filter(p => p !== disconnectedP).map(p => (
+       <Button key={p} type="button" variant="outline" size="sm" className="h-7 px-2.5 text-xs" onClick={() => setYearSource(i, `source:${p}`)}>
+        Source — {accountingProviders[p].buttonName}
+       </Button>
+      ))}
+      <Button type="button" variant="outline" size="sm" className="h-7 px-2.5 text-xs" onClick={() => setYearSource(i, "csv")}>
+       CSV / Excel / PDF
+      </Button>
+     </div>
     </div>
    )}
   </div>
