@@ -1207,6 +1207,15 @@ const [ackText, setAckText] = useState("");
      if (o.startsWith("source:") && c.startsWith("source:") && c !== "source:none" && !connectedProviders.includes(o.slice(7) as AccountingProvider)) return "toOtherSource";
      return null;
    };
+   /** Edit only: the year's saved provider (regardless of current selection) is no longer an active connection. */
+   const origDisconnectedProvider = (i: number): AccountingProvider | null => {
+     if (!isEditMode) return null;
+     const o = originalYearSources[i];
+     if (!o?.startsWith("source:") || o === "source:none") return null;
+     const p = o.slice(7) as AccountingProvider;
+     return connectedProviders.includes(p) ? null : p;
+   };
+   const [yearKeepReset, setYearKeepReset] = useState<Record<number, "keep" | "reset">>({});
    /** Edit only: the year's saved provider is no longer among the client's active connections (and the row is unchanged). */
    const yearDisconnectedProvider = (i: number): AccountingProvider | null => {
      if (!isEditMode) return null;
@@ -1773,7 +1782,6 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
   const stubLocked = isSourceLockedStub;
   const val = yearSources[i] ?? "csv";
   const disconnectedP = yearDisconnectedProvider(i);
-  
   return (
   <div key={row.label} className="py-2">
    <div className={`grid grid-cols-[176px_minmax(0,176px)_minmax(0,176px)_200px] gap-4 items-start ${i === 0 ? "mt-4" : ""}`}>
