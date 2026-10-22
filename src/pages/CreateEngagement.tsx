@@ -1203,7 +1203,8 @@ const [ackText, setAckText] = useState("");
      if (!o || !c || o === c || o === "locked" || c === "locked") return null;
      if (o.startsWith("source:") && c === "csv") return "toCsv";
      if (o === "csv" && c.startsWith("source:") && c !== "source:none") return "toSource";
-     if (o.startsWith("source:") && c.startsWith("source:") && c !== "source:none") return "toOtherSource";
+     // Switching off a provider that was disconnected externally (per-row switch prompt)
+     if (o.startsWith("source:") && c.startsWith("source:") && c !== "source:none" && !connectedProviders.includes(o.slice(7) as AccountingProvider)) return "toOtherSource";
      return null;
    };
    /** Edit only: the year's saved provider is no longer among the client's active connections (and the row is unchanged). */
