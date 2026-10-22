@@ -1197,13 +1197,22 @@ const [ackText, setAckText] = useState("");
    };
    const YEAR_LABELS = ["Current Year", "Prior Year 1", "Prior Year 2"];
    const [originalYearSources] = useState<string[]>(initYearSources);
-   const yearChangeKind = (i: number): "toCsv" | "toSource" | null => {
+   const yearChangeKind = (i: number): "toCsv" | "toSource" | "toOtherSource" | null => {
      if (!isEditMode) return null;
      const o = originalYearSources[i], c = yearSources[i];
      if (!o || !c || o === c || o === "locked" || c === "locked") return null;
      if (o.startsWith("source:") && c === "csv") return "toCsv";
      if (o === "csv" && c.startsWith("source:") && c !== "source:none") return "toSource";
+     if (o.startsWith("source:") && c.startsWith("source:") && c !== "source:none") return "toOtherSource";
      return null;
+   };
+   /** Edit only: the year's saved provider is no longer among the client's active connections (and the row is unchanged). */
+   const yearDisconnectedProvider = (i: number): AccountingProvider | null => {
+     if (!isEditMode) return null;
+     const o = originalYearSources[i];
+     if (!o?.startsWith("source:") || o === "source:none" || yearSources[i] !== o) return null;
+     const p = o.slice(7) as AccountingProvider;
+     return connectedProviders.includes(p) ? null : p;
    };
    const isCyToCsv = [0, 1, 2].some(i => yearChangeKind(i) !== null) || (isEditMode && hasSelectedActiveConnection && !!editingMeta?.sourceProvider && editingMeta.sourceProvider !== clientSourceIntegration);
 
