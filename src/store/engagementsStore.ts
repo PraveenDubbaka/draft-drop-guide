@@ -17,7 +17,6 @@ const META_KEY = (id: string) => `engagement-meta-${id}`;
 export const SEED_ENGAGEMENTS: EngagementRecord[] = [
   { id: "COM-NEW-Dec312024", client: "Cedar Point Logistics", type: "Compilation (COM)", yearEnd: "Dec 31, 2024", team: "View Assignees", status: "New", statusVariant: "new", hasRF: false, dateCreated: "Jan 13, 2026 09:00 AM", firstYearAudit: false },
   { id: "COM-INPROGRESS-Dec312024", client: "Riverstone Capital", type: "Compilation (COM)", yearEnd: "Dec 31, 2024", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: true, dateCreated: "Jan 10, 2026 09:00 AM", firstYearAudit: false },
-  { id: "COM-MULTI-Dec312024", client: "Riverstone Capital", type: "Compilation (COM)", yearEnd: "Dec 31, 2024", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: false, dateCreated: "Jan 11, 2026 09:00 AM", firstYearAudit: false },
 ];
 
 function seedDemoEngagementMeta() {
@@ -48,7 +47,6 @@ function seedDemoEngagementMeta() {
   const seeds: Record<string, { dataSource: 'csv' | 'source'; sourceProvider?: 'xero' | 'quickbooks'; sourceYearsAvailable?: number; sourceYears?: number; sourceRollForward?: boolean; periodType?: 'stub' | 'full'; firstYearOfOperations?: boolean; yearDataSources?: EngagementMeta['yearDataSources']; yearSourceProviders?: EngagementMeta['yearSourceProviders'] }> = {
     'COM-NEW-Dec312024': { dataSource: 'csv' },
     'COM-INPROGRESS-Dec312024': { dataSource: 'source', sourceProvider: 'quickbooks', sourceYearsAvailable: 3, sourceYears: 1, sourceRollForward: true },
-    'COM-MULTI-Dec312024': { dataSource: 'source', sourceProvider: 'quickbooks', sourceYearsAvailable: 3, sourceYears: 1, yearDataSources: { cy: 'source', py1: 'source', py2: 'csv' }, yearSourceProviders: { cy: 'quickbooks', py1: 'xero' } },
   };
   Object.entries(seeds).forEach(([id, seed]) => {
     try {
