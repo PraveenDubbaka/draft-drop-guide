@@ -1267,7 +1267,7 @@ const [ackText, setAckText] = useState("");
   const fooDerived = isFooPeriod;
   // First Year of Operations: Current Year dates derive from the Year-End Date only (12 months ending on it)
   useEffect(() => {
-    if (!fooDerived || !fooYearEnd) return;
+    return; // FOO: dates entered manually
     const mm = fooYearEnd.match(/^(\d{1,2})\/(\d{1,2})$/);
     if (!mm) return;
     const m = Number(mm[1]) - 1, d = Number(mm[2]);
@@ -1633,12 +1633,7 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
   <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
   <span className="text-sm text-muted-foreground">Source connection not available for stub periods</span>
  </div>
-) : isFooPeriod ? (
- <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-blue-300 bg-blue-50 dark:bg-blue-950/30 px-3 py-2">
-  <Info className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
-  <span className="text-sm text-blue-800 dark:text-blue-200">First year of operations — short period treated as full year for source connection.</span>
- </div>
-) : (
+) : isFooPeriod ? null : (
  <>
   {isRollForwardSource && !isSourceLockedStub && !(isFooPeriod) && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
@@ -1735,25 +1730,12 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
  </Select>
  </div>
  </div>
- {fooDerived && (
- <>
- <div className="flex items-start gap-4 py-2.5">
- <span className="text-sm text-foreground w-44 shrink-0 whitespace-nowrap pt-2">Year-End Date<span className="text-destructive ml-0.5">*</span></span>
- <div className="flex flex-col gap-1">
- <div className="w-44">
- <MMDDDateField value={fooYearEnd} onChange={setFooYearEnd} required />
- </div>
- <p className="text-xs text-muted-foreground">e.g. December 31 — year rotates automatically each engagement</p>
- </div>
- </div>
- </>
- )}
  {/* Year rows */}
  {[
- { label: "Current Year", required: true, start: currentYearStart, setStart: handleCurrentYearStartChange, end: currentYearEnd, setEnd: handleCurrentYearEndChange, disabled: fooDerived, note: fooDerived ? "Auto-derived from Year-End Date" : "" },
+ { label: "Current Year", required: true, start: currentYearStart, setStart: handleCurrentYearStartChange, end: currentYearEnd, setEnd: handleCurrentYearEndChange, disabled: false, note: "" },
  { label: "Prior Year 1", required: false, start: fooDerived ? "" : priorYear1Start, setStart: setPriorYear1Start, end: fooDerived ? "" : priorYear1End, setEnd: setPriorYear1End, disabled: isFullYearPeriod || fooDerived, note: fooDerived ? "No data for this period" : isFullYearPeriod ? "Auto-derived from Current Year dates" : "" },
  { label: "Prior Year 2", required: false, start: fooDerived ? "" : priorYear2Start, setStart: setPriorYear2Start, end: fooDerived ? "" : priorYear2End, setEnd: setPriorYear2End, disabled: isFullYearPeriod || fooDerived, note: fooDerived ? "No data for this period" : isFullYearPeriod ? "Auto-derived from Current Year dates" : "" },
- ].map((row, i) => {
+ ].filter((_, i) => !(fooDerived && i > 0)).map((row, i) => {
   const locked = isRollForwardSource && i > 0;
   const noData = fooDerived && i > 0;
   const stubLocked = isSourceLockedStub;
@@ -1981,7 +1963,7 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
  <X className="h-4 w-4" />
  Cancel
  </Button>
- <Button disabled={!isFormValid || (fooDerived && !fooYearEnd) || (isCyToCsv && !ackChecked)} onClick={handleCreate}>
+ <Button disabled={!isFormValid || (isCyToCsv && !ackChecked)} onClick={handleCreate}>
  {isEditMode ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
  {isEditMode ? "Update Engagement" : "Create Engagement"}
  </Button>
