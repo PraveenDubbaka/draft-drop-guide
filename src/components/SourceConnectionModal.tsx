@@ -3,7 +3,7 @@ import { AlertTriangle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { accountingProviders } from "@/lib/accountingProviders";
-import { connectClientSource, connectExtraClientSource, disconnectClientSource, disconnectExtraClientSource, type AccountingProvider } from "@/lib/clientSource";
+import { connectClientSource, disconnectClientSource, type AccountingProvider } from "@/lib/clientSource";
 
 interface SourceConnectionModalProps {
   open: boolean;
@@ -14,43 +14,24 @@ interface SourceConnectionModalProps {
   onComplete?: () => void;
   initialStep?: "select" | "connected";
   initialProvider?: AccountingProvider | null;
-  /** All active connections for the client (primary first). */
-  providers?: AccountingProvider[];
 }
 
-export function SourceConnectionModal({ open, onOpenChange, clientName, connectionName = clientName, engagementId, onComplete, initialStep, initialProvider, providers }: SourceConnectionModalProps) {
+export function SourceConnectionModal({ open, onOpenChange, clientName, connectionName = clientName, engagementId, onComplete, initialStep, initialProvider }: SourceConnectionModalProps) {
   const [step, setStep] = useState<"select" | "loading" | "connected">("select");
   const [provider, setProvider] = useState<AccountingProvider>("quickbooks");
-  const [connected, setConnected] = useState<AccountingProvider[]>([]);
-  const [addingExtra, setAddingExtra] = useState(false);
   useEffect(() => {
     if (!open) return;
     setStep(initialStep ?? "select");
     if (initialProvider) setProvider(initialProvider);
-    setConnected(providers && providers.length ? providers : initialProvider ? [initialProvider] : []);
-    setAddingExtra(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initialStep, initialProvider]);
   useEffect(() => {
     if (!open || step !== "loading") return;
-    const timer = window.setTimeout(() => {
-      if (addingExtra) {
-        connectExtraClientSource(clientName, provider);
-        if (connectionName !== clientName) connectExtraClientSource(connectionName, provider);
-        setConnected(c => Array.from(new Set([...c, provider])));
-        setAddingExtra(false);
-        onComplete?.();
-      } else {
-        setConnected([provider]);
-      }
-      setStep("connected");
-    }, 1000);
+    const timer = window.setTimeout(() => setStep("connected"), 1000);
     return () => window.clearTimeout(timer);
   }, [open, step]);
-  const remaining = (Object.keys(accountingProviders) as AccountingProvider[]).filter(id => !connected.includes(id));
 
   const close = (nextOpen: boolean) => {
-    if (!nextOpen && step === "connected" && connected[0] === provider) {
+    if (!nextOpen && step === "connected") {
       connectClientSource(connectionName, provider, engagementId);
       // Keep the client-level status consistent when entering from either page.
       connectClientSource(clientName, provider);
@@ -84,51 +65,17 @@ export function SourceConnectionModal({ open, onOpenChange, clientName, connecti
           </div>}
           {step === "connected" && <>
             <h3 className="text-sm font-semibold mb-4">Connected to:</h3>
-            <div className="flex flex-col gap-3">
-            {connected.map((p, idx) => {
-              const pl = accountingProviders[p];
-              return (
-            <div key={p} className="flex flex-wrap items-center gap-4 border border-border rounded-[8px] px-5 py-5">
-              <img src={pl.logo} alt={pl.name} className="h-8 w-12 object-contain shrink-0" />
-              <span className="font-medium text-sm">{pl.name}</span>
+            <div className="flex flex-wrap items-center gap-4 border border-border rounded-[8px] px-5 py-5">
+              <img src={platform.logo} alt={platform.name} className="h-8 w-12 object-contain shrink-0" />
+              <span className="font-medium text-sm">{platform.name}</span>
               <span className="text-sm break-words">{clientName}</span>
               <Button variant="link" className="ml-auto px-0 h-auto whitespace-normal text-left" onClick={() => {
-                if (idx > 0) {
-                  disconnectExtraClientSource(clientName, p);
-                  if (connectionName !== clientName) disconnectExtraClientSource(connectionName, p);
-                  setConnected(c => c.filter(x => x !== p));
-                } else if (connected.length > 1) {
-                  // Promote the next connection to primary.
-                  const next = connected[1];
-                  disconnectExtraClientSource(clientName, next);
-                  if (connectionName !== clientName) disconnectExtraClientSource(connectionName, next);
-                  connectClientSource(clientName, next);
-                  if (connectionName !== clientName) connectClientSource(connectionName, next);
-                  if (engagementId) connectClientSource(connectionName, next, engagementId);
-                  setProvider(next);
-                  setConnected(c => c.filter(x => x !== p));
-                } else {
-                  disconnectClientSource(connectionName, engagementId);
-                  disconnectClientSource(clientName);
-                  setStep("select");
-                }
+                disconnectClientSource(connectionName, engagementId);
+                disconnectClientSource(clientName);
+                setStep("select");
                 onComplete?.();
-              }}>Disconnect from {pl.name}</Button>
+              }}>Disconnect from {platform.name}</Button>
             </div>
-              );
-            })}
-            </div>
-            {remaining.length > 0 && <>
-              <h3 className="text-sm font-semibold mt-5 mb-4">Add another source:</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 border border-border rounded-[8px] px-5 py-8">
-                {remaining.map(id => (
-                  <Button key={id} variant={id === "quickbooks" ? "accounting" : "outline"} className="h-10 w-full" onClick={() => { setProvider(id); setAddingExtra(true); setStep("loading"); }}>
-                    <img src={accountingProviders[id].logo} alt="" className="h-6 w-7 object-contain shrink-0" />
-                    Connect to {accountingProviders[id].buttonName}
-                  </Button>
-                ))}
-              </div>
-            </>}
             <div className="mt-5 flex items-start gap-2 rounded-[10px] border border-connection-warning/30 bg-connection-warning-surface p-3 text-connection-warning">
               <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
               <p className="text-sm"><strong>Action Required:</strong> For any CSV engagements created for this client, go to Edit Engagement and change Data Source Type to Integrate with Accounting Software to start pulling data.</p>

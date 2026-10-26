@@ -6,7 +6,6 @@ export type ClientSourceIntegration = AccountingProvider | null;
 const DEMO_DATA_SOURCES: Readonly<Record<string, "csv" | "source">> = {
   "COM-NEW-Dec312024": "csv",
   "COM-INPROGRESS-Dec312024": "source",
-  "COM-MULTI-Dec312024": "source",
 };
 
 /** Exact client-name connections for demo engagements (exact match only, so "Cedar Point Logistics" stays unconnected). */
@@ -67,7 +66,6 @@ export function getEngagementSourceIntegration(
 export const VISIBLE_ENGAGEMENT_IDS: readonly string[] = [
   "COM-NEW-Dec312024",
   "COM-INPROGRESS-Dec312024",
-  "COM-MULTI-Dec312024",
 ];
 
 /** Keep only the visible engagements, in the fixed scenario order. */
@@ -144,54 +142,5 @@ export function disconnectClientSource(clientName: string, engagementId?: string
     if (name) delete overrides[name.trim().toLowerCase()];
   }
   localStorage.setItem(CONN_OVERRIDE_KEY, JSON.stringify(overrides));
-  window.dispatchEvent(new Event(CLIENT_CONNECTION_EVENT));
-}
-
-// ── Additional (secondary) source connections per client — enables multi-source engagements ──
-const DEMO_EXTRA_CONNECTIONS: Readonly<Record<string, AccountingProvider[]>> = {
-  "riverstone capital": ["xero"],
-};
-const EXTRA_REMOVED_KEY = "client-extra-connections-removed";
-function readRemoved(): Record<string, AccountingProvider[]> {
-  try { return JSON.parse(localStorage.getItem(EXTRA_REMOVED_KEY) || "{}"); } catch { return {}; }
-}
-
-/** All active source connections for a client: the primary connection first, then secondary ones. */
-export function getClientSourceConnections(clientName: string, primary?: ClientSourceIntegration): AccountingProvider[] {
-  const n = (clientName || "").trim().toLowerCase();
-  const first = primary === undefined ? getClientSourceIntegration(clientName) : primary;
-  if (!first) return [];
-  const removed = readRemoved()[n] ?? [];
-  const extras = [...(DEMO_EXTRA_CONNECTIONS[n] ?? []), ...getAddedExtraConnections(n)].filter(p => !removed.includes(p));
-  return Array.from(new Set([first, ...extras]));
-}
-
-/** Disconnect one secondary connection (prototype only). */
-export function disconnectExtraClientSource(clientName: string, provider: AccountingProvider) {
-  const n = clientName.trim().toLowerCase();
-  const removed = readRemoved();
-  removed[n] = Array.from(new Set([...(removed[n] ?? []), provider]));
-  localStorage.setItem(EXTRA_REMOVED_KEY, JSON.stringify(removed));
-  const added = readAdded();
-  if (added[n]) { added[n] = added[n].filter(p => p !== provider); localStorage.setItem(EXTRA_ADDED_KEY, JSON.stringify(added)); }
-  window.dispatchEvent(new Event(CLIENT_CONNECTION_EVENT));
-}
-
-// ── User-added secondary connections (from "Add another source" in the modal) ──
-const EXTRA_ADDED_KEY = "client-extra-connections-added";
-function readAdded(): Record<string, AccountingProvider[]> {
-  try { return JSON.parse(localStorage.getItem(EXTRA_ADDED_KEY) || "{}"); } catch { return {}; }
-}
-export function getAddedExtraConnections(clientName: string): AccountingProvider[] {
-  return readAdded()[(clientName || "").trim().toLowerCase()] ?? [];
-}
-/** Add a secondary connection for a client (prototype only). */
-export function connectExtraClientSource(clientName: string, provider: AccountingProvider) {
-  const n = clientName.trim().toLowerCase();
-  const added = readAdded();
-  added[n] = Array.from(new Set([...(added[n] ?? []), provider]));
-  localStorage.setItem(EXTRA_ADDED_KEY, JSON.stringify(added));
-  const removed = readRemoved();
-  if (removed[n]) { removed[n] = removed[n].filter(p => p !== provider); localStorage.setItem(EXTRA_REMOVED_KEY, JSON.stringify(removed)); }
   window.dispatchEvent(new Event(CLIENT_CONNECTION_EVENT));
 }
