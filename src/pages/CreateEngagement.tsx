@@ -777,6 +777,15 @@ function addDaysStr(mmddyyyy: string, days: number): string {
   return `${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}/${d.getFullYear()}`;
 }
 
+/** Normalize saved dates ("01/01/2024" or "Jan 1, 2025") to MM/DD/YYYY. */
+function toMmDdYyyy(v?: string): string | null {
+ if (!v) return null;
+ if (/^\d{2}\/\d{2}\/\d{4}$/.test(v)) return v;
+ const d = new Date(v);
+ if (isNaN(d.getTime())) return null;
+ return `${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}/${d.getFullYear()}`;
+}
+
 function formatYearEnd(dateStr: string): string {
  const parts = dateStr.split("/");
  if (parts.length !== 3) return dateStr;
@@ -931,12 +940,21 @@ export default function CreateEngagement() {
   editingMeta?.firstYearOfOperations && /^partial year$/i.test(editingMeta?.auditPeriodType ?? "")
    ? "First Year of Operations"
    : editingMeta?.auditPeriodType ?? (prefillIsAudit ? "Full Year" : "Full year"));
- const [currentYearStart, setCurrentYearStart] = useState(editingMeta?.periodStart ?? "12/01/2022");
- const [currentYearEnd, setCurrentYearEnd] = useState(editingMeta?.periodEnd ?? "11/30/2023");
- const [priorYear1Start, setPriorYear1Start] = useState("12/01/2021");
- const [priorYear1End, setPriorYear1End] = useState("11/30/2022");
- const [priorYear2Start, setPriorYear2Start] = useState("12/01/2020");
- const [priorYear2End, setPriorYear2End] = useState("11/30/2021");
+ // Edit: when no period dates were saved, derive a 12-month period from the engagement's Year End
+ const recordYearEnd = (() => {
+  const d = editingRecord?.yearEnd ? new Date(editingRecord.yearEnd) : null;
+  return d && !isNaN(d.getTime())
+   ? `${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}/${d.getFullYear()}`
+   : null;
+ })();
+ const initialCyEnd = toMmDdYyyy(editingMeta?.periodEnd) ?? recordYearEnd ?? "11/30/2023";
+ const initialCyStart = toMmDdYyyy(editingMeta?.periodStart) ?? (recordYearEnd ? addDaysStr(shiftYearStr(recordYearEnd, -1), 1) : "12/01/2022");
+ const [currentYearStart, setCurrentYearStart] = useState(initialCyStart);
+ const [currentYearEnd, setCurrentYearEnd] = useState(initialCyEnd);
+ const [priorYear1Start, setPriorYear1Start] = useState(shiftYearStr(initialCyStart, -1));
+ const [priorYear1End, setPriorYear1End] = useState(shiftYearStr(initialCyEnd, -1));
+ const [priorYear2Start, setPriorYear2Start] = useState(shiftYearStr(initialCyStart, -2));
+ const [priorYear2End, setPriorYear2End] = useState(shiftYearStr(initialCyEnd, -2));
  const [priorYear1NoData, setPriorYear1NoData] = useState(false);
  const [priorYear2NoData, setPriorYear2NoData] = useState(false);
 
