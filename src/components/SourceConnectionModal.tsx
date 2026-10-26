@@ -19,9 +19,11 @@ interface SourceConnectionModalProps {
 export function SourceConnectionModal({ open, onOpenChange, clientName, connectionName = clientName, engagementId, onComplete, initialStep, initialProvider }: SourceConnectionModalProps) {
   const [step, setStep] = useState<"select" | "loading" | "connected">("select");
   const [provider, setProvider] = useState<AccountingProvider>("quickbooks");
+  const [justDisconnected, setJustDisconnected] = useState(false);
   useEffect(() => {
     if (!open) return;
     setStep(initialStep ?? "select");
+    setJustDisconnected(false);
     if (initialProvider) setProvider(initialProvider);
   }, [open, initialStep, initialProvider]);
   useEffect(() => {
@@ -52,12 +54,16 @@ export function SourceConnectionModal({ open, onOpenChange, clientName, connecti
             <h3 className="text-sm font-semibold mb-4">Accounting Software:</h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 border border-border rounded-[8px] px-5 py-8">
               {(Object.keys(accountingProviders) as AccountingProvider[]).map(id => (
-                <Button key={id} variant={id === "quickbooks" ? "accounting" : "outline"} className="h-10 w-full" onClick={() => { setProvider(id); setStep("loading"); }}>
+                <Button key={id} variant={id === "quickbooks" ? "accounting" : "outline"} className="h-10 w-full" onClick={() => { setProvider(id); setJustDisconnected(false); setStep("loading"); }}>
                   <img src={accountingProviders[id].logo} alt="" className="h-6 w-7 object-contain shrink-0" />
                   Connect to {accountingProviders[id].buttonName}
                 </Button>
               ))}
             </div>
+            {justDisconnected && <div className="mt-5 flex items-start gap-2 rounded-[10px] border border-connection-warning/30 bg-connection-warning-surface p-3 text-connection-warning">
+              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+              <p className="text-sm"><strong>Action Required:</strong> For any source connected engagements for this client, go to Edit Engagement and update the Data Source to continue managing your data.</p>
+            </div>}
           </>}
           {step === "loading" && <div role="status" className="flex min-h-40 flex-col items-center justify-center gap-4">
             <img src={platform.logo} alt={platform.name} className="h-12 w-20 object-contain" />
@@ -73,6 +79,7 @@ export function SourceConnectionModal({ open, onOpenChange, clientName, connecti
                 disconnectClientSource(connectionName, engagementId);
                 disconnectClientSource(clientName);
                 setStep("select");
+                setJustDisconnected(true);
                 onComplete?.();
               }}>Disconnect from {platform.name}</Button>
             </div>
