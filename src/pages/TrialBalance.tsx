@@ -232,6 +232,7 @@ export default function TrialBalance() {
  const [switchToCsvOpen, setSwitchToCsvOpen] = useState(false);
  const [pendingCsvSwitch, setPendingCsvSwitch] = useState(false);
  const [refreshOpen, setRefreshOpen] = useState(false);
+ const [refreshChecked, setRefreshChecked] = useState<Record<"cy" | "py1" | "py2", boolean>>({ cy: false, py1: false, py2: false });
  const [activeYearTab, setActiveYearTab] = useState<"cy" | "py1" | "py2">("cy");
  const [disconnectText, setDisconnectText] = useState("");
  const cyInputRef = useRef<HTMLInputElement>(null);
@@ -311,6 +312,19 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  };
  setRefreshOpen(false);
  toast.success(`Refreshed ${labels[years]} from ${sourceLabel(linkedProvider)}`);
+ };
+ const isYearSource = (y: "cy" | "py1" | "py2", idx: number) => {
+ if (!isSourceLinked) return false;
+ const yds = srcMeta.yearDataSources;
+ if (yds) return yds[y] === "source";
+ return idx < sourceYearCount;
+ };
+ const confirmRefreshYears = (years: ("cy" | "py1" | "py2")[]) => {
+ if (!years.length) return;
+ const labels = { cy: "Current Year", py1: "Prior Year 1", py2: "Prior Year 2" } as const;
+ setRefreshOpen(false);
+ setRefreshChecked({ cy: false, py1: false, py2: false });
+ toast.success(`Refreshed ${years.map(y => labels[y]).join(", ")} from ${sourceLabel(linkedProvider)}`);
  };
  // Year tabs: the first `sourceYearCount` years come from source (locked), the rest are CSV
  const sourceYearCount = configuredProvider ? Math.min(srcMeta.sourceYears ?? 1, srcMeta.sourceYearsAvailable ?? 3) : 0;
@@ -768,36 +782,36 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  disabled={!isSourceLinked || !activeTabIsSource}
  />
  </PopoverTrigger>
- <PopoverContent align="end" className="w-80 p-3 z-[100]">
- <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Refresh years</p>
- <div className="space-y-1">
+ <PopoverContent align="end" className="w-56 p-3 z-[100]">
+ <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Refresh</p>
+ <div className="space-y-2">
  {([
- { id: "cy", label: "Current Year", needs: 1, note: "" },
- { id: "py1", label: "Prior Year 1", needs: 2, note: "PY1 is not source connected." },
- { id: "py2", label: "Prior Year 2", needs: 3, note: "PY2 is not source connected." },
- { id: "all", label: "All Years", needs: 3, note: "Not all years are source connected." },
+ { id: "cy", label: "Current Year", idx: 0 },
+ { id: "py1", label: "Prior Year 1", idx: 1 },
+ { id: "py2", label: "Prior Year 2", idx: 2 },
  ] as const).map(opt => {
- const unavailable = sourceYearCount < opt.needs;
+ const enabled = isYearSource(opt.id, opt.idx);
  return (
- <div key={opt.id}>
- <button
- type="button"
- disabled={unavailable}
- onClick={() => confirmRefresh(opt.id)}
- className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-left ${unavailable ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:bg-muted"}`}
- >
+ <label key={opt.id} className={`flex items-center gap-2 px-2 py-1 text-sm ${enabled ? "cursor-pointer" : "opacity-40 cursor-not-allowed"}`}>
+ <Checkbox
+ disabled={!enabled}
+ checked={enabled && refreshChecked[opt.id]}
+ onCheckedChange={(v) => setRefreshChecked(prev => ({ ...prev, [opt.id]: !!v }))}
+ />
  <span className="text-foreground">{opt.label}</span>
- </button>
- {unavailable && (
- <div className="px-2 pb-1 text-xs">
- <p className="text-muted-foreground">{opt.note}</p>
- <button type="button" className="text-link hover:underline" onClick={() => { setRefreshOpen(false); navigate(`/engagements/${engagementId}/edit`); }}>Connect more years in Edit Engagement →</button>
- </div>
- )}
- </div>
+ </label>
  );
  })}
  </div>
+ <Button
+ variant="secondary"
+ size="sm"
+ className="mt-3"
+ disabled={!(["cy", "py1", "py2"] as const).some((y, i) => isYearSource(y, i) && refreshChecked[y])}
+ onClick={() => confirmRefreshYears((["cy", "py1", "py2"] as const).filter((y, i) => isYearSource(y, i) && refreshChecked[y]))}
+ >
+ Refresh
+ </Button>
  </PopoverContent>
  </Popover>
  ) : (
