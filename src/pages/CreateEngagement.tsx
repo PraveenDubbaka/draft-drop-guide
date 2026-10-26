@@ -1627,82 +1627,6 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
  )}
 
 <SectionCard icon={<Calendar className="h-5 w-5" />} title="Engagement Period">
-{/* Contextual messages at top of card */}
-{isSourceLockedStub ? (
- <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-border bg-muted/50 px-3 py-2">
-  <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-  <span className="text-sm text-muted-foreground">Source connection not available for stub periods</span>
- </div>
-) : isFooPeriod ? null : (
- <>
-  {isRollForwardSource && !isSourceLockedStub && !(isFooPeriod) && (
-   <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
-    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-    <span className="text-sm text-amber-800 dark:text-amber-200">Prior year rows are locked to their original source. Only Current Year can be changed.</span>
-   </div>
-  )}
-  {((dataSource === "source" && !clientHasSourceConnection && !isExternallyDisconnected && !isSourceLockedStub && !(isFooPeriod)) || (isEditMode && !clientHasSourceConnection && !isExternallyDisconnected && !isSourceLockedStub && !(isFooPeriod) && yearErrors.some(Boolean))) && (
-   <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
-    <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
-    <span className="text-sm text-red-800 dark:text-red-200">
-     No source connection found for this client. Please go to the Clients page, click Connect under Integrations, and connect your accounting software. Then return here to continue.{" "}
-     <Button variant="link" onClick={() => setShowSourceConnection(true)} className="h-auto p-0 text-sm underline underline-offset-2">Connect Source</Button>{" "}
-     <Button variant="link" onClick={() => navigate("/clients")} className="h-auto p-0 text-sm underline underline-offset-2">Go to Clients →</Button>
-    </span>
-   </div>
-  )}
-  {clientHasSourceConnection && !isSourceToCsvSwitch && yearSourceMix.csv > 0 && !isSourceLockedStub && !(isFooPeriod) && (
-   <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
-    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-    <span className="text-sm text-amber-800 dark:text-amber-200">
-     {yearSourceMix.src === 0
-      ? "All years are set to CSV. The source connection will remain active but won't be used for this engagement."
-      : "Years set to Source will pull data from the connected source. Years set to CSV will use manually imported data."}
-    </span>
-   </div>
-  )}
-  {isSourceToCsvSwitch && originalCyProvider && !isSourceLockedStub && !(isFooPeriod) && (
-   <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
-    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-    <span className="text-sm text-amber-800 dark:text-amber-200">
-     {isRollForwardSource
-      ? `Switching to CSV will disconnect all years from ${sourceLabel(originalCyProvider)}, including Prior Year 1 and Prior Year 2. You will need to import CSV files for all years.`
-      : `Switching to CSV means this engagement will no longer pull data from ${sourceLabel(originalCyProvider)}. The source connection will stay active but won't be used.`}
-    </span>
-   </div>
-  )}
-  {isReconnectFlow && hasSelectedActiveConnection && !isSourceLockedStub && !(isFooPeriod) && (
-   <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
-    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-    <span className="text-sm text-amber-800 dark:text-amber-200">Switching back to Source will replace your current CSV trial balance data. Years available from {sourceLabel(clientSourceIntegration)} will be refreshed.</span>
-   </div>
-  )}
-  {isExternallyDisconnected && originalCyProvider && !isSourceLockedStub && !(isFooPeriod) && (
-   <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
-    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-    <span className="text-sm text-amber-800 dark:text-amber-200">
-     Your client has no active source connection. This engagement is still linked to {sourceLabel(originalCyProvider)}. Connect a new source or change Data Source Type to CSV.{" "}
-     <Button variant="link" onClick={() => setShowSourceConnection(true)} className="h-auto p-0 text-sm underline underline-offset-2">Connect Source</Button>
-    </span>
-   </div>
-  )}
-  {isSourceProviderMismatch && !hasSelectedActiveConnection && originalCyProvider && !isSourceLockedStub && !(isFooPeriod) && (
-   <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
-    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-    <div className="flex flex-col items-start gap-2">
-     <span className="text-sm text-amber-800 dark:text-amber-200">Your client's source connection has changed from {sourceLabel(originalCyProvider)} to {sourceLabel(clientSourceIntegration)}. Click Switch Connection to update this engagement to use {sourceLabel(clientSourceIntegration)}.</span>
-     <Button variant="outline" size="sm" className="h-8 text-sm" onClick={() => { setHasSelectedActiveConnection(true); setAckText(""); }}>Switch Connection</Button>
-    </div>
-   </div>
-  )}
-  {isEditMode && clientHasSourceConnection && !isSourceLockedStub && !(isFooPeriod) && [0, 1, 2].some(i => yearChangeKind(i) === "toSource") && (
-   <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
-    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-    <span className="text-sm text-amber-800 dark:text-amber-200">Switching to Source will replace your existing CSV trial balance data. Years selected for source will be refreshed.</span>
-   </div>
-  )}
- </>
-)}
  {/* Source Data status */}
  <div className="mt-3 pb-4 mb-2 border-b border-border/50 flex items-center gap-4">
   <span className="text-sm text-foreground w-[160px] shrink-0">Source Data</span>
@@ -1822,29 +1746,85 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
   </div>
   );
  })}
+{/* Contextual messages below year rows */}
+{isSourceLockedStub ? (
+ <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-border bg-muted/50 px-3 py-2">
+  <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+  <span className="text-sm text-muted-foreground">Source connection not available for stub periods</span>
+ </div>
+) : isFooPeriod ? null : (
+ <>
+  {isRollForwardSource && !isSourceLockedStub && !(isFooPeriod) && (
+   <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+    <span className="text-sm text-amber-800 dark:text-amber-200">Prior year rows are locked to their original source. Only Current Year can be changed.</span>
+   </div>
+  )}
+  {((dataSource === "source" && !clientHasSourceConnection && !isExternallyDisconnected && !isSourceLockedStub && !(isFooPeriod)) || (isEditMode && !clientHasSourceConnection && !isExternallyDisconnected && !isSourceLockedStub && !(isFooPeriod) && yearErrors.some(Boolean))) && (
+   <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
+    <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
+    <span className="text-sm text-red-800 dark:text-red-200">
+     No source connection found for this client. Please go to the Clients page, click Connect under Integrations, and connect your accounting software. Then return here to continue.{" "}
+     <Button variant="link" onClick={() => setShowSourceConnection(true)} className="h-auto p-0 text-sm underline underline-offset-2">Connect Source</Button>{" "}
+     <Button variant="link" onClick={() => navigate("/clients")} className="h-auto p-0 text-sm underline underline-offset-2">Go to Clients →</Button>
+    </span>
+   </div>
+  )}
+  {clientHasSourceConnection && !isSourceToCsvSwitch && yearSourceMix.csv > 0 && !isSourceLockedStub && !(isFooPeriod) && (
+   <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+    <span className="text-sm text-amber-800 dark:text-amber-200">
+     {yearSourceMix.src === 0
+      ? "All years are set to CSV. The source connection will remain active but won't be used for this engagement."
+      : "Years set to Source will pull data from the connected source. Years set to CSV will use manually imported data."}
+    </span>
+   </div>
+  )}
+  {isSourceToCsvSwitch && originalCyProvider && !isSourceLockedStub && !(isFooPeriod) && (
+   <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+    <span className="text-sm text-amber-800 dark:text-amber-200">
+     {isRollForwardSource
+      ? `Switching to CSV will disconnect all years from ${sourceLabel(originalCyProvider)}, including Prior Year 1 and Prior Year 2. You will need to import CSV files for all years.`
+      : `Switching to CSV means this engagement will no longer pull data from ${sourceLabel(originalCyProvider)}. The source connection will stay active but won't be used.`}
+    </span>
+   </div>
+  )}
+  {isReconnectFlow && hasSelectedActiveConnection && !isSourceLockedStub && !(isFooPeriod) && (
+   <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+    <span className="text-sm text-amber-800 dark:text-amber-200">Switching back to Source will replace your current CSV trial balance data. Years available from {sourceLabel(clientSourceIntegration)} will be refreshed.</span>
+   </div>
+  )}
+  {isExternallyDisconnected && originalCyProvider && !isSourceLockedStub && !(isFooPeriod) && (
+   <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+    <span className="text-sm text-amber-800 dark:text-amber-200">
+     Your client has no active source connection. This engagement is still linked to {sourceLabel(originalCyProvider)}. Connect a new source or change Data Source Type to CSV.{" "}
+     <Button variant="link" onClick={() => setShowSourceConnection(true)} className="h-auto p-0 text-sm underline underline-offset-2">Connect Source</Button>
+    </span>
+   </div>
+  )}
+  {isSourceProviderMismatch && !hasSelectedActiveConnection && originalCyProvider && !isSourceLockedStub && !(isFooPeriod) && (
+   <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+    <div className="flex flex-col items-start gap-2">
+     <span className="text-sm text-amber-800 dark:text-amber-200">Your client's source connection has changed from {sourceLabel(originalCyProvider)} to {sourceLabel(clientSourceIntegration)}. Click Switch Connection to update this engagement to use {sourceLabel(clientSourceIntegration)}.</span>
+     <Button variant="outline" size="sm" className="h-8 text-sm" onClick={() => { setHasSelectedActiveConnection(true); setAckText(""); }}>Switch Connection</Button>
+    </div>
+   </div>
+  )}
+  {isEditMode && clientHasSourceConnection && !isSourceLockedStub && !(isFooPeriod) && [0, 1, 2].some(i => yearChangeKind(i) === "toSource") && (
+   <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+    <span className="text-sm text-amber-800 dark:text-amber-200">Switching to Source will replace your existing CSV trial balance data. Years selected for source will be refreshed.</span>
+   </div>
+  )}
+ </>
+)}
  </SectionCard>
  </div>
 
- {isCyToCsv && (
- <div className="mt-5 rounded-[10px] border border-red-200 border-l-4 border-l-red-500 bg-red-50 dark:bg-red-950/30 px-3 py-2.5">
-  <div className="flex items-start gap-2">
-   <XCircle className="h-4 w-4 text-red-500 shrink-0 mt-1" />
-   <div className="min-w-0 flex-1">
-    <p className="text-lg font-bold leading-snug text-red-700 dark:text-red-300">Please read carefully — THIS ACTION CANNOT BE UNDONE</p>
-    <ul className="mt-2 space-y-1.5">
-     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><FilePen className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Adjusting entries will be deleted</span></li>
-     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><FolderPlus className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Manually added accounts will be deleted</span></li>
-     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><MessageSquareText className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Issues, comments and requests will be deleted</span></li>
-     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><FileText className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Documents will only move after data is imported</span></li>
-    </ul>
-    <label className="mt-3 flex items-center gap-1 text-sm font-semibold text-red-800 dark:text-red-200">Type DELETE to confirm<span className="text-destructive">*</span></label>
-    <input type="text" value={ackText} onChange={e => setAckText(e.target.value)} placeholder="DELETE" required aria-required="true"
-     className="input-double-border mt-1 h-9 w-64 rounded-[10px] border border-border bg-card px-3 text-sm text-foreground outline-none" />
-    {ackChecked && <p className="mt-1 text-xs font-medium text-[#2E7D52]">Confirmed</p>}
-   </div>
-  </div>
- </div>
- )}
 
  {/* Assigned Team — full page width, gated */}
  {engagementDetailsValid && (
@@ -1929,6 +1909,26 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
  </button>
  </div>
  </SectionCard>
+ )}
+ {isCyToCsv && (
+ <div className="mt-5 rounded-[10px] border border-red-200 border-l-4 border-l-red-500 bg-red-50 dark:bg-red-950/30 px-3 py-2.5">
+  <div className="flex items-start gap-2">
+   <XCircle className="h-4 w-4 text-red-500 shrink-0 mt-1" />
+   <div className="min-w-0 flex-1">
+    <p className="text-lg font-bold leading-snug text-red-700 dark:text-red-300">Please read carefully — THIS ACTION CANNOT BE UNDONE</p>
+    <ul className="mt-2 space-y-1.5">
+     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><FilePen className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Adjusting entries will be deleted</span></li>
+     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><FolderPlus className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Manually added accounts will be deleted</span></li>
+     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><MessageSquareText className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Issues, comments and requests will be deleted</span></li>
+     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><FileText className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Documents will only move after data is imported</span></li>
+    </ul>
+    <label className="mt-3 flex items-center gap-1 text-sm font-semibold text-red-800 dark:text-red-200">Type DELETE to confirm<span className="text-destructive">*</span></label>
+    <input type="text" value={ackText} onChange={e => setAckText(e.target.value)} placeholder="DELETE" required aria-required="true"
+     className="input-double-border mt-1 h-9 w-64 rounded-[10px] border border-border bg-card px-3 text-sm text-foreground outline-none" />
+    {ackChecked && <p className="mt-1 text-xs font-medium text-[#2E7D52]">Confirmed</p>}
+   </div>
+  </div>
+ </div>
  )}
  </div>
 
