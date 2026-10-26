@@ -926,7 +926,11 @@ export default function CreateEngagement() {
  const [additionalDisclosures, setAdditionalDisclosures] = useState(prefillIsAudit ? "Full financial statements" : "Statement of cash flows");
 
  // Engagement Period state
- const [periodType, setPeriodType] = useState(editingMeta?.auditPeriodType ?? (prefillIsAudit ? "Full Year" : "Full year"));
+ const [periodType, setPeriodType] = useState(
+  // Legacy: Partial year saved with the old First Year of Operations checkbox opens as the new period type
+  editingMeta?.firstYearOfOperations && /^partial year$/i.test(editingMeta?.auditPeriodType ?? "")
+   ? "First Year of Operations"
+   : editingMeta?.auditPeriodType ?? (prefillIsAudit ? "Full Year" : "Full year"));
  const [currentYearStart, setCurrentYearStart] = useState(editingMeta?.periodStart ?? "12/01/2022");
  const [currentYearEnd, setCurrentYearEnd] = useState(editingMeta?.periodEnd ?? "11/30/2023");
  const [priorYear1Start, setPriorYear1Start] = useState("12/01/2021");
@@ -1101,18 +1105,20 @@ export default function CreateEngagement() {
  ? [
   { value: "Full Year", label: "Full Year" },
   { value: "Partial Year", label: "Partial Year" },
+  { value: "First Year of Operations", label: "First Year of Operations" },
   { value: "Other", label: "Other" },
   ]
   : [
   { value: "Full year", label: "Full year" },
   { value: "Partial year", label: "Partial year" },
+  { value: "First Year of Operations", label: "First Year of Operations" },
   ];
 
   const isFullYearPeriod = periodType === "Full Year" || periodType === "Full year";
   const isStubPeriod = periodType === "Partial Year" || periodType === "Partial year";
-  const [firstYearOfOperations, setFirstYearOfOperations] = useState<boolean>(!!editingMeta?.firstYearOfOperations);
-  // Stub periods allow source only when it's the first year of operations
-  const isSourceLockedStub = isStubPeriod && !firstYearOfOperations;
+  const isFooPeriod = periodType === "First Year of Operations";
+  // Partial year periods are locked to CSV; First Year of Operations allows source
+  const isSourceLockedStub = isStubPeriod;
  const clientSourceIntegration = getEngagementConnectionOverride(routeEngagementId) ?? getClientConnectionOverride(clientName, clientInfo?.entityLegalName) ?? (localClientInfo
    ? (localClientInfo.integrations.includes("xero") ? "xero" as const
      : localClientInfo.integrations.includes("quickbooks") ? "quickbooks" as const
@@ -1249,7 +1255,7 @@ const [ackText, setAckText] = useState("");
   setCurrentYearEnd(autoEnd);
   applyFullYearPriors(currentYearStart, autoEnd);
   }
-  if (isNowStub && !firstYearOfOperations && dataSource === "source") {
+  if (isNowStub && dataSource === "source") {
   setDataSource("csv");
   }
   if (isNowFull && isEditMode && originalDataSource === "source") {
@@ -1258,31 +1264,21 @@ const [ackText, setAckText] = useState("");
   };
 
   const [fooYearEnd, setFooYearEnd] = useState<string>(""); // MM/dd
-  const clientIncorporation: Date | undefined = (() => {
-    const raw = (clientInfo as any)?.dateOfIncorporation ?? (appClient as any)?.dateOfIncorporation;
-    if (!raw) return undefined;
-    const d = new Date(raw);
-    return isNaN(d.getTime()) ? undefined : d;
-  })();
-  const [fooIncorporation, setFooIncorporation] = useState<Date | undefined>(clientIncorporation);
-  const fooDerived = isStubPeriod && firstYearOfOperations;
+  const fooDerived = isFooPeriod;
+  // First Year of Operations: Current Year dates derive from the Year-End Date only (12 months ending on it)
   useEffect(() => {
-    if (!fooDerived || !fooYearEnd || !fooIncorporation) return;
+    if (!fooDerived || !fooYearEnd) return;
     const mm = fooYearEnd.match(/^(\d{1,2})\/(\d{1,2})$/);
     if (!mm) return;
     const m = Number(mm[1]) - 1, d = Number(mm[2]);
-    let end = new Date(fooIncorporation.getFullYear(), m, d);
-    if (end < fooIncorporation) end = new Date(fooIncorporation.getFullYear() + 1, m, d);
+    const prevEnd = new Date(currentYearEnd);
+    const year = isNaN(prevEnd.getTime()) ? new Date().getFullYear() : prevEnd.getFullYear();
+    const end = new Date(year, m, d);
+    const start = new Date(year - 1, m, d + 1);
     const fmt = (x: Date) => formatDateFns(x, "MM/dd/yyyy");
-    setCurrentYearStart(fmt(fooIncorporation));
+    setCurrentYearStart(fmt(start));
     setCurrentYearEnd(fmt(end));
-  }, [fooDerived, fooYearEnd, fooIncorporation]);
-  const handleFOOChange = (checked: boolean) => {
-  setFirstYearOfOperations(checked);
-  if (!checked && dataSource === "source") {
-  setDataSource("csv");
-  }
-  };
+  }, [fooDerived, fooYearEnd]); // eslint-disable-line react-hooks/exhaustive-deps
 
  const handleCurrentYearStartChange = (val: string) => {
  setCurrentYearStart(val);
@@ -1323,7 +1319,7 @@ const [ackText, setAckText] = useState("");
  (!isReconnectFlow || hasSelectedActiveConnection);
 
   // Edit-mode scenario: engagement was CSV, client has a source connection, user switched to Source
-  const isCsvToSourceSwitch = isEditMode && clientHasSourceConnection && originalDataSource === "csv" && dataSource === "source" && sourceConnected && !savedDisconnectedFrom && !(isStubPeriod && firstYearOfOperations);
+  const isCsvToSourceSwitch = isEditMode && clientHasSourceConnection && originalDataSource === "csv" && dataSource === "source" && sourceConnected && !savedDisconnectedFrom && !(isFooPeriod);
    // Edit-mode scenario 2: engagement was Source, user switched to CSV
    const isSourceToCsvSwitch = isEditMode && clientHasSourceConnection && originalDataSource === "source" && dataSource === "csv";
    // Per-year mix of CSV vs Source (locked prior years count as Source; "No data" rows are skipped)
@@ -1365,7 +1361,7 @@ const [ackText, setAckText] = useState("");
        && (((dataSource !== originalDataSource && (!isReconnectFlow || hasSelectedActiveConnection)) || (isSourceProviderMismatch && hasSelectedActiveConnection)) || isAddingSourceYears);
 
        const showSourceSectionSeparator = isSourceLockedStub
-      || (isStubPeriod && firstYearOfOperations)
+      || (isFooPeriod)
       || (!isSourceLockedStub && !isRollForwardNoSource && (
         (dataSource === "source" && !clientHasSourceConnection)
         || (clientHasSourceConnection && dataSource === "csv" && !isSourceToCsvSwitch)
@@ -1418,7 +1414,7 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
  sourceRollForward: editingMeta?.sourceRollForward,
  sourceYearsAvailable: editingMeta?.sourceYearsAvailable,
   auditPeriodType: periodType,
-  firstYearOfOperations: isStubPeriod ? firstYearOfOperations : undefined,
+  firstYearOfOperations: isFooPeriod ? true : undefined,
  annualizeInterim: isAudit && periodType === "Interim (6-month)" ? annualizeInterim : undefined,
  firstTimeAdoption: isAudit ? firstTimeAdoption : undefined,
  });
@@ -1637,20 +1633,20 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
   <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
   <span className="text-sm text-muted-foreground">Source connection not available for stub periods</span>
  </div>
-) : isStubPeriod && firstYearOfOperations ? (
+) : isFooPeriod ? (
  <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-blue-300 bg-blue-50 dark:bg-blue-950/30 px-3 py-2">
   <Info className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
   <span className="text-sm text-blue-800 dark:text-blue-200">First year of operations — short period treated as full year for source connection.</span>
  </div>
 ) : (
  <>
-  {isRollForwardSource && !isSourceLockedStub && !(isStubPeriod && firstYearOfOperations) && (
+  {isRollForwardSource && !isSourceLockedStub && !(isFooPeriod) && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">Prior year rows are locked to their original source. Only Current Year can be changed.</span>
    </div>
   )}
-  {((dataSource === "source" && !clientHasSourceConnection && !isExternallyDisconnected && !isSourceLockedStub && !(isStubPeriod && firstYearOfOperations)) || (isEditMode && !clientHasSourceConnection && !isExternallyDisconnected && !isSourceLockedStub && !(isStubPeriod && firstYearOfOperations) && yearErrors.some(Boolean))) && (
+  {((dataSource === "source" && !clientHasSourceConnection && !isExternallyDisconnected && !isSourceLockedStub && !(isFooPeriod)) || (isEditMode && !clientHasSourceConnection && !isExternallyDisconnected && !isSourceLockedStub && !(isFooPeriod) && yearErrors.some(Boolean))) && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
     <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
     <span className="text-sm text-red-800 dark:text-red-200">
@@ -1660,7 +1656,7 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
     </span>
    </div>
   )}
-  {clientHasSourceConnection && !isSourceToCsvSwitch && yearSourceMix.csv > 0 && !isSourceLockedStub && !(isStubPeriod && firstYearOfOperations) && (
+  {clientHasSourceConnection && !isSourceToCsvSwitch && yearSourceMix.csv > 0 && !isSourceLockedStub && !(isFooPeriod) && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">
@@ -1670,7 +1666,7 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
     </span>
    </div>
   )}
-  {isSourceToCsvSwitch && originalCyProvider && !isSourceLockedStub && !(isStubPeriod && firstYearOfOperations) && (
+  {isSourceToCsvSwitch && originalCyProvider && !isSourceLockedStub && !(isFooPeriod) && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">
@@ -1680,13 +1676,13 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
     </span>
    </div>
   )}
-  {isReconnectFlow && hasSelectedActiveConnection && !isSourceLockedStub && !(isStubPeriod && firstYearOfOperations) && (
+  {isReconnectFlow && hasSelectedActiveConnection && !isSourceLockedStub && !(isFooPeriod) && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">Switching back to Source will replace your current CSV trial balance data. Years available from {sourceLabel(clientSourceIntegration)} will be refreshed.</span>
    </div>
   )}
-  {isExternallyDisconnected && originalCyProvider && !isSourceLockedStub && !(isStubPeriod && firstYearOfOperations) && (
+  {isExternallyDisconnected && originalCyProvider && !isSourceLockedStub && !(isFooPeriod) && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">
@@ -1695,7 +1691,7 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
     </span>
    </div>
   )}
-  {isSourceProviderMismatch && !hasSelectedActiveConnection && originalCyProvider && !isSourceLockedStub && !(isStubPeriod && firstYearOfOperations) && (
+  {isSourceProviderMismatch && !hasSelectedActiveConnection && originalCyProvider && !isSourceLockedStub && !(isFooPeriod) && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <div className="flex flex-col items-start gap-2">
@@ -1704,7 +1700,7 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
     </div>
    </div>
   )}
-  {isEditMode && clientHasSourceConnection && !isSourceLockedStub && !(isStubPeriod && firstYearOfOperations) && [0, 1, 2].some(i => yearChangeKind(i) === "toSource") && (
+  {isEditMode && clientHasSourceConnection && !isSourceLockedStub && !(isFooPeriod) && [0, 1, 2].some(i => yearChangeKind(i) === "toSource") && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">Switching to Source will replace your existing CSV trial balance data. Years selected for source will be refreshed.</span>
@@ -1739,15 +1735,6 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
  </Select>
  </div>
  </div>
- {isStubPeriod && (
- <div className="flex items-center gap-4 pb-2.5">
- <span className="w-44 shrink-0" />
- <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
- <Checkbox checked={firstYearOfOperations} onCheckedChange={v => handleFOOChange(!!v)} />
- First Year of Operations
- </label>
- </div>
- )}
  {fooDerived && (
  <>
  <div className="flex items-start gap-4 py-2.5">
@@ -1759,24 +1746,13 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
  <p className="text-xs text-muted-foreground">e.g. December 31 — year rotates automatically each engagement</p>
  </div>
  </div>
- <div className="flex items-start gap-4 py-2.5">
- <span className="text-sm text-foreground w-44 shrink-0 whitespace-nowrap pt-2">Date of Incorporation</span>
- <div className="flex flex-col gap-1">
- <div className="w-44">
- <DateField value={fooIncorporation ? formatDateFns(fooIncorporation, "MM/dd/yyyy") : ""} onChange={v => { const m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); setFooIncorporation(m ? new Date(Number(m[3]), Number(m[1]) - 1, Number(m[2])) : undefined); }} />
- </div>
- <p className="text-xs text-muted-foreground">
- {clientIncorporation && fooIncorporation?.getTime() === clientIncorporation.getTime() ? "Pre-filled from client page" : "Optional — auto-populates from client page if available"}
- </p>
- </div>
- </div>
  </>
  )}
  {/* Year rows */}
  {[
- { label: "Current Year", required: true, start: currentYearStart, setStart: handleCurrentYearStartChange, end: currentYearEnd, setEnd: handleCurrentYearEndChange, disabled: fooDerived, note: fooDerived ? "Auto-derived from Date of Incorporation and Year-End Date" : "" },
- { label: "Prior Year 1", required: false, start: fooDerived ? "" : priorYear1Start, setStart: setPriorYear1Start, end: fooDerived ? "" : priorYear1End, setEnd: setPriorYear1End, disabled: isFullYearPeriod || fooDerived, note: isFullYearPeriod && !fooDerived ? "Auto-derived from Current Year dates" : "" },
- { label: "Prior Year 2", required: false, start: fooDerived ? "" : priorYear2Start, setStart: setPriorYear2Start, end: fooDerived ? "" : priorYear2End, setEnd: setPriorYear2End, disabled: isFullYearPeriod || fooDerived, note: isFullYearPeriod && !fooDerived ? "Auto-derived from Current Year dates" : "" },
+ { label: "Current Year", required: true, start: currentYearStart, setStart: handleCurrentYearStartChange, end: currentYearEnd, setEnd: handleCurrentYearEndChange, disabled: fooDerived, note: fooDerived ? "Auto-derived from Year-End Date" : "" },
+ { label: "Prior Year 1", required: false, start: fooDerived ? "" : priorYear1Start, setStart: setPriorYear1Start, end: fooDerived ? "" : priorYear1End, setEnd: setPriorYear1End, disabled: isFullYearPeriod || fooDerived, note: fooDerived ? "No data for this period" : isFullYearPeriod ? "Auto-derived from Current Year dates" : "" },
+ { label: "Prior Year 2", required: false, start: fooDerived ? "" : priorYear2Start, setStart: setPriorYear2Start, end: fooDerived ? "" : priorYear2End, setEnd: setPriorYear2End, disabled: isFullYearPeriod || fooDerived, note: fooDerived ? "No data for this period" : isFullYearPeriod ? "Auto-derived from Current Year dates" : "" },
  ].map((row, i) => {
   const locked = isRollForwardSource && i > 0;
   const noData = fooDerived && i > 0;
