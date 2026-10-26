@@ -1722,7 +1722,7 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
      <span className="col-span-2 text-xs text-muted-foreground">{row.note}</span>
     </div>
    )}
-   {!locked && !noData && !stubLocked && disconnectedP && (
+   {!isSourceProviderMismatch && !locked && !noData && !stubLocked && disconnectedP && (
     <div className="grid grid-cols-[176px_minmax(0,1fr)] gap-4 mt-2">
      <span />
      <div className="flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 px-3 py-2 text-amber-800" role="status">
@@ -1754,7 +1754,7 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
  </div>
 ) : isFooPeriod ? null : (
  <>
-  {isRollForwardSource && !isSourceLockedStub && !(isFooPeriod) && (
+  {!isSourceProviderMismatch && isRollForwardSource && !isSourceLockedStub && !(isFooPeriod) && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">Prior year rows are locked to their original source. Only Current Year can be changed.</span>
@@ -1770,7 +1770,7 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
     </span>
    </div>
   )}
-  {clientHasSourceConnection && !isSourceToCsvSwitch && yearSourceMix.csv > 0 && !isSourceLockedStub && !(isFooPeriod) && (
+  {!isSourceProviderMismatch && clientHasSourceConnection && !isSourceToCsvSwitch && yearSourceMix.csv > 0 && !isSourceLockedStub && !(isFooPeriod) && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">
@@ -1780,7 +1780,7 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
     </span>
    </div>
   )}
-  {isSourceToCsvSwitch && originalCyProvider && !isSourceLockedStub && !(isFooPeriod) && (
+  {!isSourceProviderMismatch && isSourceToCsvSwitch && originalCyProvider && !isSourceLockedStub && !(isFooPeriod) && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">
@@ -1790,13 +1790,13 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
     </span>
    </div>
   )}
-  {isReconnectFlow && hasSelectedActiveConnection && !isSourceLockedStub && !(isFooPeriod) && (
+  {!isSourceProviderMismatch && isReconnectFlow && hasSelectedActiveConnection && !isSourceLockedStub && !(isFooPeriod) && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">Switching back to Source will replace your current CSV trial balance data. Years available from {sourceLabel(clientSourceIntegration)} will be refreshed.</span>
    </div>
   )}
-  {isExternallyDisconnected && originalCyProvider && !isSourceLockedStub && !(isFooPeriod) && (
+  {!isSourceProviderMismatch && isExternallyDisconnected && originalCyProvider && !isSourceLockedStub && !(isFooPeriod) && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">
@@ -1809,12 +1809,12 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <div className="flex flex-col items-start gap-2">
-     <span className="text-sm text-amber-800 dark:text-amber-200">Your client's source connection has changed from {sourceLabel(originalCyProvider)} to {sourceLabel(clientSourceIntegration)}. Click Switch Connection to update this engagement to use {sourceLabel(clientSourceIntegration)}.</span>
+     <span className="text-sm text-amber-800 dark:text-amber-200">Your client's source connection has changed. Click Switch Connection to update this engagement to the new source.</span>
      <Button variant="outline" size="sm" className="h-8 text-sm" onClick={() => { setHasSelectedActiveConnection(true); setAckText(""); }}>Switch Connection</Button>
     </div>
    </div>
   )}
-  {isEditMode && clientHasSourceConnection && !isSourceLockedStub && !(isFooPeriod) && [0, 1, 2].some(i => yearChangeKind(i) === "toSource") && (
+  {!isSourceProviderMismatch && isEditMode && clientHasSourceConnection && !isSourceLockedStub && !(isFooPeriod) && [0, 1, 2].some(i => yearChangeKind(i) === "toSource") && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">Switching to Source will replace your existing CSV trial balance data. Years selected for source will be refreshed.</span>
