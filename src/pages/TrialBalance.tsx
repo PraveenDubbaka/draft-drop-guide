@@ -773,7 +773,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
 
  {/* Refresh button beside Actions */}
  {isSourceLinked || disconnectedFrom ? (
- <Popover open={refreshOpen} onOpenChange={setRefreshOpen}>
+ <Popover open={refreshOpen} onOpenChange={(o) => { if (o) setRefreshChecked({ cy: isYearSource("cy", 0), py1: isYearSource("py1", 1), py2: isYearSource("py2", 2) }); setRefreshOpen(o); }}>
  <PopoverTrigger asChild>
  <ExpandableIconButton
  variant="secondary"
