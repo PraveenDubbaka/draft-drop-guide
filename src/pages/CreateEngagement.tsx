@@ -1142,7 +1142,7 @@ export default function CreateEngagement() {
    });
       const [unconnectedYearsAction, setUnconnectedYearsAction] = useState<"keep" | "reset">("keep");
 const [ackText, setAckText] = useState("");
-    const ackChecked = ackText.trim() === "Delete";
+    const ackChecked = ackText.trim() === "DELETE";
     const setAckChecked = (_v: boolean) => setAckText("");
    // Connecting to source defaults to all available years (user can only reduce)
    useEffect(() => {
@@ -1837,8 +1837,8 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
      <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><MessageSquareText className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Issues, comments and requests will be deleted</span></li>
      <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><FileText className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Documents will only move after data is imported</span></li>
     </ul>
-    <label className="mt-3 flex items-center gap-1 text-sm font-semibold text-red-800 dark:text-red-200">Confirmation<span className="text-destructive">*</span></label>
-    <input type="text" value={ackText} onChange={e => setAckText(e.target.value)} placeholder="Type Delete to confirm" required aria-required="true"
+    <label className="mt-3 flex items-center gap-1 text-sm font-semibold text-red-800 dark:text-red-200">Type DELETE to confirm<span className="text-destructive">*</span></label>
+    <input type="text" value={ackText} onChange={e => setAckText(e.target.value)} placeholder="DELETE" required aria-required="true"
      className="input-double-border mt-1 h-9 w-64 rounded-[10px] border border-border bg-card px-3 text-sm text-foreground outline-none" />
     {ackChecked && <p className="mt-1 text-xs font-medium text-[#2E7D52]">Confirmed</p>}
    </div>
