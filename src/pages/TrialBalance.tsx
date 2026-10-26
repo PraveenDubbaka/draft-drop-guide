@@ -782,7 +782,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  disabled={!isSourceLinked || !activeTabIsSource}
  />
  </PopoverTrigger>
- <PopoverContent align="end" className="w-80 p-3 z-[100]">
+ <PopoverContent align="end" className="w-56 p-3 z-[100]">
  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Refresh</p>
  <div className="space-y-2">
  {([
