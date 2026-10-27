@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
 import xeroLogo from "@/assets/xero-logo-full.svg";
 import { clientsData as appClientsData } from "@/data/clientsData";
-import { getClientSourceIntegration, sourceLabel, getClientConnectionOverride, getEngagementConnectionOverride, CLIENT_CONNECTION_EVENT, type AccountingProvider } from "@/lib/clientSource";
+import { getClientSourceIntegration, sourceLabel, getClientConnectionState, CLIENT_CONNECTION_EVENT, type AccountingProvider } from "@/lib/clientSource";
 import { accountingProviders } from "@/lib/accountingProviders";
 import { SourceConnectionModal } from "@/components/SourceConnectionModal";
 import { ArrowLeft, Briefcase, Calendar, Users, ChevronDown, Plus, Pencil, Trash2, Search, ExternalLink, X, Building2, FileText, Settings2, Check, UserPlus, Link2, AlertTriangle, XCircle, Info, FilePen, FolderPlus, MessageSquareText } from "lucide-react";
@@ -961,14 +961,18 @@ export default function CreateEngagement() {
   const [hasSelectedActiveConnection, setHasSelectedActiveConnection] = useState(false);
   const initialClientRef = useRef(clientName);
 
+    /** Client-level connection: saved connect/disconnect first, then demo client data, then app client data. */
+    const resolveClientConnection = (): AccountingProvider | null => {
+      const state = getClientConnectionState(clientName, localClientInfo?.entityLegalName, clientInfo?.entityLegalName);
+      if (state !== undefined) return state;
+      if (localClientInfo?.integrations.includes("xero")) return "xero";
+      if (localClientInfo?.integrations.includes("quickbooks")) return "quickbooks";
+      return getClientSourceIntegration(clientName);
+    };
     // Sync data source default when client selection changes based on source connection status
     useEffect(() => {
       {
-        const integ = getEngagementConnectionOverride(routeEngagementId) ?? getClientConnectionOverride(clientName, localClientInfo?.entityLegalName) ?? (localClientInfo
-          ? (localClientInfo.integrations.includes("xero") ? "xero"
-            : localClientInfo.integrations.includes("quickbooks") ? "quickbooks"
-            : getClientSourceIntegration(clientName))
-          : getClientSourceIntegration(clientName));
+        const integ = resolveClientConnection();
         setSourceConnected(integ !== null);
         // Keep the initial data source until the user picks a different client
         // Never change the data type on a live connection change while editing
@@ -1204,11 +1208,7 @@ export default function CreateEngagement() {
   const isFooPeriod = periodType === "First Year of Operations";
   // Partial year periods are locked to CSV; First Year of Operations allows source
   const isSourceLockedStub = isStubPeriod;
- const clientSourceIntegration = getEngagementConnectionOverride(routeEngagementId) ?? getClientConnectionOverride(clientName, clientInfo?.entityLegalName) ?? (localClientInfo
-   ? (localClientInfo.integrations.includes("xero") ? "xero" as const
-     : localClientInfo.integrations.includes("quickbooks") ? "quickbooks" as const
-     : getClientSourceIntegration(clientName))
-   : getClientSourceIntegration(clientName));
+ const clientSourceIntegration = resolveClientConnection();
  const clientHasSourceConnection = clientSourceIntegration !== null;
  // Engagement was disconnected from its source by a CSV import; switching back to Source reconnects it
  const savedDisconnectedFrom = editingMeta?.sourceDisconnectedFrom;
@@ -1291,7 +1291,9 @@ const [ackText, setAckText] = useState("");
    const [originalYearSources] = useState<string[]>(initYearSources);
    const yearChangeKind = (i: number): "toCsv" | "toSource" | "toOtherSource" | null => {
      if (!isEditMode) return null;
-     const o = originalYearSources[i], c = yearSources[i];
+     const o = originalYearSources[i];
+     // Partial year locks every non-locked row to CSV, so a Source row becomes a switch to CSV
+     const c = isSourceLockedStub && yearSources[i] !== "locked" ? "csv" : yearSources[i];
      if (!o || !c || o === c || o === "locked" || c === "locked") return null;
      if (o.startsWith("source:") && c === "csv") return "toCsv";
      if (o === "csv" && c.startsWith("source:") && c !== "source:none") return "toSource";
@@ -1428,7 +1430,9 @@ const [ackText, setAckText] = useState("");
    // either the connection isn't active or the engagement is linked to a different source.
    const showConnectionDropdown = isSourceProviderMismatch || isReconnectFlow;
    const dropdownSavedProvider = isReconnectFlow ? savedDisconnectedFrom : savedSourceProvider;
-    const isExternallyDisconnected = isEditMode && !clientHasSourceConnection && originalDataSource === "source" && dataSource === "source" && !isSourceLockedStub && !isRollForwardSource;
+    const isExternallyDisconnected = isEditMode && !clientHasSourceConnection && originalDataSource === "source" && dataSource === "source" && !isSourceLockedStub;
+    // Mismatch warning only while at least one year row still points to the old provider
+    const showMismatchWarning = isSourceProviderMismatch && [0, 1, 2].some(i => yearDisconnectedProvider(i) !== null);
      const isConnectionDisconnected = clientHasSourceConnection&& (!sourceConnected || isSourceProviderMismatch);
     // Roll forward with no client connection → auto CSV, locked
     const isRollForwardNoSource = isRollForwardSource && !clientHasSourceConnection;
@@ -1454,13 +1458,19 @@ const [ackText, setAckText] = useState("");
         || (clientHasSourceConnection && dataSource === "source" && !sourceConnected)
         || (isRollForwardSource && dataSource === "source" && clientHasSourceConnection && rollForwardPriorProvider !== clientSourceIntegration)
         || (isReconnectFlow && hasSelectedActiveConnection)
-        || (isSourceProviderMismatch && !hasSelectedActiveConnection)
+        || showMismatchWarning
         || showYearSelection
         || showAck
       ))
       || isRollForwardNoSource;
 const performSave = () => {
    const savedDataSource: "csv" | "source" = isSourceLockedStub || isRollForwardNoSource ? "csv" : dataSource;
+   // Save what each row actually uses: Partial year forces every non-locked row to CSV
+   const effectiveYearSources = isSourceLockedStub ? yearSources.map(v => (v === "locked" ? v : "csv")) : yearSources;
+   const isSourceRow = (v?: string) => !!v && v.startsWith("source:") && v !== "source:none";
+   const rowKind = (v?: string): "csv" | "source" => (v && v.startsWith("source:") ? "source" : "csv");
+   const firstSourceRow = effectiveYearSources.find(isSourceRow);
+   const firstSourceProvider = firstSourceRow ? (firstSourceRow.slice(7) as AccountingProvider) : undefined;
  const record: EngagementRecord = {
  id: engagementId,
  client: clientName,
@@ -1490,11 +1500,12 @@ const performSave = () => {
  periodStart: currentYearStart,
  periodEnd: currentYearEnd,
 dataSource: savedDataSource,
-yearDataSources: { cy: cyDataSource, py1: py1DataSource, py2: py2DataSource },
-yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, i) => [k, yearSources[i]?.startsWith("source:") && yearSources[i] !== "source:none" ? yearSources[i].slice(7) : undefined]).filter(([, v]) => v)) as EngagementMeta["yearSourceProviders"],
- sourceYears: savedDataSource === "source" ? sourceYears : undefined,
+yearDataSources: { cy: rowKind(effectiveYearSources[0]), py1: rowKind(effectiveYearSources[1]), py2: rowKind(effectiveYearSources[2]) },
+yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, i) => [k, isSourceRow(effectiveYearSources[i]) ? effectiveYearSources[i].slice(7) : undefined]).filter(([, v]) => v)) as EngagementMeta["yearSourceProviders"],
+ sourceYears: savedDataSource === "source" ? Math.max(1, effectiveYearSources.filter(isSourceRow).length) : undefined,
  teamMembers,
- sourceProvider: savedDataSource === "source" ? (clientSourceIntegration ?? undefined) : (editingMeta?.sourceDisconnectedFrom ? editingMeta.sourceProvider : undefined),
+ sourceProvider: savedDataSource === "source" ? (firstSourceProvider ?? clientSourceIntegration ?? undefined) : (editingMeta?.sourceDisconnectedFrom ? editingMeta.sourceProvider : undefined),
+ priorYearProvider: editingMeta?.priorYearProvider,
  sourceDisconnectedFrom: savedDataSource === "csv" ? editingMeta?.sourceDisconnectedFrom : undefined,
  sourceRollForward: editingMeta?.sourceRollForward,
  sourceYearsAvailable: editingMeta?.sourceYearsAvailable,
@@ -1767,14 +1778,14 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
      <span className="text-xs font-medium text-foreground">Data Source</span>
      {locked ? (
       <Select value="locked" disabled><SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-       <SelectContent><SelectItem value="locked">Source — {sourceLabel("xero")} (prior year)</SelectItem></SelectContent></Select>
+       <SelectContent><SelectItem value="locked">Source — {sourceLabel(editingMeta?.priorYearProvider ?? rollForwardPriorProvider)} (prior year)</SelectItem></SelectContent></Select>
      ) : noData ? (
       <Select value="nodata" disabled><SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
        <SelectContent><SelectItem value="nodata">No data</SelectItem></SelectContent></Select>
      ) : (!stubLocked && disconnectedP) ? (
       <Select value="disconnected" onValueChange={v => setYearSource(i, v)}>
-       <SelectTrigger className="h-9 text-sm border-amber-300 text-amber-700" title={`Source — ${accountingProviders[disconnectedP].buttonName} (Disconnected)`}>
-        <SelectValue>Source — {accountingProviders[disconnectedP].buttonName} (Disconnected)</SelectValue>
+       <SelectTrigger className="h-9 text-sm border-amber-300 text-amber-700" title={`Source — ${sourceLabel(disconnectedP)} (Disconnected)`}>
+        <SelectValue>Source — {sourceLabel(disconnectedP)} (Disconnected)</SelectValue>
        </SelectTrigger>
        <SelectContent>
         {activeProvider && activeProvider !== disconnectedP && (
@@ -1807,12 +1818,12 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
      <span className="col-span-2 text-xs text-muted-foreground">{row.note}</span>
     </div>
    )}
-   {!isSourceProviderMismatch && !locked && !noData && !stubLocked && disconnectedP && (
+   {!showMismatchWarning && !isExternallyDisconnected && !locked && !noData && !stubLocked && disconnectedP && (
     <div className="grid grid-cols-[176px_minmax(0,1fr)] gap-4 mt-2">
      <span />
      <div className="flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 px-3 py-2 text-amber-800" role="status">
       <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-      <p className="text-sm">{accountingProviders[disconnectedP].buttonName} is disconnected for this year. Please select a new data source above.</p>
+      <p className="text-sm">{sourceLabel(disconnectedP)} is disconnected for this year. Select a new data source from the Data Source dropdown.</p>
      </div>
     </div>
    )}
@@ -1837,15 +1848,15 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
   <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
   <span className="text-sm text-muted-foreground">Source connection not available for stub periods</span>
  </div>
-) : isFooPeriod ? null : (
+) : (
  <>
-  {!isSourceProviderMismatch && isRollForwardSource && !isSourceLockedStub && !(isFooPeriod) && (
+  {!showMismatchWarning && isRollForwardSource && !isSourceLockedStub && !(isFooPeriod) && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">Prior year rows are locked to their original source. Only Current Year can be changed.</span>
    </div>
   )}
-  {((dataSource === "source" && !clientHasSourceConnection && !isExternallyDisconnected && !isSourceLockedStub && !(isFooPeriod)) || (isEditMode && !clientHasSourceConnection && !isExternallyDisconnected && !isSourceLockedStub && !(isFooPeriod) && yearErrors.some(Boolean))) && (
+  {((dataSource === "source" && !clientHasSourceConnection && !isExternallyDisconnected && !isSourceLockedStub) || (!clientHasSourceConnection && !isExternallyDisconnected && !isSourceLockedStub && yearErrors.some(Boolean))) && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
     <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
     <span className="text-sm text-red-800 dark:text-red-200">
@@ -1855,7 +1866,7 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
     </span>
    </div>
   )}
-  {!isSourceProviderMismatch && clientHasSourceConnection && !isSourceToCsvSwitch && yearSourceMix.csv > 0 && !isSourceLockedStub && !(isFooPeriod) && (
+  {!showMismatchWarning && clientHasSourceConnection && !isSourceToCsvSwitch && yearSourceMix.csv > 0 && !isSourceLockedStub && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">
@@ -1865,41 +1876,46 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
     </span>
    </div>
   )}
-  {!isSourceProviderMismatch && isSourceToCsvSwitch && originalCyProvider && !isSourceLockedStub && !(isFooPeriod) && (
+  {!showMismatchWarning && isSourceToCsvSwitch && originalCyProvider && !isSourceLockedStub && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">
      {isRollForwardSource
-      ? `Switching to CSV will disconnect all years from ${sourceLabel(originalCyProvider)}, including Prior Year 1 and Prior Year 2. You will need to import CSV files for all years.`
+      ? `Switching Current Year to CSV means it will no longer pull data from ${sourceLabel(originalCyProvider)}. Prior years stay locked to their original source.`
       : `Switching to CSV means this engagement will no longer pull data from ${sourceLabel(originalCyProvider)}. The source connection will stay active but won't be used.`}
     </span>
    </div>
   )}
-  {!isSourceProviderMismatch && isReconnectFlow && hasSelectedActiveConnection && !isSourceLockedStub && !(isFooPeriod) && (
+  {!showMismatchWarning && isReconnectFlow && hasSelectedActiveConnection && !isSourceLockedStub && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">Switching back to Source will replace your current CSV trial balance data. Years available from {sourceLabel(clientSourceIntegration)} will be refreshed.</span>
    </div>
   )}
-  {!isSourceProviderMismatch && isExternallyDisconnected && originalCyProvider && !isSourceLockedStub && !(isFooPeriod) && (
+  {!showMismatchWarning && isExternallyDisconnected && originalCyProvider && !isSourceLockedStub && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">
-     Your client has no active source connection. This engagement is still linked to {sourceLabel(originalCyProvider)}. Connect a new source or change Data Source Type to CSV.{" "}
+     Your client has no active source connection. Connect a source, or set the affected years to CSV / Excel / PDF.{" "}
      <Button variant="link" onClick={() => setShowSourceConnection(true)} className="h-auto p-0 text-sm underline underline-offset-2">Connect Source</Button>
     </span>
    </div>
   )}
-  {isSourceProviderMismatch && !hasSelectedActiveConnection && originalCyProvider && !isSourceLockedStub && !(isFooPeriod) && (
+  {showMismatchWarning && originalCyProvider && !isSourceLockedStub && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <div className="flex flex-col items-start gap-2">
      <span className="text-sm text-amber-800 dark:text-amber-200">Your client's source connection has changed. Click Switch Connection to update this engagement to the new source.</span>
-     <Button variant="outline" size="sm" className="h-8 text-sm" onClick={() => { setHasSelectedActiveConnection(true); setAckText(""); }}>Switch Connection</Button>
+     <Button variant="outline" size="sm" className="h-8 text-sm" onClick={() => {
+      setHasSelectedActiveConnection(true);
+      setAckText("");
+      // Move every row still on the old provider to the client's active connection
+      if (activeProvider) setYearSources(s => s.map(v => (v.startsWith("source:") && v !== "source:none" && v.slice(7) !== activeProvider ? `source:${activeProvider}` : v)));
+     }}>Switch Connection</Button>
     </div>
    </div>
   )}
-  {!isSourceProviderMismatch && isEditMode && clientHasSourceConnection && !isSourceLockedStub && !(isFooPeriod) && [0, 1, 2].some(i => yearChangeKind(i) === "toSource") && (
+  {!showMismatchWarning && isEditMode && clientHasSourceConnection && !isSourceLockedStub && [0, 1, 2].some(i => yearChangeKind(i) === "toSource") && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">Switching to Source will replace your existing CSV trial balance data. Years selected for source will be refreshed.</span>
