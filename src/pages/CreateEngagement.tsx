@@ -1808,7 +1808,7 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
        <SelectContent><SelectItem value="nodata">No data</SelectItem></SelectContent></Select>
      ) : (!stubLocked && disconnectedP) ? (
       <Select value="disconnected" onValueChange={v => setYearSource(i, v)}>
-       <SelectTrigger className="h-9 text-sm border-amber-300 text-amber-700" title={`Source — ${sourceLabel(disconnectedP)} (Disconnected)`}>
+       <SelectTrigger className="h-9 text-sm border-amber-300 text-amber-700" title={`${sourceLabel(disconnectedP)} · ${clientInfo?.entityLegalName || clientName} · Disconnected`}>
         <SelectValue>Source — {sourceLabel(disconnectedP)} (Disconnected)</SelectValue>
        </SelectTrigger>
        <SelectContent>
@@ -1820,7 +1820,7 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
       </Select>
      ) : (
       <Select value={stubLocked ? "csv" : (val.startsWith("source:") ? val : "csv")} disabled={stubLocked} onValueChange={v => setYearSource(i, v)}>
-       <SelectTrigger className="h-9 text-sm" title={stubLocked || !val.startsWith("source:") ? "CSV / Excel / PDF" : val === "source:none" ? "Source — Accounting software" : `Source — ${sourceLabel(val.slice(7) as AccountingProvider)}`}><SelectValue /></SelectTrigger>
+       <SelectTrigger className="h-9 text-sm" title={stubLocked || !val.startsWith("source:") ? "CSV / Excel / PDF" : val === "source:none" ? "Accounting software · Not connected" : sourceLabel(val.slice(7) as AccountingProvider)}><SelectValue /></SelectTrigger>
        <SelectContent>
         {(() => {
          // Exactly one source option: the year's saved provider, else the client's single active connection
