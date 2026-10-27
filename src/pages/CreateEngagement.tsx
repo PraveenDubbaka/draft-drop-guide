@@ -797,7 +797,58 @@ function formatYearEnd(dateStr: string): string {
 function formatDateCreated(): string {
  const now = new Date();
  return now.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) +
- " " + now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+  " " + now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+}
+
+type TypeDefaults = { prefix: string; template: string; templateId: string; standards: string };
+
+/** Defaults applied on Create Engagement for each engagement type. */
+const TYPE_DEFAULTS: Record<string, TypeDefaults> = {
+ "Audit (AUD)": { prefix: "AUD", template: "CAS Audit", templateId: "audit5100", standards: "ASPE — Canadian Accounting Standards for Private Enterprises" },
+ "Review (REV)": { prefix: "REV", template: "Review Section 2400", templateId: "rev2400", standards: "Section 2400 Review standards" },
+ "Compilation (COM)": { prefix: "COM", template: "Compilation CSRS 4200", templateId: "comp4200", standards: "CSRS 4200 — Compilation Engagements" },
+ "T2 (Corporations)": { prefix: "T2", template: "T2 (Corporations)", templateId: "tax-t2", standards: "ASPE" },
+ "1120 (US C-Corporation)": { prefix: "1120", template: "1120 (US C-Corporation)", templateId: "", standards: "" },
+ "1120S (US S-Corporation)": { prefix: "1120S", template: "1120S (US S-Corporation)", templateId: "", standards: "" },
+};
+
+const typeDefaults = (type: string | undefined): TypeDefaults =>
+ (type && TYPE_DEFAULTS[type]) || TYPE_DEFAULTS["Review (REV)"];
+
+/** Template label shown in edit mode for a saved template id. */
+const TEMPLATE_LABELS: Record<string, string> = {
+ audit5100: "CAS Audit",
+ rev2400: "Review Section 2400",
+ comp4200: "Compilation CSRS 4200",
+ "tax-t2": "T2 (Corporations)",
+};
+
+const IGNORED_NAME_WORDS = new Set(["inc", "llc", "ltd", "corp", "co", "group"]);
+
+/** Client initials: first letter of each word (max 3), ignoring company suffixes; one word → first 3 letters. */
+export function clientInitials(name: string): string {
+ const words = (name || "")
+  .split(/[^A-Za-z0-9]+/)
+  .filter(w => w && !IGNORED_NAME_WORDS.has(w.toLowerCase()));
+ if (words.length === 0) return "";
+ if (words.length === 1) return words[0].slice(0, 3).toUpperCase();
+ return words.map(w => w[0]).join("").slice(0, 3).toUpperCase();
+}
+
+const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** Build PREFIX-INITIALS-MonDDYYYY, adding -2, -3… when the ID is already taken. */
+export function generateEngagementId(type: string, clientName: string, cyEnd: string, existingIds: string[]): string {
+ const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec((cyEnd || "").trim());
+ const datePart = m && MONTHS_SHORT[Number(m[1]) - 1]
+  ? `${MONTHS_SHORT[Number(m[1]) - 1]}${m[2].padStart(2, "0")}${m[3]}`
+  : "";
+ const base = [typeDefaults(type).prefix, clientInitials(clientName), datePart].filter(Boolean).join("-");
+ const taken = new Set(existingIds);
+ if (!taken.has(base)) return base;
+ let n = 2;
+ while (taken.has(`${base}-${n}`)) n++;
+ return `${base}-${n}`;
 }
 
 export default function CreateEngagement() {
