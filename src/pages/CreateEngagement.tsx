@@ -1801,10 +1801,10 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
     <div className="flex flex-col gap-1">
      <span className="text-xs font-medium text-foreground">Data Source</span>
      {locked ? (
-      <Select value="locked" disabled><SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+      <Select value="locked" disabled><SelectTrigger className="h-9 text-sm" title={lockedYearLabel(i === 1 ? "py1" : "py2")}><SelectValue /></SelectTrigger>
        <SelectContent><SelectItem value="locked">{lockedYearLabel(i === 1 ? "py1" : "py2")}</SelectItem></SelectContent></Select>
      ) : noData ? (
-      <Select value="nodata" disabled><SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+      <Select value="nodata" disabled><SelectTrigger className="h-9 text-sm" title="No data"><SelectValue /></SelectTrigger>
        <SelectContent><SelectItem value="nodata">No data</SelectItem></SelectContent></Select>
      ) : (!stubLocked && disconnectedP) ? (
       <Select value="disconnected" onValueChange={v => setYearSource(i, v)}>
@@ -1820,7 +1820,7 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
       </Select>
      ) : (
       <Select value={stubLocked ? "csv" : (val.startsWith("source:") ? val : "csv")} disabled={stubLocked} onValueChange={v => setYearSource(i, v)}>
-       <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+       <SelectTrigger className="h-9 text-sm" title={stubLocked || !val.startsWith("source:") ? "CSV / Excel / PDF" : val === "source:none" ? "Source — Accounting software" : `Source — ${sourceLabel(val.slice(7) as AccountingProvider)}`}><SelectValue /></SelectTrigger>
        <SelectContent>
         {(() => {
          // Exactly one source option: the year's saved provider, else the client's single active connection
