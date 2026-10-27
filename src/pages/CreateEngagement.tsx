@@ -1457,7 +1457,6 @@ const [ackText, setAckText] = useState("");
         ? (editingMeta?.yearSourceProviders?.[k] ?? editingMeta?.sourceProvider ?? "csv")
         : "csv";
     };
-    const entityName = clientInfo?.entityLegalName || clientName;
     const lockedYearLabel = (k: "py1" | "py2") => {
       const v = lockedYearSource(k);
       return v === "csv" ? "CSV / Excel / PDF · Prior year" : `${sourceLabel(v)} · Prior year`;
@@ -1816,26 +1815,26 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
        <SelectContent><SelectItem value="nodata">No data</SelectItem></SelectContent></Select>
      ) : (!stubLocked && disconnectedP) ? (
       <Select value="disconnected" onValueChange={v => setYearSource(i, v)}>
-       <SelectTrigger className="h-9 text-sm text-muted-foreground" title={`${sourceLabel(disconnectedP)} · ${entityName} · Disconnected`}>
-        <SelectValue>{sourceLabel(disconnectedP)} · {entityName} · Disconnected</SelectValue>
+       <SelectTrigger className="h-9 text-sm text-muted-foreground" title={`${sourceLabel(disconnectedP)} · Disconnected`}>
+        <SelectValue>{sourceLabel(disconnectedP)} · Disconnected</SelectValue>
        </SelectTrigger>
        <SelectContent>
         {activeProvider && activeProvider !== disconnectedP && (
-         <SelectItem value={`source:${activeProvider}`}>{sourceLabel(activeProvider)} · {entityName}</SelectItem>
+         <SelectItem value={`source:${activeProvider}`}>{sourceLabel(activeProvider)}</SelectItem>
         )}
         <SelectItem value="csv">CSV / Excel / PDF</SelectItem>
        </SelectContent>
       </Select>
      ) : (
       <Select value={stubLocked ? "csv" : (val.startsWith("source:") ? val : "csv")} disabled={stubLocked} onValueChange={v => setYearSource(i, v)}>
-       <SelectTrigger className="h-9 text-sm" title={stubLocked || !val.startsWith("source:") ? "CSV / Excel / PDF" : val === "source:none" ? "Accounting software · Not connected" : `${sourceLabel(val.slice(7) as AccountingProvider)} · ${entityName}`}><SelectValue /></SelectTrigger>
+       <SelectTrigger className="h-9 text-sm" title={stubLocked || !val.startsWith("source:") ? "CSV / Excel / PDF" : val === "source:none" ? "Accounting software · Not connected" : `${sourceLabel(val.slice(7) as AccountingProvider)}`}><SelectValue /></SelectTrigger>
        <SelectContent>
         {(() => {
          // Exactly one source option: the year's saved provider, else the client's single active connection
          const cur = val.startsWith("source:") && val !== "source:none" ? (val.slice(7) as AccountingProvider) : null;
          const p = cur ?? activeProvider;
          return p
-          ? <SelectItem value={`source:${p}`}>{sourceLabel(p)} · {entityName}</SelectItem>
+          ? <SelectItem value={`source:${p}`}>{sourceLabel(p)}</SelectItem>
           : <SelectItem value="source:none">Accounting software · Not connected</SelectItem>;
         })()}
         <SelectItem value="csv">CSV / Excel / PDF</SelectItem>
@@ -1953,6 +1952,27 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
  </div>
 
 
+ {isCyToCsv && (
+ <div className="mt-5 rounded-[10px] border border-red-200 border-l-4 border-l-red-500 bg-red-50 dark:bg-red-950/30 px-3 py-2.5">
+  <div className="flex items-start gap-2">
+   <XCircle className="h-4 w-4 text-red-500 shrink-0 mt-1" />
+   <div className="min-w-0 flex-1">
+    <p className="text-lg font-bold leading-snug text-red-700 dark:text-red-300">Please read carefully — THIS ACTION CANNOT BE UNDONE</p>
+    <ul className="mt-2 space-y-1.5">
+     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><FilePen className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Adjusting entries will be deleted</span></li>
+     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><FolderPlus className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Manually added accounts will be deleted</span></li>
+     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><MessageSquareText className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Issues, comments and requests will be deleted</span></li>
+     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><FileText className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Documents will only move after data is imported</span></li>
+    </ul>
+    <p className="mt-2 text-sm text-red-800 dark:text-red-200">To remove the impact, choose a different option above.</p>
+    <label className="mt-3 flex items-center gap-1 text-sm font-semibold text-red-800 dark:text-red-200">Please type DELETE below to confirm your understanding<span className="text-destructive">*</span></label>
+    <input type="text" value={ackText} onChange={e => setAckText(e.target.value)} placeholder="DELETE" required aria-required="true"
+     className="input-double-border mt-1 h-9 w-64 rounded-[10px] border border-border bg-card px-3 text-sm text-foreground outline-none" />
+    {ackChecked && <p className="mt-1 text-xs font-medium text-[#2E7D52]">Confirmed</p>}
+   </div>
+  </div>
+ </div>
+ )}
  {/* Assigned Team — full page width, gated */}
  {engagementDetailsValid && (
  <SectionCard
@@ -2036,27 +2056,6 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
  </button>
  </div>
  </SectionCard>
- )}
- {isCyToCsv && (
- <div className="mt-5 rounded-[10px] border border-red-200 border-l-4 border-l-red-500 bg-red-50 dark:bg-red-950/30 px-3 py-2.5">
-  <div className="flex items-start gap-2">
-   <XCircle className="h-4 w-4 text-red-500 shrink-0 mt-1" />
-   <div className="min-w-0 flex-1">
-    <p className="text-lg font-bold leading-snug text-red-700 dark:text-red-300">Please read carefully — THIS ACTION CANNOT BE UNDONE</p>
-    <ul className="mt-2 space-y-1.5">
-     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><FilePen className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Adjusting entries will be deleted</span></li>
-     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><FolderPlus className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Manually added accounts will be deleted</span></li>
-     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><MessageSquareText className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Issues, comments and requests will be deleted</span></li>
-     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><FileText className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Documents will only move after data is imported</span></li>
-    </ul>
-    <p className="mt-2 text-sm text-red-800 dark:text-red-200">To remove the impact, choose a different option above.</p>
-    <label className="mt-3 flex items-center gap-1 text-sm font-semibold text-red-800 dark:text-red-200">Please type DELETE below to confirm your understanding<span className="text-destructive">*</span></label>
-    <input type="text" value={ackText} onChange={e => setAckText(e.target.value)} placeholder="DELETE" required aria-required="true"
-     className="input-double-border mt-1 h-9 w-64 rounded-[10px] border border-border bg-card px-3 text-sm text-foreground outline-none" />
-    {ackChecked && <p className="mt-1 text-xs font-medium text-[#2E7D52]">Confirmed</p>}
-   </div>
-  </div>
- </div>
  )}
  </div>
 
