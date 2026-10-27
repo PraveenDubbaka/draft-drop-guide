@@ -1320,7 +1320,16 @@ const [ackText, setAckText] = useState("");
      const p = o.slice(7) as AccountingProvider;
      return p === activeProvider ? null : p;
    };
-   const [yearKeepReset, setYearKeepReset] = useState<Record<number, "keep" | "reset">>({});
+   const [yearRemoveData, setYearRemoveData] = useState<Record<number, boolean>>({});
+   useEffect(() => {
+     setYearRemoveData(prev => {
+       const next: Record<number, boolean> = {};
+       let changed = false;
+       Object.keys(prev).forEach(k => { const i = Number(k); if (yearChangeKind(i) === "toCsv") next[i] = prev[i]; else changed = true; });
+       return changed ? next : prev;
+     });
+     // eslint-disable-next-line react-hooks/exhaustive-deps
+   }, [yearSources, isSourceLockedStub]);
    /** Edit only: the year's saved provider is no longer among the client's active connections (and the row is unchanged). */
    const yearDisconnectedProvider = (i: number): AccountingProvider | null => {
      if (!isEditMode) return null;
@@ -1519,8 +1528,10 @@ const performSave = () => {
  } else {
  addEngagement(record);
  }
+ const removeKeys = (["cy", "py1", "py2"] as const).filter((_, i) => yearRemoveData[i] && yearChangeKind(i) === "toCsv");
  setEngagementMeta(engagementId, {
  firstYearAudit,
+ yearRemoveData: removeKeys.length ? Object.fromEntries(removeKeys.map(k => [k, true])) : undefined,
  firstYearOnPlatform: firstYearAudit ? firstYearOnPlatform : undefined,
  isRollForward: firstYearAudit ? isRollForward : undefined,
  firstYearTemplates: firstYearAudit ? [...firstYearTemplates] : undefined,
@@ -1794,7 +1805,7 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
   const disconnectedP = yearDisconnectedProvider(i);
   return (
   <div key={row.label} className="py-2">
-   <div className={`grid grid-cols-[176px_minmax(0,176px)_minmax(0,176px)_minmax(200px,320px)] gap-4 items-start ${i === 0 ? "mt-4" : ""}`}>
+   <div className={`grid grid-cols-[176px_minmax(0,176px)_minmax(0,176px)_minmax(200px,320px)_auto] gap-4 items-start ${i === 0 ? "mt-4" : ""}`}>
     <div className="flex flex-col gap-1">
      <span className="text-xs font-medium text-foreground opacity-0" aria-hidden="true">Period</span>
      <span className="flex h-9 items-center text-sm text-foreground whitespace-nowrap">{row.label}{row.required && <span className="text-destructive ml-0.5">*</span>}</span>
@@ -1842,9 +1853,20 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
       </Select>
      )}
     </div>
+    <div>
+     {!locked && !noData && !stubLocked && !row.disabled && yearChangeKind(i) === "toCsv" && (
+      <div className="flex flex-col gap-1">
+       <span className="text-xs font-medium text-foreground opacity-0" aria-hidden="true">Period</span>
+       <label className="flex h-9 items-center gap-2 text-sm text-foreground cursor-pointer whitespace-nowrap">
+        <Checkbox checked={!!yearRemoveData[i]} onCheckedChange={v => setYearRemoveData(k => ({ ...k, [i]: v === true }))} />
+        Remove existing data
+       </label>
+      </div>
+     )}
+    </div>
    </div>
    {row.note && (
-    <div className="grid grid-cols-[176px_minmax(0,176px)_minmax(0,176px)_minmax(200px,320px)] gap-4 mt-1">
+    <div className="grid grid-cols-[176px_minmax(0,176px)_minmax(0,176px)_minmax(200px,320px)_auto] gap-4 mt-1">
      <span />
      <span className="col-span-2 text-xs text-muted-foreground">{row.note}</span>
     </div>
@@ -1855,18 +1877,6 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
      <div className="flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 px-3 py-2 text-amber-800" role="status">
       <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
       <p className="text-sm">{sourceLabel(disconnectedP)} is disconnected for this year. Select a new data source from the Data Source dropdown.</p>
-     </div>
-    </div>
-   )}
-   {!locked && !noData && !stubLocked && origDisconnectedProvider(i) && val === "csv" && (
-    <div className="grid grid-cols-[176px_minmax(0,1fr)] gap-4 mt-2">
-     <span />
-     <div>
-      <p className="text-sm font-medium text-foreground mb-2">What would you like to do with existing {row.label} data?</p>
-      <RadioGroup value={yearKeepReset[i] ?? "keep"} onValueChange={v => setYearKeepReset(k => ({ ...k, [i]: v as "keep" | "reset" }))} className="flex flex-col gap-2">
-       <label className="flex items-center gap-2 text-sm cursor-pointer"><RadioGroupItem value="keep" />Keep existing data</label>
-       <label className="flex items-center gap-2 text-sm cursor-pointer"><RadioGroupItem value="reset" />Reset data</label>
-      </RadioGroup>
      </div>
     </div>
    )}
