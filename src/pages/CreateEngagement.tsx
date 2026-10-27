@@ -1787,7 +1787,7 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
   const disconnectedP = yearDisconnectedProvider(i);
   return (
   <div key={row.label} className="py-2">
-   <div className={`grid grid-cols-[176px_minmax(0,176px)_minmax(0,176px)_200px] gap-4 items-start ${i === 0 ? "mt-4" : ""}`}>
+   <div className={`grid grid-cols-[176px_minmax(0,176px)_minmax(0,176px)_minmax(200px,320px)] gap-4 items-start ${i === 0 ? "mt-4" : ""}`}>
     <div className="flex flex-col gap-1">
      <span className="text-xs font-medium text-foreground opacity-0" aria-hidden="true">Period</span>
      <span className="flex h-9 items-center text-sm text-foreground whitespace-nowrap">{row.label}{row.required && <span className="text-destructive ml-0.5">*</span>}</span>
@@ -1837,7 +1837,7 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
     </div>
    </div>
    {row.note && (
-    <div className="grid grid-cols-[176px_minmax(0,176px)_minmax(0,176px)_200px] gap-4 mt-1">
+    <div className="grid grid-cols-[176px_minmax(0,176px)_minmax(0,176px)_minmax(200px,320px)] gap-4 mt-1">
      <span />
      <span className="col-span-2 text-xs text-muted-foreground">{row.note}</span>
     </div>
