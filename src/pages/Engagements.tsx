@@ -367,7 +367,7 @@ export default function Engagements() {
  aria-label="Roll Forward"
  onClick={(e) => handleRollForward(engagement.id, engagement.client, e)}
  >
- <FastForward className="h-4 w-4 text-link" />
+ <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-link group-hover/rf:text-link" aria-hidden="true"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h11A1.5 1.5 0 0 1 17 6.5V11" /><path d="M3 6.5V18a1.5 1.5 0 0 0 1.5 1.5H10" /><path d="M7 3v4M13 3v4M3 10h14" /><path d="M14 17h7" /><path d="M18 14l3 3-3 3" /></svg>
  </button>
  {engagement.id !== 'AUD-NPM-Dec312025' && (
  <button
