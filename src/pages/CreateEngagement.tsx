@@ -992,7 +992,7 @@ export default function CreateEngagement() {
       }
     }, [dataSource, originalDataSource, isEditMode]);
 
- const [accountingStandards, setAccountingStandards] = useState(editingMeta?.accountingStandards ?? (prefillIsAudit ? "ASPE — Canadian Accounting Standards for Private Enterprises" : "Section 2400 Review standards"));
+ const [accountingStandards, setAccountingStandards] = useState(editingMeta?.accountingStandards ?? (isEditMode ? (prefillIsAudit ? "ASPE — Canadian Accounting Standards for Private Enterprises" : "Section 2400 Review standards") : initialTypeDefaults.standards));
  const [additionalDisclosures, setAdditionalDisclosures] = useState(prefillIsAudit ? "Full financial statements" : "Statement of cash flows");
 
  // Engagement Period state
@@ -1607,7 +1607,7 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
  </InlineRow>
  <InlineRow label="Engagement ID" required>
  <div className="relative">
- <input type="text" value={engagementId} onChange={e => setEngagementId(e.target.value)} className={ic + " pr-10"} />
+ <input type="text" value={engagementId} onChange={e => { idTouched.current = true; setEngagementId(e.target.value); }} className={ic + " pr-10"} />
  <Pencil className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
  </div>
  </InlineRow>
@@ -1620,7 +1620,7 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
  </div>
  </InlineRow>
  <InlineRow label="Engagement Type" required>
- <Select value={engagementType} onValueChange={setEngagementType} disabled>
+ <Select value={engagementType} onValueChange={setEngagementType} disabled={isEditMode}>
  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
  <SelectContent>
  {engagementTypeOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
@@ -2034,7 +2034,7 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
  if (id && TEMPLATE_CONFIG[id]) {
  const cfg = TEMPLATE_CONFIG[id];
  setEngagementType(cfg.engagementTypeLabel);
- setAccountingStandards(cfg.defaultFramework);
+ setAccountingStandards(cfg.engagementTypeLabel === "Audit (AUD)" ? cfg.defaultFramework : typeDefaults(cfg.engagementTypeLabel).standards);
  }
  }}
  />
