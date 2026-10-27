@@ -992,7 +992,7 @@ export default function CreateEngagement() {
       }
     }, [dataSource, originalDataSource, isEditMode]);
 
- const [accountingStandards, setAccountingStandards] = useState(editingMeta?.accountingStandards ?? (isEditMode ? (prefillIsAudit ? "ASPE — Canadian Accounting Standards for Private Enterprises" : "Section 2400 Review standards") : initialTypeDefaults.standards));
+ const [accountingStandards, setAccountingStandards] = useState(editingMeta?.accountingStandards ?? initialTypeDefaults.standards);
  const [additionalDisclosures, setAdditionalDisclosures] = useState(prefillIsAudit ? "Full financial statements" : "Statement of cash flows");
 
  // Engagement Period state
