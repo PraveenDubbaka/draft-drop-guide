@@ -44,9 +44,14 @@ function seedDemoEngagementMeta() {
     { id: 'tm-staff', role: 'Staff / Assistant', name: 'Sarah Chen', email: 'sarahc@countable.co', title: 'Staff Auditor', hourlyRate: '65.00', timeAllocation: '20' },
   ]);
 
-  const seeds: Record<string, { dataSource: 'csv' | 'source'; sourceProvider?: 'xero' | 'quickbooks'; sourceYearsAvailable?: number; sourceYears?: number; sourceRollForward?: boolean; periodType?: 'stub' | 'full'; firstYearOfOperations?: boolean; yearDataSources?: EngagementMeta['yearDataSources']; yearSourceProviders?: EngagementMeta['yearSourceProviders']; priorYearProvider?: 'xero' | 'quickbooks' | 'sage' }> = {
+  const seeds: Record<string, { dataSource: 'csv' | 'source'; sourceProvider?: 'xero' | 'quickbooks'; sourceYearsAvailable?: number; sourceYears?: number; sourceRollForward?: boolean; periodType?: 'stub' | 'full'; firstYearOfOperations?: boolean; yearDataSources?: EngagementMeta['yearDataSources']; yearSourceProviders?: EngagementMeta['yearSourceProviders']; priorYearSources?: EngagementMeta['priorYearSources'] }> = {
     'COM-NEW-Dec312024': { dataSource: 'csv' },
-    'COM-INPROGRESS-Dec312024': { dataSource: 'source', sourceProvider: 'quickbooks', sourceYearsAvailable: 3, sourceYears: 1, sourceRollForward: true, priorYearProvider: 'xero' },
+    'COM-INPROGRESS-Dec312024': {
+      dataSource: 'source', sourceProvider: 'quickbooks', sourceYearsAvailable: 3, sourceYears: 1, sourceRollForward: true,
+      priorYearSources: { py1: 'quickbooks', py2: 'csv' },
+      yearDataSources: { cy: 'source', py1: 'source', py2: 'csv' },
+      yearSourceProviders: { cy: 'quickbooks', py1: 'quickbooks' },
+    },
   };
   Object.entries(seeds).forEach(([id, seed]) => {
     try {
@@ -62,9 +67,14 @@ function seedDemoEngagementMeta() {
         if (seed.sourceRollForward) meta.sourceRollForward = true; else delete meta.sourceRollForward;
         if (seed.yearDataSources) meta.yearDataSources = seed.yearDataSources;
         if (seed.yearSourceProviders) meta.yearSourceProviders = seed.yearSourceProviders;
+      } else if (!meta.yearDataSources && seed.yearDataSources) {
+        // Older stored meta without per-year sources (never saved via Edit) — fill in the seeded per-year sources
+        meta.yearDataSources = seed.yearDataSources;
+        if (seed.yearSourceProviders) meta.yearSourceProviders = seed.yearSourceProviders;
       }
       meta.sourceYearsAvailable = seed.sourceYearsAvailable ?? 3;
-      if (seed.priorYearProvider) meta.priorYearProvider = seed.priorYearProvider;
+      if (seed.priorYearSources) meta.priorYearSources = seed.priorYearSources;
+      delete (meta as EngagementMeta & { priorYearProvider?: unknown }).priorYearProvider;
       if (seed.periodType === 'stub') {
         meta.auditPeriodType = 'Partial year';
         meta.firstYearOfOperations = !!seed.firstYearOfOperations;
@@ -137,6 +147,8 @@ export function saveEngagements(list: EngagementRecord[]): void {
  } catch {}
 }
 
+export type YearSourceKind = "csv" | "xero" | "quickbooks" | "sage";
+
 export type EngagementMeta = {
  firstYearAudit: boolean;
  firstYearOnPlatform?: string;
@@ -164,7 +176,8 @@ export type EngagementMeta = {
  sourceYears?: number; // 1 = CY only, 2 = CY + PY1, 3 = all years connected to source
  sourceDisconnectedFrom?: "xero" | "quickbooks" | "sage"; // set when a CSV import disconnected a source engagement
  sourceRollForward?: boolean; // roll forward: CY from source, prior years stay CSV
- priorYearProvider?: "xero" | "quickbooks" | "sage"; // roll forward: provider the locked prior years came from
+ /** Roll forward: where each locked prior year came from (last year's CY → PY1, last year's PY1 → PY2). */
+ priorYearSources?: { py1: YearSourceKind; py2: YearSourceKind };
  sourceYearsAvailable?: number; // years of data available in the source (demo)
  sourceProvider?: "xero" | "quickbooks" | "sage"; // which accounting source the engagement is linked to
  teamMembers?: {
@@ -190,4 +203,81 @@ export function setEngagementMeta(id: string, meta: EngagementMeta): void {
  try {
  localStorage.setItem(META_KEY(id), JSON.stringify(meta));
  } catch {}
+}
+
+const LAST_YEAR_RE = /(\d{4})(?!\d)(?!.*\d{4})/;
+/** Adds `n` years to the last 4-digit year in a string (IDs, year ends, period dates). */
+function bumpLastYear(s: string, n = 1): string {
+ return s.replace(LAST_YEAR_RE, (y) => String(Number(y) + n));
+}
+
+function nowDateCreated(): string {
+ const now = new Date();
+ return now.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) +
+  " " + now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+}
+
+/**
+ * Rolls an engagement forward one year. Saves the new engagement's meta and returns its record
+ * (the caller adds the record to the engagement list). Returns null if the source engagement is missing.
+ */
+export function createRollForward(
+ sourceId: string,
+ clientConnection: "xero" | "quickbooks" | "sage" | null,
+): EngagementRecord | null {
+ const list = loadEngagements();
+ const src = list.find((e) => e.id === sourceId);
+ if (!src) return null;
+ const m = getEngagementMeta(sourceId);
+
+ // Last year's source per year
+ const lastYear = (y: "cy" | "py1" | "py2"): YearSourceKind =>
+  m.yearDataSources?.[y] === "source" ? (m.yearSourceProviders?.[y] ?? m.sourceProvider ?? "csv") : "csv";
+ const py1: YearSourceKind = lastYear("cy");
+ const py2: YearSourceKind = m.sourceRollForward && m.priorYearSources?.py1 ? m.priorYearSources.py1 : lastYear("py1");
+ const cyKind: "csv" | "source" = clientConnection ? "source" : "csv";
+
+ // New ID: bump the last year, de-duplicate with -2, -3, …
+ const ids = new Set(list.map((e) => e.id));
+ const baseId = bumpLastYear(sourceId);
+ let id = baseId;
+ for (let n = 2; ids.has(id); n++) id = `${baseId}-${n}`;
+
+ const record: EngagementRecord = {
+  ...src,
+  id,
+  yearEnd: bumpLastYear(src.yearEnd),
+  status: "New",
+  statusVariant: "new",
+  hasRF: true,
+  dateCreated: nowDateCreated(),
+ };
+
+ const kind = (v: YearSourceKind): "csv" | "source" => (v === "csv" ? "csv" : "source");
+ const yearSourceProviders: NonNullable<EngagementMeta["yearSourceProviders"]> = {};
+ if (cyKind === "source" && clientConnection) yearSourceProviders.cy = clientConnection;
+ if (py1 !== "csv") yearSourceProviders.py1 = py1;
+ if (py2 !== "csv") yearSourceProviders.py2 = py2;
+
+ const meta: EngagementMeta = {
+  firstYearAudit: record.firstYearAudit,
+  templateId: m.templateId,
+  accountingStandards: m.accountingStandards,
+  accountingFramework: m.accountingFramework,
+  budget: m.budget,
+  teamMembers: m.teamMembers ? m.teamMembers.map((t) => ({ ...t })) : undefined,
+  auditPeriodType: m.auditPeriodType,
+  periodStart: m.periodStart ? bumpLastYear(m.periodStart) : undefined,
+  periodEnd: m.periodEnd ? bumpLastYear(m.periodEnd) : undefined,
+  sourceRollForward: true,
+  dataSource: cyKind,
+  sourceProvider: clientConnection ?? undefined,
+  sourceYears: cyKind === "source" ? 1 : undefined,
+  priorYearSources: { py1, py2 },
+  yearDataSources: { cy: cyKind, py1: kind(py1), py2: kind(py2) },
+  yearSourceProviders,
+  sourceYearsAvailable: m.sourceYearsAvailable ?? 3,
+ };
+ setEngagementMeta(id, meta);
+ return record;
 }

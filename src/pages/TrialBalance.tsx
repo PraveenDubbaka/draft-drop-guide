@@ -313,10 +313,15 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  setRefreshOpen(false);
  toast.success(`Refreshed ${labels[years]} from ${sourceLabel(linkedProvider)}`);
  };
+ // A year is Source (and refreshable) only if it is set to Source AND its provider is the linked provider
+ const yearMatchesProvider = (y: "cy" | "py1" | "py2", provider: ClientSourceIntegration) => {
+ const yds = srcMeta.yearDataSources;
+ if (!provider || !yds) return false;
+ return yds[y] === "source" && (srcMeta.yearSourceProviders?.[y] ?? srcMeta.sourceProvider) === provider;
+ };
  const isYearSource = (y: "cy" | "py1" | "py2", idx: number) => {
  if (!isSourceLinked) return false;
- const yds = srcMeta.yearDataSources;
- if (yds) return yds[y] === "source";
+ if (srcMeta.yearDataSources) return yearMatchesProvider(y, linkedProvider);
  return idx < sourceYearCount;
  };
  const confirmRefreshYears = (years: ("cy" | "py1" | "py2")[]) => {
@@ -336,7 +341,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
   const yearEnd = contextEng?.yearEnd || staticEng?.yearEnd || `Dec 31, ${cyYear}`;
   const date = yearEnd.replace(/\d{4}/, String(cyYear - i)).replace(',', '');
   const isSource = configuredProvider
-   ? (srcMeta.yearDataSources ? srcMeta.yearDataSources[t.id] === "source" : i < sourceYearCount)
+   ? (srcMeta.yearDataSources ? yearMatchesProvider(t.id, configuredProvider) : i < sourceYearCount)
    : false;
   return { ...t, date, isSource };
  });
