@@ -1528,7 +1528,13 @@ const performSave = () => {
  } else {
  addEngagement(record);
  }
- const removeKeys = (["cy", "py1", "py2"] as const).filter((_, i) => yearRemoveData[i] && yearChangeKind(i) === "toCsv");
+ // Keep earlier remove flags, add years ticked now, drop years now set to Source
+ const removeMap: { cy?: boolean; py1?: boolean; py2?: boolean } = { ...(editingMeta?.yearRemoveData ?? {}) };
+ (["cy", "py1", "py2"] as const).forEach((k, i) => {
+ if (yearRemoveData[i] && yearChangeKind(i) === "toCsv") removeMap[k] = true;
+ if (rowKind(effectiveYearSources[i], i) === "source") delete removeMap[k];
+ });
+ const removeKeys = (["cy", "py1", "py2"] as const).filter(k => removeMap[k]);
  setEngagementMeta(engagementId, {
  firstYearAudit,
  yearRemoveData: removeKeys.length ? Object.fromEntries(removeKeys.map(k => [k, true])) : undefined,
