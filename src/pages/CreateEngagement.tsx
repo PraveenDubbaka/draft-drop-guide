@@ -1528,8 +1528,10 @@ const performSave = () => {
  } else {
  addEngagement(record);
  }
+ const removeKeys = (["cy", "py1", "py2"] as const).filter((_, i) => yearRemoveData[i] && yearChangeKind(i) === "toCsv");
  setEngagementMeta(engagementId, {
  firstYearAudit,
+ yearRemoveData: removeKeys.length ? Object.fromEntries(removeKeys.map(k => [k, true])) : undefined,
  firstYearOnPlatform: firstYearAudit ? firstYearOnPlatform : undefined,
  isRollForward: firstYearAudit ? isRollForward : undefined,
  firstYearTemplates: firstYearAudit ? [...firstYearTemplates] : undefined,
