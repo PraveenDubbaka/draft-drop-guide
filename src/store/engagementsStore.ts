@@ -173,6 +173,8 @@ export type EngagementMeta = {
  };
  /** Which connected provider each Source year pulls from (multi-source engagements). */
  yearSourceProviders?: { cy?: "xero" | "quickbooks" | "sage"; py1?: "xero" | "quickbooks" | "sage"; py2?: "xero" | "quickbooks" | "sage" };
+  /** Edit only: years switched Source to CSV whose existing data the user chose to remove. */
+ yearRemoveData?: { cy?: boolean; py1?: boolean; py2?: boolean };
  sourceYears?: number; // 1 = CY only, 2 = CY + PY1, 3 = all years connected to source
  sourceDisconnectedFrom?: "xero" | "quickbooks" | "sage"; // set when a CSV import disconnected a source engagement
  sourceRollForward?: boolean; // roll forward: CY from source, prior years stay CSV
