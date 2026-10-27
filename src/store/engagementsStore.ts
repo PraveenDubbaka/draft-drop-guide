@@ -44,9 +44,14 @@ function seedDemoEngagementMeta() {
     { id: 'tm-staff', role: 'Staff / Assistant', name: 'Sarah Chen', email: 'sarahc@countable.co', title: 'Staff Auditor', hourlyRate: '65.00', timeAllocation: '20' },
   ]);
 
-  const seeds: Record<string, { dataSource: 'csv' | 'source'; sourceProvider?: 'xero' | 'quickbooks'; sourceYearsAvailable?: number; sourceYears?: number; sourceRollForward?: boolean; periodType?: 'stub' | 'full'; firstYearOfOperations?: boolean; yearDataSources?: EngagementMeta['yearDataSources']; yearSourceProviders?: EngagementMeta['yearSourceProviders']; priorYearProvider?: 'xero' | 'quickbooks' | 'sage' }> = {
+  const seeds: Record<string, { dataSource: 'csv' | 'source'; sourceProvider?: 'xero' | 'quickbooks'; sourceYearsAvailable?: number; sourceYears?: number; sourceRollForward?: boolean; periodType?: 'stub' | 'full'; firstYearOfOperations?: boolean; yearDataSources?: EngagementMeta['yearDataSources']; yearSourceProviders?: EngagementMeta['yearSourceProviders']; priorYearSources?: EngagementMeta['priorYearSources'] }> = {
     'COM-NEW-Dec312024': { dataSource: 'csv' },
-    'COM-INPROGRESS-Dec312024': { dataSource: 'source', sourceProvider: 'quickbooks', sourceYearsAvailable: 3, sourceYears: 1, sourceRollForward: true, priorYearProvider: 'xero' },
+    'COM-INPROGRESS-Dec312024': {
+      dataSource: 'source', sourceProvider: 'quickbooks', sourceYearsAvailable: 3, sourceYears: 1, sourceRollForward: true,
+      priorYearSources: { py1: 'quickbooks', py2: 'csv' },
+      yearDataSources: { cy: 'source', py1: 'source', py2: 'csv' },
+      yearSourceProviders: { cy: 'quickbooks', py1: 'quickbooks' },
+    },
   };
   Object.entries(seeds).forEach(([id, seed]) => {
     try {
@@ -62,9 +67,14 @@ function seedDemoEngagementMeta() {
         if (seed.sourceRollForward) meta.sourceRollForward = true; else delete meta.sourceRollForward;
         if (seed.yearDataSources) meta.yearDataSources = seed.yearDataSources;
         if (seed.yearSourceProviders) meta.yearSourceProviders = seed.yearSourceProviders;
+      } else if (!meta.yearDataSources && seed.yearDataSources) {
+        // Older stored meta without per-year sources (never saved via Edit) — fill in the seeded per-year sources
+        meta.yearDataSources = seed.yearDataSources;
+        if (seed.yearSourceProviders) meta.yearSourceProviders = seed.yearSourceProviders;
       }
       meta.sourceYearsAvailable = seed.sourceYearsAvailable ?? 3;
-      if (seed.priorYearProvider) meta.priorYearProvider = seed.priorYearProvider;
+      if (seed.priorYearSources) meta.priorYearSources = seed.priorYearSources;
+      delete (meta as EngagementMeta & { priorYearProvider?: unknown }).priorYearProvider;
       if (seed.periodType === 'stub') {
         meta.auditPeriodType = 'Partial year';
         meta.firstYearOfOperations = !!seed.firstYearOfOperations;
