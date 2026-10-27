@@ -16,22 +16,23 @@ const DEMO_EXACT_CONNECTIONS: Readonly<Record<string, "xero" | "quickbooks">> = 
 /**
  * Resolve which accounting source a client is connected to.
  * Matches on legal entity name or short entity name (case/whitespace insensitive).
- * Clients with 'connect' / 'none' (or unknown clients) are treated as not connected (CSV).
+ * User-made connections/disconnections (overrides) win over demo seeds and client data.
  */
 export function getClientSourceIntegration(clientName: string): ClientSourceIntegration {
   const normalized = (clientName || "").trim().toLowerCase();
   if (!normalized) return null;
-  if (DEMO_EXACT_CONNECTIONS[normalized]) return DEMO_EXACT_CONNECTIONS[normalized];
-  const override = getClientConnectionOverride(normalized);
-  if (override) return override;
   const client = clientsData.find(
     (c) =>
       c.legalEntityName.toLowerCase() === normalized ||
       c.entityName.toLowerCase() === normalized
   );
+  const state = getClientConnectionState(clientName, client?.legalEntityName, client?.entityName);
+  if (state !== undefined) return state;
+  for (const n of [clientName, client?.legalEntityName, client?.entityName]) {
+    const key = (n || "").trim().toLowerCase();
+    if (key && DEMO_EXACT_CONNECTIONS[key]) return DEMO_EXACT_CONNECTIONS[key];
+  }
   if (!client) return null;
-  const clientOverride = getClientConnectionOverride(client.legalEntityName, client.entityName);
-  if (clientOverride) return clientOverride;
   if (client.integration === "xero" || client.integration === "quickbooks") {
     return client.integration;
   }
@@ -83,7 +84,9 @@ export function filterVisibleEngagements<T extends { id: string }>(list: T[]): T
 const CONN_OVERRIDE_KEY = "client-connection-overrides";
 export const CLIENT_CONNECTION_EVENT = "client-connection-changed";
 
-function readOverrides(): Record<string, AccountingProvider | null> {
+type StoredConnection = AccountingProvider | "none";
+
+function readOverrides(): Record<string, StoredConnection> {
   try {
     return JSON.parse(localStorage.getItem(CONN_OVERRIDE_KEY) || "{}");
   } catch {
@@ -91,30 +94,47 @@ function readOverrides(): Record<string, AccountingProvider | null> {
   }
 }
 
-/** Connection the user made from the Clients page or inline on Edit Engagement. */
-export function getClientConnectionOverride(...names: (string | undefined | null)[]): ClientSourceIntegration {
+const isProvider = (v: unknown): v is AccountingProvider =>
+  v === "xero" || v === "quickbooks" || v === "sage";
+
+/**
+ * Client-level connection state saved by the user.
+ * provider = connected, null = explicitly disconnected ("none"), undefined = no entry.
+ */
+export function getClientConnectionState(
+  ...names: (string | undefined | null)[]
+): AccountingProvider | null | undefined {
   const overrides = readOverrides();
   for (const raw of names) {
     const n = (raw || "").trim().toLowerCase();
-    if (!n) continue;
-    for (const [key, val] of Object.entries(overrides)) {
-      if (key === n) return val;
-    }
+    if (!n || !(n in overrides)) continue;
+    const val = overrides[n];
+    if (isProvider(val)) return val;
+    if (val === "none") return null;
   }
+  return undefined;
+}
+
+/** Connection the user made from the Clients page or inline on Edit Engagement. */
+export function getClientConnectionOverride(...names: (string | undefined | null)[]): ClientSourceIntegration {
+  return getClientConnectionState(...names) ?? null;
+}
+
+const ENGAGEMENT_CONN_PREFIX = "engagement-connection-";
+
+/** Connections are client-level only; kept for compatibility and always null. */
+export function getEngagementConnectionOverride(_engagementId?: string | null): ClientSourceIntegration {
   return null;
 }
 
-const engagementConnKey = (engagementId: string) => `engagement-connection-${engagementId}`;
-
-/** Connection made inline for one specific engagement ("Connect here →"). */
-export function getEngagementConnectionOverride(engagementId?: string | null): ClientSourceIntegration {
-  if (!engagementId) return null;
-  try {
-    const v = localStorage.getItem(engagementConnKey(engagementId));
-    return v === "xero" || v === "quickbooks" || v === "sage" ? v : null;
-  } catch {
-    return null;
-  }
+/** All names a client may be stored under (given name plus entity/legal names). */
+function clientKeys(clientName: string): string[] {
+  const normalized = clientName.trim().toLowerCase();
+  const client = clientsData.find(
+    c => c.entityName.toLowerCase() === normalized || c.legalEntityName.toLowerCase() === normalized
+  );
+  const names = client ? [client.entityName, client.legalEntityName] : [clientName];
+  return Array.from(new Set(names.map(n => n.trim().toLowerCase()).filter(Boolean)));
 }
 
 export function connectClientSource(
@@ -122,25 +142,23 @@ export function connectClientSource(
   provider: AccountingProvider = "quickbooks",
   engagementId?: string
 ) {
-  if (engagementId) {
-    localStorage.setItem(engagementConnKey(engagementId), provider);
-  } else {
-    const overrides = readOverrides();
-    overrides[clientName.trim().toLowerCase()] = provider;
-    localStorage.setItem(CONN_OVERRIDE_KEY, JSON.stringify(overrides));
-  }
+  if (engagementId) localStorage.removeItem(`${ENGAGEMENT_CONN_PREFIX}${engagementId}`);
+  const overrides = readOverrides();
+  for (const key of clientKeys(clientName)) overrides[key] = provider;
+  localStorage.setItem(CONN_OVERRIDE_KEY, JSON.stringify(overrides));
   window.dispatchEvent(new Event(CLIENT_CONNECTION_EVENT));
 }
 
-/** Remove only prototype overrides; never disconnect a real accounting service. */
-export function disconnectClientSource(clientName: string, engagementId?: string) {
-  if (engagementId) localStorage.removeItem(engagementConnKey(engagementId));
+/** Mark the client explicitly disconnected; never disconnects a real accounting service. */
+export function disconnectClientSource(clientName: string, _engagementId?: string) {
   const overrides = readOverrides();
-  const normalized = clientName.trim().toLowerCase();
-  const client = clientsData.find(c => c.entityName.toLowerCase() === normalized || c.legalEntityName.toLowerCase() === normalized);
-  for (const name of [clientName, client?.entityName, client?.legalEntityName]) {
-    if (name) delete overrides[name.trim().toLowerCase()];
-  }
+  for (const key of clientKeys(clientName)) overrides[key] = "none";
   localStorage.setItem(CONN_OVERRIDE_KEY, JSON.stringify(overrides));
+  const staleKeys: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith(ENGAGEMENT_CONN_PREFIX)) staleKeys.push(k);
+  }
+  staleKeys.forEach(k => localStorage.removeItem(k));
   window.dispatchEvent(new Event(CLIENT_CONNECTION_EVENT));
 }
