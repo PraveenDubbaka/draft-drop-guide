@@ -44,9 +44,9 @@ function seedDemoEngagementMeta() {
     { id: 'tm-staff', role: 'Staff / Assistant', name: 'Sarah Chen', email: 'sarahc@countable.co', title: 'Staff Auditor', hourlyRate: '65.00', timeAllocation: '20' },
   ]);
 
-  const seeds: Record<string, { dataSource: 'csv' | 'source'; sourceProvider?: 'xero' | 'quickbooks'; sourceYearsAvailable?: number; sourceYears?: number; sourceRollForward?: boolean; periodType?: 'stub' | 'full'; firstYearOfOperations?: boolean; yearDataSources?: EngagementMeta['yearDataSources']; yearSourceProviders?: EngagementMeta['yearSourceProviders'] }> = {
+  const seeds: Record<string, { dataSource: 'csv' | 'source'; sourceProvider?: 'xero' | 'quickbooks'; sourceYearsAvailable?: number; sourceYears?: number; sourceRollForward?: boolean; periodType?: 'stub' | 'full'; firstYearOfOperations?: boolean; yearDataSources?: EngagementMeta['yearDataSources']; yearSourceProviders?: EngagementMeta['yearSourceProviders']; priorYearProvider?: 'xero' | 'quickbooks' | 'sage' }> = {
     'COM-NEW-Dec312024': { dataSource: 'csv' },
-    'COM-INPROGRESS-Dec312024': { dataSource: 'source', sourceProvider: 'quickbooks', sourceYearsAvailable: 3, sourceYears: 1, sourceRollForward: true },
+    'COM-INPROGRESS-Dec312024': { dataSource: 'source', sourceProvider: 'quickbooks', sourceYearsAvailable: 3, sourceYears: 1, sourceRollForward: true, priorYearProvider: 'xero' },
   };
   Object.entries(seeds).forEach(([id, seed]) => {
     try {
@@ -64,6 +64,7 @@ function seedDemoEngagementMeta() {
         if (seed.yearSourceProviders) meta.yearSourceProviders = seed.yearSourceProviders;
       }
       meta.sourceYearsAvailable = seed.sourceYearsAvailable ?? 3;
+      if (seed.priorYearProvider) meta.priorYearProvider = seed.priorYearProvider;
       if (seed.periodType === 'stub') {
         meta.auditPeriodType = 'Partial year';
         meta.firstYearOfOperations = !!seed.firstYearOfOperations;
