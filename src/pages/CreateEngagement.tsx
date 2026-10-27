@@ -1248,7 +1248,11 @@ const [ackText, setAckText] = useState("");
    const [py2DataSource, setPy2DataSource] = useState<"csv" | "source">(() => editingMeta?.yearDataSources?.py2 ?? "csv");
    const initYearSources = (): string[] => {
      const p = clientSourceIntegration;
-     if (isRollForwardSource) return [editingMeta?.sourceProvider ? `source:${editingMeta.sourceProvider}` : p ? `source:${p}` : "csv", "locked", "locked"];
+     if (isRollForwardSource) {
+       const cyProv = editingMeta?.yearSourceProviders?.cy ?? editingMeta?.sourceProvider ?? p;
+       const cy = editingMeta?.yearDataSources?.cy === "csv" ? "csv" : cyProv ? `source:${cyProv}` : "csv";
+       return [cy, "locked", "locked"];
+     }
      if (isEditMode) {
        const savedProvider = editingMeta?.sourceProvider ?? p;
        const yds = editingMeta?.yearDataSources;
@@ -1438,6 +1442,18 @@ const [ackText, setAckText] = useState("");
     const isRollForwardNoSource = isRollForwardSource && !clientHasSourceConnection;
     const rollForwardPriorProvider: AccountingProvider = savedDisconnectedFrom ?? savedSourceProvider
       ?? (clientSourceIntegration === "quickbooks" ? "xero" : "quickbooks");
+    // Roll forward: where a locked prior year came from (priorYearSources, else its saved per-year source)
+    const lockedYearSource = (k: "py1" | "py2"): "csv" | AccountingProvider => {
+      const pys = editingMeta?.priorYearSources?.[k];
+      if (pys) return pys;
+      return editingMeta?.yearDataSources?.[k] === "source"
+        ? (editingMeta?.yearSourceProviders?.[k] ?? editingMeta?.sourceProvider ?? "csv")
+        : "csv";
+    };
+    const lockedYearLabel = (k: "py1" | "py2") => {
+      const v = lockedYearSource(k);
+      return v === "csv" ? "CSV / Excel / PDF · Prior year" : `${sourceLabel(v)} · Prior year`;
+    };
     // Year selection (CY locked; PY1/PY2 optional, in order)
     const originalSourceYears = originalDataSource === "source" ? (editingMeta?.sourceYears ?? 1) : 0;
     const isAddingSourceYearsFlow = isEditMode && originalDataSource === "source" && dataSource === "source" && !isSourceProviderMismatch;
@@ -1468,7 +1484,15 @@ const performSave = () => {
    // Save what each row actually uses: Partial year forces every non-locked row to CSV
    const effectiveYearSources = isSourceLockedStub ? yearSources.map(v => (v === "locked" ? v : "csv")) : yearSources;
    const isSourceRow = (v?: string) => !!v && v.startsWith("source:") && v !== "source:none";
-   const rowKind = (v?: string): "csv" | "source" => (v && v.startsWith("source:") ? "source" : "csv");
+   const YEAR_KEYS = ["cy", "py1", "py2"] as const;
+   // Locked roll-forward rows keep the source they inherited from last year
+   const lockedKind = (i: number) => lockedYearSource(YEAR_KEYS[i] as "py1" | "py2");
+   const rowKind = (v: string | undefined, i: number): "csv" | "source" =>
+     v === "locked" ? (lockedKind(i) === "csv" ? "csv" : "source") : (v && v.startsWith("source:") ? "source" : "csv");
+   const rowProvider = (v: string | undefined, i: number): AccountingProvider | undefined => {
+     if (v === "locked") { const k = lockedKind(i); return k === "csv" ? undefined : k; }
+     return isSourceRow(v) ? (v!.slice(7) as AccountingProvider) : undefined;
+   };
    const firstSourceRow = effectiveYearSources.find(isSourceRow);
    const firstSourceProvider = firstSourceRow ? (firstSourceRow.slice(7) as AccountingProvider) : undefined;
  const record: EngagementRecord = {
@@ -1500,12 +1524,12 @@ const performSave = () => {
  periodStart: currentYearStart,
  periodEnd: currentYearEnd,
 dataSource: savedDataSource,
-yearDataSources: { cy: rowKind(effectiveYearSources[0]), py1: rowKind(effectiveYearSources[1]), py2: rowKind(effectiveYearSources[2]) },
-yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, i) => [k, isSourceRow(effectiveYearSources[i]) ? effectiveYearSources[i].slice(7) : undefined]).filter(([, v]) => v)) as EngagementMeta["yearSourceProviders"],
+yearDataSources: { cy: rowKind(effectiveYearSources[0], 0), py1: rowKind(effectiveYearSources[1], 1), py2: rowKind(effectiveYearSources[2], 2) },
+yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(effectiveYearSources[i], i)]).filter(([, v]) => v)) as EngagementMeta["yearSourceProviders"],
  sourceYears: savedDataSource === "source" ? Math.max(1, effectiveYearSources.filter(isSourceRow).length) : undefined,
  teamMembers,
  sourceProvider: savedDataSource === "source" ? (firstSourceProvider ?? clientSourceIntegration ?? undefined) : (editingMeta?.sourceDisconnectedFrom ? editingMeta.sourceProvider : undefined),
- priorYearProvider: editingMeta?.priorYearProvider,
+ priorYearSources: editingMeta?.priorYearSources,
  sourceDisconnectedFrom: savedDataSource === "csv" ? editingMeta?.sourceDisconnectedFrom : undefined,
  sourceRollForward: editingMeta?.sourceRollForward,
  sourceYearsAvailable: editingMeta?.sourceYearsAvailable,
@@ -1778,7 +1802,7 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
      <span className="text-xs font-medium text-foreground">Data Source</span>
      {locked ? (
       <Select value="locked" disabled><SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-       <SelectContent><SelectItem value="locked">Source — {sourceLabel(editingMeta?.priorYearProvider ?? rollForwardPriorProvider)} (prior year)</SelectItem></SelectContent></Select>
+       <SelectContent><SelectItem value="locked">{lockedYearLabel(i === 1 ? "py1" : "py2")}</SelectItem></SelectContent></Select>
      ) : noData ? (
       <Select value="nodata" disabled><SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
        <SelectContent><SelectItem value="nodata">No data</SelectItem></SelectContent></Select>
@@ -1850,12 +1874,6 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
  </div>
 ) : (
  <>
-  {!showMismatchWarning && isRollForwardSource && !isSourceLockedStub && !(isFooPeriod) && (
-   <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
-    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-    <span className="text-sm text-amber-800 dark:text-amber-200">Prior year rows are locked to their original source. Only Current Year can be changed.</span>
-   </div>
-  )}
   {((dataSource === "source" && !clientHasSourceConnection && !isExternallyDisconnected && !isSourceLockedStub) || (!clientHasSourceConnection && !isExternallyDisconnected && !isSourceLockedStub && yearErrors.some(Boolean))) && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
     <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
