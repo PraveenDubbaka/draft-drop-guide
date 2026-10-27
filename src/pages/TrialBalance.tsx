@@ -253,11 +253,24 @@ export default function TrialBalance() {
  const clearFilters = () => setActiveFilters(new Set());
 
  const handleUpload = () => {
- if (!cyFile || !engagementId) return;
+ if (!engagementId || uploadDisabled) return;
  setIsUploading(true);
  setTimeout(() => {
  localStorage.setItem(TB_LOADED_KEY(engagementId), '1');
  setTbLoaded(true);
+ // Uploaded years get their data back: clear their "removed" flags
+ {
+ const m = getEngagementMeta(engagementId);
+ if (m.yearRemoveData) {
+ const next = { ...m.yearRemoveData };
+ if (cyFile) delete next.cy;
+ if (py1File) delete next.py1;
+ if (py2File) delete next.py2;
+ const hasAny = Object.values(next).some(Boolean);
+ setEngagementMeta(engagementId, { ...m, yearRemoveData: hasAny ? next : undefined });
+ setMetaVersion(v => v + 1);
+ }
+ }
  if (pendingCsvSwitch) {
  // CSV import disconnects the engagement from its source for all years
  const m = getEngagementMeta(engagementId);
@@ -301,6 +314,14 @@ export default function TrialBalance() {
   ? configuredProvider
   : (srcMeta.dataSource !== 'source' ? srcMeta.sourceDisconnectedFrom ?? null : null);
    const badgeProvider = configuredProvider ?? disconnectedFrom;
+ // Years whose existing data the user removed in Edit Engagement (only while that year is CSV)
+ const removed = srcMeta.yearRemoveData ?? {};
+ const isRemoved = (y: "cy" | "py1" | "py2") => !!removed[y] && srcMeta.yearDataSources?.[y] !== "source";
+ const cyRemoved = isRemoved("cy"), py1Removed = isRemoved("py1"), py2Removed = isRemoved("py2");
+ const removedYearLabels = [cyRemoved && "Current Year", py1Removed && "Prior Year 1", py2Removed && "Prior Year 2"].filter(Boolean) as string[];
+ const allYearsRemoved = cyRemoved && py1Removed && py2Removed;
+ const uploadDisabled = status === 'New' && !tbLoaded ? !cyFile : !(cyFile || py1File || py2File);
+ const dash = <span className="text-muted-foreground">—</span>;
    const sourceStatusDisconnected = isExternallyDisconnected || !!disconnectedFrom;
 const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  if (!engagementId) return;
@@ -417,7 +438,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  );
 
  // ── Empty state — only for New engagements without a loaded TB ──────────
- if (!tbLoaded && !showImport && status === 'New') {
+ if (!showImport && ((!tbLoaded && status === 'New') || allYearsRemoved)) {
  return (
  <Layout title="Engagements" headerContent={trialBalanceBreadcrumb}>
  <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -594,7 +615,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  </div>
  <div className="flex items-center gap-2">
  <Button size="sm" variant="outline" disabled={!cyFile && !py1File && !py2File}>Delete Draft</Button>
- <Button size="sm" disabled={!cyFile} onClick={handleUpload} className="gap-1.5">
+ <Button size="sm" disabled={uploadDisabled} onClick={handleUpload} className="gap-1.5">
  {isUploading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
  Upload
  </Button>
@@ -618,7 +639,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  <DropZone label="Prior Year 1 (PY1) Trial Balance" file={py1File} onFile={setPy1File} inputRef={py1InputRef} />
  <DropZone label="Prior Year 2 (PY2) Trial Balance" file={py2File} onFile={setPy2File} inputRef={py2InputRef} />
  <div className="mt-4">
- <Button className="w-full gap-1.5" disabled={!cyFile} onClick={handleUpload}>
+ <Button className="w-full gap-1.5" disabled={uploadDisabled} onClick={handleUpload}>
  {isUploading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
  Upload
  </Button>
@@ -853,6 +874,12 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  </div>
  </div>
 
+ {removedYearLabels.length > 0 && (
+ <div className="mx-6 mt-4 flex items-center justify-between gap-3 rounded-[10px] border border-amber-300 bg-amber-50 px-3 py-2">
+ <span className="text-sm text-amber-800">Existing data was removed for {removedYearLabels.join(" / ")}. Import a new trial balance for these years.</span>
+ <Button size="sm" variant="secondary" className="gap-1.5" onClick={() => setShowImport(true)}><Upload className="h-4 w-4" /> Import</Button>
+ </div>
+ )}
  {disconnectedFrom && (
  <div className="mx-6 mt-4 flex items-center justify-between gap-3 rounded-[10px] border border-amber-300 bg-amber-50 px-3 py-2">
  <span className="text-sm text-amber-800">{isExternallyDisconnected ? "Source connection inactive. Your data is unchanged. Go to Edit Engagement to reconnect or switch to CSV." : `This engagement is now CSV. Source connection is inactive. To reconnect to ${sourceLabel(disconnectedFrom)}, go to Edit Engagement.`}</span>
@@ -995,16 +1022,16 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
   </span>
   ) : row.description}
  </td>
- <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{formatNumber(row.original)}</td>
+ <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{cyRemoved ? dash : formatNumber(row.original)}</td>
  <td className="px-6 py-2 text-right whitespace-nowrap">
- <button onClick={() => { setSelectedAdjRow({ accNo: row.accNo, description: row.description }); setAdjModalOpen(true); }} className="text-link font-medium hover:underline focus:outline-none">
+ {cyRemoved ? dash : <button onClick={() => { setSelectedAdjRow({ accNo: row.accNo, description: row.description }); setAdjModalOpen(true); }} className="text-link font-medium hover:underline focus:outline-none">
    {formatNumber(row.adj)}
- </button>
+ </button>}
  </td>
- <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{formatNumber(row.final)}</td>
- <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{formatNumber(row.py1)}</td>
- <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{row.changePct}</td>
- <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{row.py2}</td>
+ <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{cyRemoved ? dash : formatNumber(row.final)}</td>
+ <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{py1Removed ? dash : formatNumber(row.py1)}</td>
+ <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{cyRemoved || py1Removed ? dash : row.changePct}</td>
+ <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{py2Removed ? dash : row.py2}</td>
  <td className="px-6 py-2 text-right whitespace-nowrap">
  <span className="text-link font-medium">{formatNumber(row.mapNo)}</span>
  </td>
@@ -1029,12 +1056,12 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  {/* Totals row */}
  <tr className="bg-muted border-t border-border">
  <td className="px-6 py-2" colSpan={5}></td>
- <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{formatNumber(totals.original)}</td>
- <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{formatNumber(totals.adj)}</td>
- <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{formatNumber(totals.final)}</td>
- <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{formatNumber(totals.py1)}</td>
+ <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{cyRemoved ? dash : formatNumber(totals.original)}</td>
+ <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{cyRemoved ? dash : formatNumber(totals.adj)}</td>
+ <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{cyRemoved ? dash : formatNumber(totals.final)}</td>
+ <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{py1Removed ? dash : formatNumber(totals.py1)}</td>
  <td className="px-6 py-2"></td>
- <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{formatNumber(totals.py2)}</td>
+ <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{py2Removed ? dash : formatNumber(totals.py2)}</td>
  <td colSpan={7}></td>
  </tr>
 
@@ -1042,12 +1069,12 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  <tr className="bg-muted border-t border-border">
  <td className="px-6 py-2" colSpan={4}></td>
  <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">Net Income (loss)</td>
- <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{formatNumber(netIncome.original)}</td>
- <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{formatNumber(netIncome.adj)}</td>
- <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{formatNumber(netIncome.final)}</td>
- <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{formatNumber(netIncome.py1)}</td>
+ <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{cyRemoved ? dash : formatNumber(netIncome.original)}</td>
+ <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{cyRemoved ? dash : formatNumber(netIncome.adj)}</td>
+ <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{cyRemoved ? dash : formatNumber(netIncome.final)}</td>
+ <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{py1Removed ? dash : formatNumber(netIncome.py1)}</td>
  <td className="px-6 py-2"></td>
- <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{netIncome.py2}</td>
+ <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{py2Removed ? dash : netIncome.py2}</td>
  <td colSpan={7}></td>
  </tr>
  </tfoot>
