@@ -797,7 +797,58 @@ function formatYearEnd(dateStr: string): string {
 function formatDateCreated(): string {
  const now = new Date();
  return now.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) +
- " " + now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+  " " + now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+}
+
+type TypeDefaults = { prefix: string; template: string; templateId: string; standards: string };
+
+/** Defaults applied on Create Engagement for each engagement type. */
+const TYPE_DEFAULTS: Record<string, TypeDefaults> = {
+ "Audit (AUD)": { prefix: "AUD", template: "CAS Audit", templateId: "audit5100", standards: "ASPE — Canadian Accounting Standards for Private Enterprises" },
+ "Review (REV)": { prefix: "REV", template: "Review Section 2400", templateId: "rev2400", standards: "Section 2400 Review standards" },
+ "Compilation (COM)": { prefix: "COM", template: "Compilation CSRS 4200", templateId: "comp4200", standards: "CSRS 4200 — Compilation Engagements" },
+ "T2 (Corporations)": { prefix: "T2", template: "T2 (Corporations)", templateId: "tax-t2", standards: "ASPE" },
+ "1120 (US C-Corporation)": { prefix: "1120", template: "1120 (US C-Corporation)", templateId: "", standards: "" },
+ "1120S (US S-Corporation)": { prefix: "1120S", template: "1120S (US S-Corporation)", templateId: "", standards: "" },
+};
+
+const typeDefaults = (type: string | undefined): TypeDefaults =>
+ (type && TYPE_DEFAULTS[type]) || TYPE_DEFAULTS["Review (REV)"];
+
+/** Template label shown in edit mode for a saved template id. */
+const TEMPLATE_LABELS: Record<string, string> = {
+ audit5100: "CAS Audit",
+ rev2400: "Review Section 2400",
+ comp4200: "Compilation CSRS 4200",
+ "tax-t2": "T2 (Corporations)",
+};
+
+const IGNORED_NAME_WORDS = new Set(["inc", "llc", "ltd", "corp", "co", "group"]);
+
+/** Client initials: first letter of each word (max 3), ignoring company suffixes; one word → first 3 letters. */
+export function clientInitials(name: string): string {
+ const words = (name || "")
+  .split(/[^A-Za-z0-9]+/)
+  .filter(w => w && !IGNORED_NAME_WORDS.has(w.toLowerCase()));
+ if (words.length === 0) return "";
+ if (words.length === 1) return words[0].slice(0, 3).toUpperCase();
+ return words.map(w => w[0]).join("").slice(0, 3).toUpperCase();
+}
+
+const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** Build PREFIX-INITIALS-MonDDYYYY, adding -2, -3… when the ID is already taken. */
+export function generateEngagementId(type: string, clientName: string, cyEnd: string, existingIds: string[]): string {
+ const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec((cyEnd || "").trim());
+ const datePart = m && MONTHS_SHORT[Number(m[1]) - 1]
+  ? `${MONTHS_SHORT[Number(m[1]) - 1]}${m[2].padStart(2, "0")}${m[3]}`
+  : "";
+ const base = [typeDefaults(type).prefix, clientInitials(clientName), datePart].filter(Boolean).join("-");
+ const taken = new Set(existingIds);
+ if (!taken.has(base)) return base;
+ let n = 2;
+ while (taken.has(`${base}-${n}`)) n++;
+ return `${base}-${n}`;
 }
 
 export default function CreateEngagement() {
@@ -846,9 +897,19 @@ export default function CreateEngagement() {
         } : null);
  const [engagementType, setEngagementType] = useState(prefill.engagementType || "Review (REV)");
  const prefillIsAudit = (prefill.engagementType || "Review (REV)") === "Audit (AUD)";
- const [engagementId, setEngagementId] = useState(editingRecord?.id ?? (prefillIsAudit ? "AUD-HFL-Mar312024" : "REV-DEF-Nov302023"));
- const [engagementTemplate, setEngagementTemplate] = useState(prefillIsAudit ? "CAS Audit" : "Review Section 2400");
- const [templateId, setTemplateId] = useState(editingMeta?.templateId ?? (prefillIsAudit ? "audit5100" : ""));
+ const initialTypeDefaults = typeDefaults(prefill.engagementType || "Review (REV)");
+ // Create: the ID is generated from type, client and CY end date (see effect below)
+ const [engagementId, setEngagementId] = useState(editingRecord?.id ?? "");
+ // Set once the user types in the Engagement ID field so it stops auto-generating
+ const idTouched = useRef(false);
+ const [engagementTemplate, setEngagementTemplate] = useState(() => {
+  if (!isEditMode) return initialTypeDefaults.template;
+  const savedId = editingMeta?.templateId;
+  return (savedId && TEMPLATE_LABELS[savedId]) || initialTypeDefaults.template;
+ });
+ const [templateId, setTemplateId] = useState(
+  editingMeta?.templateId ?? (isEditMode ? (prefillIsAudit ? "audit5100" : "") : initialTypeDefaults.templateId)
+ );
  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
  const [budget, setBudget] = useState(editingMeta?.budget ?? "10000.00");
  // For engagements saved before the Data Source field existed, fall back to the
@@ -931,7 +992,7 @@ export default function CreateEngagement() {
       }
     }, [dataSource, originalDataSource, isEditMode]);
 
- const [accountingStandards, setAccountingStandards] = useState(editingMeta?.accountingStandards ?? (prefillIsAudit ? "ASPE — Canadian Accounting Standards for Private Enterprises" : "Section 2400 Review standards"));
+ const [accountingStandards, setAccountingStandards] = useState(editingMeta?.accountingStandards ?? (isEditMode ? (prefillIsAudit ? "ASPE — Canadian Accounting Standards for Private Enterprises" : "Section 2400 Review standards") : initialTypeDefaults.standards));
  const [additionalDisclosures, setAdditionalDisclosures] = useState(prefillIsAudit ? "Full financial statements" : "Statement of cash flows");
 
  // Engagement Period state
@@ -966,27 +1027,33 @@ export default function CreateEngagement() {
  useEffect(() => {
   if (isFirstMount.current) { isFirstMount.current = false; return; }
   if (isEditMode) return; // never overwrite saved values when editing
+  const defaults = typeDefaults(engagementType);
+  let nextTemplateId = templateId;
+  if (TEMPLATE_CONFIG[templateId]?.engagementTypeLabel !== engagementType) {
+   nextTemplateId = defaults.templateId;
+   setTemplateId(defaults.templateId);
+   setEngagementTemplate(defaults.template);
+  }
+  setAccountingStandards(
+   isAudit ? (TEMPLATE_CONFIG[nextTemplateId]?.defaultFramework ?? defaults.standards) : defaults.standards
+  );
  if (isAudit) {
- setEngagementId("AUD-HFL-Mar312024");
- if (!templateId) {
- setEngagementTemplate("CAS Audit");
- setAccountingStandards("ASPE — Canadian Accounting Standards for Private Enterprises");
- }
  setPeriodType("Full Year");
  setAdditionalDisclosures("");
  setAdditionalDisclosuresSet(new Set());
  } else {
- setEngagementId("REV-DEF-Nov302023");
- if (!templateId) {
- setEngagementTemplate("Review Section 2400");
- setAccountingStandards("Section 2400 Review standards");
- }
  setPeriodType("Full year");
  setAdditionalDisclosures("Statement of cash flows");
  setAdditionalDisclosuresSet(new Set());
  setSpecialPurposeFramework("");
  }
- }, [isAudit]); // eslint-disable-line react-hooks/exhaustive-deps
+ }, [engagementType]); // eslint-disable-line react-hooks/exhaustive-deps
+
+ // Create: generate PREFIX-INITIALS-MonDDYYYY until the user edits the ID; never in edit mode
+ useEffect(() => {
+  if (isEditMode || idTouched.current) return;
+  setEngagementId(generateEngagementId(engagementType, clientName, currentYearEnd, loadEngagements().map(e => e.id)));
+ }, [engagementType, clientName, currentYearEnd, isEditMode]);
  const [specialPurposeFramework, setSpecialPurposeFramework] = useState("");
 
  useEffect(() => {
@@ -1540,7 +1607,7 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
  </InlineRow>
  <InlineRow label="Engagement ID" required>
  <div className="relative">
- <input type="text" value={engagementId} onChange={e => setEngagementId(e.target.value)} className={ic + " pr-10"} />
+ <input type="text" value={engagementId} onChange={e => { idTouched.current = true; setEngagementId(e.target.value); }} className={ic + " pr-10"} />
  <Pencil className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
  </div>
  </InlineRow>
@@ -1553,7 +1620,7 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
  </div>
  </InlineRow>
  <InlineRow label="Engagement Type" required>
- <Select value={engagementType} onValueChange={setEngagementType} disabled>
+ <Select value={engagementType} onValueChange={setEngagementType} disabled={isEditMode}>
  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
  <SelectContent>
  {engagementTypeOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
@@ -1967,7 +2034,7 @@ yearSourceProviders: Object.fromEntries((["cy", "py1", "py2"] as const).map((k, 
  if (id && TEMPLATE_CONFIG[id]) {
  const cfg = TEMPLATE_CONFIG[id];
  setEngagementType(cfg.engagementTypeLabel);
- setAccountingStandards(cfg.defaultFramework);
+ setAccountingStandards(cfg.engagementTypeLabel === "Audit (AUD)" ? cfg.defaultFramework : typeDefaults(cfg.engagementTypeLabel).standards);
  }
  }}
  />

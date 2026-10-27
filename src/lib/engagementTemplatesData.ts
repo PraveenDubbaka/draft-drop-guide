@@ -2163,4 +2163,5 @@ export const TEMPLATE_CONFIG: Record<string, {
  'audit6200': { sidebarType: 'audit-us', defaultFramework: 'US GAAP — Generally Accepted Accounting Principles (United States)', engagementTypeLabel: 'Audit (AUD)' },
  'rev2400': { sidebarType: 'review-comp', defaultFramework: 'Section 2400 Review standards', engagementTypeLabel: 'Review (REV)' },
  'comp4200': { sidebarType: 'review-comp', defaultFramework: 'CSRS 4200 - Current Compilation standards', engagementTypeLabel: 'Compilation (COM)' },
+ 'tax-t2': { sidebarType: 'review-comp', defaultFramework: 'ASPE', engagementTypeLabel: 'T2 (Corporations)' },
 };
