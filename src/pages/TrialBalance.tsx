@@ -335,7 +335,10 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  ] as const).map((t, i) => {
   const yearEnd = contextEng?.yearEnd || staticEng?.yearEnd || `Dec 31, ${cyYear}`;
   const date = yearEnd.replace(/\d{4}/, String(cyYear - i)).replace(',', '');
-  return { ...t, date, isSource: i < sourceYearCount };
+  const isSource = configuredProvider
+   ? (srcMeta.yearDataSources ? srcMeta.yearDataSources[t.id] === "source" : i < sourceYearCount)
+   : false;
+  return { ...t, date, isSource };
  });
  const activeYear = yearTabs.find(t => t.id === activeYearTab) ?? yearTabs[0];
  const activeTabIsSource = !!yearTabs.find(t => t.id === activeYearTab)?.isSource;

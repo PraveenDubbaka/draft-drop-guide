@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
-import { EngagementRecord, loadEngagements, saveEngagements, setEngagementMeta } from './engagementsStore';
+import { EngagementRecord, loadEngagements, saveEngagements, setEngagementMeta, getEngagementMeta } from './engagementsStore';
 
 type CtxType = {
  engagements: EngagementRecord[];
@@ -22,7 +22,7 @@ export function EngagementsProvider({ children }: { children: React.ReactNode })
  setEngagements(prev => {
  const next = [e,...prev];
  saveEngagements(next);
- setEngagementMeta(e.id, { firstYearAudit: e.firstYearAudit });
+ setEngagementMeta(e.id, { ...getEngagementMeta(e.id), firstYearAudit: e.firstYearAudit });
  return next;
  });
  };
