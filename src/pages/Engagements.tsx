@@ -21,7 +21,7 @@ import { useNavigate } from "react-router-dom";
 import { useEngagements } from "@/store/EngagementsContext";
 import { clientsData as appClientsData } from "@/data/clientsData";
 import { toast } from "sonner";
-import { Search, ChevronDown, ChevronUp, Pencil, Trash2, Download, Briefcase, Loader, CheckCircle2, Archive, X, Mail, Phone } from "lucide-react";
+import { Search, ChevronDown, ChevronUp, Pencil, Trash2, Download, Briefcase, Loader, CheckCircle2, Archive, X, Mail, Phone, FastForward } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,7 +31,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Layout } from "@/components/Layout";
 import { StyledCard } from "@/components/ui/card";
 import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
-import { getEngagementSourceIntegration, filterVisibleEngagements, type ClientSourceIntegration } from "@/lib/clientSource";
+import { getEngagementSourceIntegration, getClientSourceIntegration, filterVisibleEngagements, type ClientSourceIntegration } from "@/lib/clientSource";
+import { createRollForward } from "@/store/engagementsStore";
 import { accountingProviders } from "@/lib/accountingProviders";
 
 
@@ -148,7 +149,7 @@ const filterPeriodOptions = [
 
 export default function Engagements() {
  const navigate = useNavigate();
- const { engagements: engagementListRaw, deleteEngagement } = useEngagements();
+ const { engagements: engagementListRaw, deleteEngagement, addEngagement } = useEngagements();
  const engagementList = engagementListRaw;
  const [searchQuery, setSearchQuery] = useState("");
  const [filterPeriod, setFilterPeriod] = useState("Last 6 Month Engagements");
@@ -186,6 +187,15 @@ export default function Engagements() {
  }
  deleteEngagement(id);
  toast.success(`Engagement ${id} deleted`);
+ };
+
+ const handleRollForward = (id: string, client: string, e: React.MouseEvent) => {
+ e.stopPropagation();
+ const record = createRollForward(id, getClientSourceIntegration(client));
+ if (!record) return;
+ addEngagement(record);
+ toast.success(`Rolled forward to ${record.id}`);
+ navigate(`/engagements/${record.id}/edit`);
  };
 
  const handleEdit = (id: string, e: React.MouseEvent) => {
@@ -350,6 +360,14 @@ export default function Engagements() {
  onClick={(e) => handleEdit(engagement.id, e)}
  >
  <Pencil className="h-4 w-4 text-link group-hover/edit:icon-edit" />
+ </button>
+ <button
+ className="p-1.5 hover:bg-muted rounded-lg transition-colors"
+ title="Roll Forward"
+ aria-label="Roll Forward"
+ onClick={(e) => handleRollForward(engagement.id, engagement.client, e)}
+ >
+ <FastForward className="h-4 w-4 text-link" />
  </button>
  {engagement.id !== 'AUD-NPM-Dec312025' && (
  <button
