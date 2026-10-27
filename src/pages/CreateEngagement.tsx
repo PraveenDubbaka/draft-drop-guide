@@ -1289,7 +1289,14 @@ const [ackText, setAckText] = useState("");
      setAckText("");
      const err = v === "source:none";
      setYearErrors(e => e.map((x, j) => (j === i ? err : x)));
-     setYearSources(s => s.map((x, j) => (j === i ? (err ? "csv" : v) : x)));
+     setYearSources(s => s.map((x, j) => {
+       if (j === i) return err ? "csv" : v;
+       // Full year: source years run in order from CY; roll-forward locked rows never change
+       if (!isFullYearPeriod || err || x === "locked") return x;
+       if (v.startsWith("source:") && j < i) return v;
+       if (v === "csv" && j > i) return "csv";
+       return x;
+     }));
    };
    const YEAR_LABELS = ["Current Year", "Prior Year 1", "Prior Year 2"];
    const [originalYearSources] = useState<string[]>(initYearSources);
