@@ -133,7 +133,7 @@ function clientKeys(clientName: string): string[] {
   const client = clientsData.find(
     c => c.entityName.toLowerCase() === normalized || c.legalEntityName.toLowerCase() === normalized
   );
-  const names = client ? [client.entityName, client.legalEntityName] : [clientName];
+  const names = client ? [clientName, client.entityName, client.legalEntityName] : [clientName];
   return Array.from(new Set(names.map(n => n.trim().toLowerCase()).filter(Boolean)));
 }
 
