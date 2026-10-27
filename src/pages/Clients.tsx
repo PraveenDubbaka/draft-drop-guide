@@ -32,7 +32,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ScrollArea } from "@/components/ui/scroll-area";
 import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
 import { clientsData } from "@/data/clientsData";
-import { getClientConnectionOverride, CLIENT_CONNECTION_EVENT } from "@/lib/clientSource";
+import { getClientSourceIntegration, CLIENT_CONNECTION_EVENT } from "@/lib/clientSource";
 import { SourceConnectionModal } from "@/components/SourceConnectionModal";
 import { accountingProviders } from "@/lib/accountingProviders";
 import { useSearchParams } from "react-router-dom";
@@ -118,7 +118,7 @@ export default function Clients() {
  const [clientList, setClientList] = useState(clientsData);
  const [, setConnVersion] = useState(0);
   const [connectingClient, setConnectingClient] = useState<(typeof clientsData)[number] | null>(null);
-  const connectingType = connectingClient ? (getClientConnectionOverride(connectingClient.legalEntityName, connectingClient.entityName) ?? connectingClient.integration) : "none";
+  const connectingType = connectingClient ? (getClientSourceIntegration(connectingClient.entityName) ?? "none") : "none";
   const connectingProvider = connectingType === "quickbooks" || connectingType === "xero" || connectingType === "sage" ? connectingType : null;
   useEffect(() => {
     const bump = () => setConnVersion(v => v + 1);
@@ -390,7 +390,7 @@ export default function Clients() {
  </td>
  <td className="px-6 py-2 whitespace-nowrap">
  <IntegrationCell
- type={getClientConnectionOverride(client.legalEntityName, client.entityName) ?? client.integration}
+ type={getClientSourceIntegration(client.entityName) ?? (client.integration === "connect" ? "connect" : "none")}
   onConnect={() => setConnectingClient(client)}
  />
  </td>
