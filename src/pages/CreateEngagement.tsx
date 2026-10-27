@@ -1854,7 +1854,7 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
      )}
     </div>
     <div>
-     {!locked && !noData && !stubLocked && !row.disabled && yearChangeKind(i) === "toCsv" && (
+     {!locked && !noData && !stubLocked && yearChangeKind(i) === "toCsv" && (
       <div className="flex flex-col gap-1">
        <span className="text-xs font-medium text-foreground opacity-0" aria-hidden="true">Period</span>
        <label className="flex h-9 items-center gap-2 text-sm text-foreground cursor-pointer whitespace-nowrap">
