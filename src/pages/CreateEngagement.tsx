@@ -897,9 +897,19 @@ export default function CreateEngagement() {
         } : null);
  const [engagementType, setEngagementType] = useState(prefill.engagementType || "Review (REV)");
  const prefillIsAudit = (prefill.engagementType || "Review (REV)") === "Audit (AUD)";
- const [engagementId, setEngagementId] = useState(editingRecord?.id ?? (prefillIsAudit ? "AUD-HFL-Mar312024" : "REV-DEF-Nov302023"));
- const [engagementTemplate, setEngagementTemplate] = useState(prefillIsAudit ? "CAS Audit" : "Review Section 2400");
- const [templateId, setTemplateId] = useState(editingMeta?.templateId ?? (prefillIsAudit ? "audit5100" : ""));
+ const initialTypeDefaults = typeDefaults(prefill.engagementType || "Review (REV)");
+ // Create: the ID is generated from type, client and CY end date (see effect below)
+ const [engagementId, setEngagementId] = useState(editingRecord?.id ?? "");
+ // Set once the user types in the Engagement ID field so it stops auto-generating
+ const idTouched = useRef(false);
+ const [engagementTemplate, setEngagementTemplate] = useState(() => {
+  if (!isEditMode) return initialTypeDefaults.template;
+  const savedId = editingMeta?.templateId;
+  return (savedId && TEMPLATE_LABELS[savedId]) || initialTypeDefaults.template;
+ });
+ const [templateId, setTemplateId] = useState(
+  editingMeta?.templateId ?? (isEditMode ? (prefillIsAudit ? "audit5100" : "") : initialTypeDefaults.templateId)
+ );
  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
  const [budget, setBudget] = useState(editingMeta?.budget ?? "10000.00");
  // For engagements saved before the Data Source field existed, fall back to the
@@ -1017,27 +1027,33 @@ export default function CreateEngagement() {
  useEffect(() => {
   if (isFirstMount.current) { isFirstMount.current = false; return; }
   if (isEditMode) return; // never overwrite saved values when editing
+  const defaults = typeDefaults(engagementType);
+  let nextTemplateId = templateId;
+  if (TEMPLATE_CONFIG[templateId]?.engagementTypeLabel !== engagementType) {
+   nextTemplateId = defaults.templateId;
+   setTemplateId(defaults.templateId);
+   setEngagementTemplate(defaults.template);
+  }
+  setAccountingStandards(
+   isAudit ? (TEMPLATE_CONFIG[nextTemplateId]?.defaultFramework ?? defaults.standards) : defaults.standards
+  );
  if (isAudit) {
- setEngagementId("AUD-HFL-Mar312024");
- if (!templateId) {
- setEngagementTemplate("CAS Audit");
- setAccountingStandards("ASPE — Canadian Accounting Standards for Private Enterprises");
- }
  setPeriodType("Full Year");
  setAdditionalDisclosures("");
  setAdditionalDisclosuresSet(new Set());
  } else {
- setEngagementId("REV-DEF-Nov302023");
- if (!templateId) {
- setEngagementTemplate("Review Section 2400");
- setAccountingStandards("Section 2400 Review standards");
- }
  setPeriodType("Full year");
  setAdditionalDisclosures("Statement of cash flows");
  setAdditionalDisclosuresSet(new Set());
  setSpecialPurposeFramework("");
  }
- }, [isAudit]); // eslint-disable-line react-hooks/exhaustive-deps
+ }, [engagementType]); // eslint-disable-line react-hooks/exhaustive-deps
+
+ // Create: generate PREFIX-INITIALS-MonDDYYYY until the user edits the ID; never in edit mode
+ useEffect(() => {
+  if (isEditMode || idTouched.current) return;
+  setEngagementId(generateEngagementId(engagementType, clientName, currentYearEnd, loadEngagements().map(e => e.id)));
+ }, [engagementType, clientName, currentYearEnd, isEditMode]);
  const [specialPurposeFramework, setSpecialPurposeFramework] = useState("");
 
  useEffect(() => {
