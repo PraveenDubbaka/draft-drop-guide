@@ -1893,7 +1893,7 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
 {isSourceLockedStub ? (
  <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-border bg-muted/50 px-3 py-2">
   <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-  <span className="text-sm text-muted-foreground">Source connection not available for stub periods</span>
+  <span className="text-sm text-muted-foreground">Data will not be pulled from source for stub periods.</span>
  </div>
 ) : (
  <>
@@ -1907,7 +1907,7 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
     </span>
    </div>
   )}
-  {!showMismatchWarning && clientHasSourceConnection && !isSourceToCsvSwitch && yearSourceMix.csv > 0 && !isSourceLockedStub && (
+  {!showMismatchWarning && clientHasSourceConnection && !isSourceToCsvSwitch && yearSourceMix.csv > 0 && !isSourceLockedStub && !isFooPeriod && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">
