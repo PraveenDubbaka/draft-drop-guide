@@ -1911,9 +1911,7 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">
-     {yearSourceMix.src === 0
-      ? "All years are set to CSV. The source connection will remain active but won't be used for this engagement."
-      : "Years set to Source will pull data from the connected source. Years set to CSV will use manually imported data."}
+     Data for each year will come from the data source selected.
     </span>
    </div>
   )}
