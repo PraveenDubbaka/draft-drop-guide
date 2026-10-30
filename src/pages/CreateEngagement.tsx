@@ -1453,6 +1453,15 @@ const [ackText, setAckText] = useState("");
       && (dataSource === "source" || yearErrors.some(Boolean));
     // Mismatch warning only while at least one year row still points to the old provider
     const showMismatchWarning = isSourceProviderMismatch && [0, 1, 2].some(i => yearDisconnectedProvider(i) !== null);
+    // Single red "No source connection found" error: never-connected Source selection or an externally disconnected saved source
+    const showRedNoConnectionError = showNoConnectionError
+      || (!showMismatchWarning && isExternallyDisconnected && !!originalCyProvider && !isSourceLockedStub);
+    // "Switching…" messages — while either is visible, the generic per-year source note is hidden
+    const showSwitchToCsvMessage = !showMismatchWarning && isSourceToCsvSwitch && !!originalCyProvider && !isSourceLockedStub;
+    const showSwitchToSourceMessage = !showMismatchWarning && !isSourceLockedStub && (
+      (isReconnectFlow && hasSelectedActiveConnection)
+      || (isEditMode && clientHasSourceConnection && [0, 1, 2].some(i => yearChangeKind(i) === "toSource"))
+    );
      const isConnectionDisconnected = clientHasSourceConnection&& (!sourceConnected || isSourceProviderMismatch);
     // Roll forward with no client connection → auto CSV, locked
     const isRollForwardNoSource = isRollForwardSource && !clientHasSourceConnection;
