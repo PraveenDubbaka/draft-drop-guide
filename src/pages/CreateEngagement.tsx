@@ -1327,16 +1327,6 @@ const [ackText, setAckText] = useState("");
      const p = o.slice(7) as AccountingProvider;
      return p === activeProvider ? null : p;
    };
-   const [yearRemoveData, setYearRemoveData] = useState<Record<number, boolean>>({});
-   useEffect(() => {
-     setYearRemoveData(prev => {
-       const next: Record<number, boolean> = {};
-       let changed = false;
-       Object.keys(prev).forEach(k => { const i = Number(k); if (yearChangeKind(i) === "toCsv") next[i] = prev[i]; else changed = true; });
-       return changed ? next : prev;
-     });
-     // eslint-disable-next-line react-hooks/exhaustive-deps
-   }, [yearSources, isSourceLockedStub]);
    /** Edit only: the year's saved provider is no longer among the client's active connections (and the row is unchanged). */
    const yearDisconnectedProvider = (i: number): AccountingProvider | null => {
      if (!isEditMode) return null;
@@ -1538,16 +1528,8 @@ const performSave = () => {
  } else {
  addEngagement(record);
  }
- // Keep earlier remove flags, add years ticked now, drop years now set to Source
- const removeMap: { cy?: boolean; py1?: boolean; py2?: boolean } = { ...(editingMeta?.yearRemoveData ?? {}) };
- (["cy", "py1", "py2"] as const).forEach((k, i) => {
- if (yearRemoveData[i] && yearChangeKind(i) === "toCsv") removeMap[k] = true;
- if (rowKind(effectiveYearSources[i], i) === "source") delete removeMap[k];
- });
- const removeKeys = (["cy", "py1", "py2"] as const).filter(k => removeMap[k]);
  setEngagementMeta(engagementId, {
  firstYearAudit,
- yearRemoveData: removeKeys.length ? Object.fromEntries(removeKeys.map(k => [k, true])) : undefined,
  firstYearOnPlatform: firstYearAudit ? firstYearOnPlatform : undefined,
  isRollForward: firstYearAudit ? isRollForward : undefined,
  firstYearTemplates: firstYearAudit ? [...firstYearTemplates] : undefined,
@@ -1821,7 +1803,7 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
   const disconnectedP = yearDisconnectedProvider(i);
   return (
   <div key={row.label} className="py-2">
-   <div className={`grid grid-cols-[176px_minmax(0,176px)_minmax(0,176px)_minmax(200px,320px)_auto] gap-4 items-start ${i === 0 ? "mt-4" : ""}`}>
+   <div className={`grid grid-cols-[176px_minmax(0,176px)_minmax(0,176px)_minmax(200px,320px)] gap-4 items-start ${i === 0 ? "mt-4" : ""}`}>
     <div className="flex flex-col gap-1">
      <span className="text-xs font-medium text-foreground opacity-0" aria-hidden="true">Period</span>
      <span className="flex h-9 items-center text-sm text-foreground whitespace-nowrap">{row.label}{row.required && <span className="text-destructive ml-0.5">*</span>}</span>
@@ -1869,20 +1851,9 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
       </Select>
      )}
     </div>
-    <div>
-     {!locked && !noData && !stubLocked && yearChangeKind(i) === "toCsv" && (
-      <div className="flex flex-col gap-1">
-       <span className="text-xs font-medium text-foreground opacity-0" aria-hidden="true">Period</span>
-       <label className="flex h-9 items-center gap-2 text-sm text-foreground cursor-pointer whitespace-nowrap">
-        <Checkbox checked={!!yearRemoveData[i]} onCheckedChange={v => setYearRemoveData(k => ({ ...k, [i]: v === true }))} />
-        Remove existing data
-       </label>
-      </div>
-     )}
-    </div>
    </div>
    {row.note && (
-    <div className="grid grid-cols-[176px_minmax(0,176px)_minmax(0,176px)_minmax(200px,320px)_auto] gap-4 mt-1">
+    <div className="grid grid-cols-[176px_minmax(0,176px)_minmax(0,176px)_minmax(200px,320px)] gap-4 mt-1">
      <span />
      <span className="col-span-2 text-xs text-muted-foreground">{row.note}</span>
     </div>
@@ -1929,9 +1900,7 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">
-     {isRollForwardSource
-      ? `Switching Current Year to CSV means it will no longer pull data from ${sourceLabel(originalCyProvider)}. Prior years stay locked to their original source.`
-      : `Switching to CSV means this engagement will no longer pull data from ${sourceLabel(originalCyProvider)}. The source connection will stay active but won't be used.`}
+     {`Switching to CSV means data will no longer be pulled from ${sourceLabel(originalCyProvider)}.`}
     </span>
    </div>
   )}
