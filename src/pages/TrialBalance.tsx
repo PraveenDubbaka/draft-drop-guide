@@ -399,8 +399,8 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  const canLeaveImport = !allYearsBlank;
  const leaveImport = () => { if (!canLeaveImport) return; setShowImport(false); setImportDismissed(true); };
  const handleImportClick = () => {
- if (isSourceLinked && activeTabIsSource) setSwitchToCsvOpen(true);
- else setShowImport(true);
+ if (allYearsSource) return;
+ setShowImport(true);
  };
 
  const trialBalanceBreadcrumb = (
@@ -509,7 +509,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  <ExpandableIconButton variant="secondary" icon={<Wrench className="h-4 w-4" />} label={<span className="inline-flex items-center gap-1">Actions<ChevronDown className="h-3 w-3" /></span>} />
  </DropdownMenuTrigger>
  <DropdownMenuContent align="end" className="w-44">
- <DropdownMenuItem className="flex items-center gap-2 cursor-pointer" disabled={activeTabIsSource} onClick={() => !activeTabIsSource && setShowImport(true)}>
+ <DropdownMenuItem className="flex items-center gap-2 cursor-pointer" disabled={allYearsSource} onClick={() => !allYearsSource && setShowImport(true)}>
  <Upload className="h-4 w-4 text-muted-foreground" /><span>Import</span>
  </DropdownMenuItem>
  <DropdownMenuSeparator />
@@ -826,7 +826,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  <span>Auto Map</span>
  </DropdownMenuItem>
  <DropdownMenuSeparator />
-  {activeTabIsSource ? (
+  {allYearsSource ? (
   <Tooltip delayDuration={100}>
   <TooltipTrigger asChild>
   <div>
@@ -836,7 +836,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
   </DropdownMenuItem>
   </div>
   </TooltipTrigger>
-  <TooltipContent side="left" className="max-w-[240px] z-[200]">Import is disabled for source-connected years. Switch to CSV in Edit Engagement to re-enable.</TooltipContent>
+  <TooltipContent side="left" className="max-w-[240px] z-[200]">All years are connected to an accounting source. To import, set a year to CSV in Edit Engagement.</TooltipContent>
   </Tooltip>
   ) : (
   <DropdownMenuItem
