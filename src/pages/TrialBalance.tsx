@@ -398,6 +398,8 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  const showImportView = showImport || landOnImport;
  const canLeaveImport = !allYearsBlank;
  const leaveImport = () => { if (!canLeaveImport) return; setShowImport(false); setImportDismissed(true); };
+ // Import is available whenever at least one year is CSV, regardless of the selected year tab
+ const allYearsSource = (["cy", "py1", "py2"] as TbYear[]).every((y, i) => yearIsSource(y, i));
  const handleImportClick = () => {
  if (allYearsSource) return;
  setShowImport(true);
