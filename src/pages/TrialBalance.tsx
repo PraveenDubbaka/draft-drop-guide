@@ -416,6 +416,12 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  const showImportView = showImport || landOnImport;
  const canLeaveImport = !allYearsBlank;
  const leaveImport = () => { if (!canLeaveImport) return; setShowImport(false); setImportDismissed(true); };
+ // New → In Progress the first time TB data is loaded from an active source connection (seeded demos excluded)
+ const pullsFromSource = isSourceLinked && !isExternallyDisconnected && yearTabs.some((t, i) => isYearSource(t.id, i));
+ useEffect(() => {
+  if (!engagementId || isSeededEngagement || !contextEng || status !== 'New' || !pullsFromSource) return;
+  updateEngagement(engagementId, { status: 'In Progress', statusVariant: 'inProgress' });
+ }, [engagementId, isSeededEngagement, contextEng, status, pullsFromSource, updateEngagement]);
  // Import is available whenever at least one year is CSV, regardless of the selected year tab
  const allYearsSource = (["cy", "py1", "py2"] as TbYear[]).every((y, i) => yearIsSource(y, i));
  const handleImportClick = () => {
