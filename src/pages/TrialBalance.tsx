@@ -678,9 +678,9 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
 
  {/* Upload zones */}
  <div className="bg-card border border-border rounded-xl p-6">
- <DropZone label="Current Year (CY) Trial Balance" file={cyFile} onFile={setCyFile} inputRef={cyInputRef} />
- <DropZone label="Prior Year 1 (PY1) Trial Balance" file={py1File} onFile={setPy1File} inputRef={py1InputRef} />
- <DropZone label="Prior Year 2 (PY2) Trial Balance" file={py2File} onFile={setPy2File} inputRef={py2InputRef} />
+ <DropZone label="Current Year (CY) Trial Balance" file={effCy} onFile={setCyFile} inputRef={cyInputRef} lockedNote={lockedNoteFor("cy", cyUploadLocked)} />
+ <DropZone label="Prior Year 1 (PY1) Trial Balance" file={effPy1} onFile={setPy1File} inputRef={py1InputRef} lockedNote={lockedNoteFor("py1", py1UploadLocked)} />
+ <DropZone label="Prior Year 2 (PY2) Trial Balance" file={effPy2} onFile={setPy2File} inputRef={py2InputRef} lockedNote={lockedNoteFor("py2", py2UploadLocked)} />
  <div className="mt-4">
  <Button className="w-full gap-1.5" disabled={uploadDisabled} onClick={handleUpload}>
  {isUploading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
