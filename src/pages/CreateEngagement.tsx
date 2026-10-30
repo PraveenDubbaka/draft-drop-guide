@@ -1285,12 +1285,19 @@ const [ackText, setAckText] = useState("");
      setPy1DataSource(toKind(yearSources[1]));
      setPy2DataSource(toKind(yearSources[2]));
    }, [yearSources]);
-   const setYearSource = (i: number, v: string) => {
-     setAckText("");
-     const err = v === "source:none";
-     setYearErrors(e => e.map((x, j) => (j === i ? err : x)));
-     setYearSources(s => s.map((x, j) => {
-       if (j === i) return err ? "csv" : v;
+  // Once the client connects, rows picked as "Accounting software · Not connected" become that connection
+  useEffect(() => {
+    if (!clientSourceIntegration) return;
+    setYearSources(s => s.map(v => (v === "source:none" ? `source:${clientSourceIntegration}` : v)));
+    setYearErrors([false, false, false]);
+  }, [clientSourceIntegration]);
+  const setYearSource = (i: number, v: string) => {
+    setAckText("");
+    const err = v === "source:none";
+    setYearErrors(e => e.map((x, j) => (j === i ? err : x)));
+    setYearSources(s => s.map((x, j) => {
+      // Keep the picked "not connected" software visible in the dropdown (save stays blocked)
+      if (j === i) return v;
        // Full year: source years run in order from CY; roll-forward locked rows never change
        if (!isFullYearPeriod || err || x === "locked") return x;
        if (v.startsWith("source:") && j < i) return v;
@@ -1451,6 +1458,9 @@ const [ackText, setAckText] = useState("");
    const showConnectionDropdown = isSourceProviderMismatch || isReconnectFlow;
    const dropdownSavedProvider = isReconnectFlow ? savedDisconnectedFrom : savedSourceProvider;
     const isExternallyDisconnected = isEditMode && !clientHasSourceConnection && originalDataSource === "source" && dataSource === "source" && !isSourceLockedStub;
+    // Red "No source connection found" error — blocks Create/Update while visible
+    const showNoConnectionError = !clientHasSourceConnection && !isExternallyDisconnected && !isSourceLockedStub
+      && (dataSource === "source" || yearErrors.some(Boolean));
     // Mismatch warning only while at least one year row still points to the old provider
     const showMismatchWarning = isSourceProviderMismatch && [0, 1, 2].some(i => yearDisconnectedProvider(i) !== null);
      const isConnectionDisconnected = clientHasSourceConnection&& (!sourceConnected || isSourceProviderMismatch);
@@ -1891,17 +1901,17 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
  })}
 {/* Contextual messages below year rows */}
 {isSourceLockedStub ? (
- <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-border bg-muted/50 px-3 py-2">
-  <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-  <span className="text-sm text-muted-foreground">Data will not be pulled from source for stub periods.</span>
+ <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+  <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+  <span className="text-sm text-amber-800 dark:text-amber-200">Data will not be pulled from source for stub periods.</span>
  </div>
 ) : (
  <>
-  {((dataSource === "source" && !clientHasSourceConnection && !isExternallyDisconnected && !isSourceLockedStub) || (!clientHasSourceConnection && !isExternallyDisconnected && !isSourceLockedStub && yearErrors.some(Boolean))) && (
+  {showNoConnectionError && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
     <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
     <span className="text-sm text-red-800 dark:text-red-200">
-     No source connection found for this client. Please go to the Clients page, click Connect under Integrations, and connect your accounting software. Then return here to continue.{" "}
+     No source connection found. Please go to the Clients page and establish the connection.{" "}
      <Button variant="link" onClick={() => setShowSourceConnection(true)} className="h-auto p-0 text-sm underline underline-offset-2">Connect Source</Button>{" "}
      <Button variant="link" onClick={() => navigate("/clients")} className="h-auto p-0 text-sm underline underline-offset-2">Go to Clients →</Button>
     </span>
