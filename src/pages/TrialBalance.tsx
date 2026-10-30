@@ -342,6 +342,7 @@ export default function TrialBalance() {
  const cyRemoved = isRemoved("cy"), py1Removed = isRemoved("py1"), py2Removed = isRemoved("py2");
  const removedYearLabels = [cyRemoved && "Current Year", py1Removed && "Prior Year 1", py2Removed && "Prior Year 2"].filter(Boolean) as string[];
  const dash = <span className="text-muted-foreground">—</span>;
+ const noData = <span className="text-muted-foreground">No data</span>;
    const sourceStatusDisconnected = isExternallyDisconnected || !!disconnectedFrom;
 const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  if (!engagementId) return;
@@ -611,7 +612,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
 
  // ── Import view ───────────────────────────────────────────────────────────
  if (showImportView) {
- const years = [cyYear, cyYear - 1, cyYear - 2];
+ const years = isFyo ? [cyYear] : [cyYear, cyYear - 1, cyYear - 2];
  const DropZone = ({ label, file, onFile, inputRef, lockedNote }: { label: string; file: File | null; onFile: (f: File | null) => void; inputRef: React.RefObject<HTMLInputElement>; lockedNote?: string }) => (
  <div className="flex items-start gap-6 py-4 border-b border-border last:border-b-0">
  <span className={`w-44 shrink-0 text-sm font-medium pt-4 ${lockedNote ? 'text-muted-foreground' : 'text-foreground'}`}>{label}</span>
@@ -711,8 +712,12 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  {/* Upload zones */}
  <div className="bg-card border border-border rounded-xl p-6">
  <DropZone label="Current Year (CY) Trial Balance" file={effCy} onFile={setCyFile} inputRef={cyInputRef} lockedNote={lockedNoteFor("cy", cyUploadLocked)} />
- <DropZone label="Prior Year 1 (PY1) Trial Balance" file={effPy1} onFile={setPy1File} inputRef={py1InputRef} lockedNote={lockedNoteFor("py1", py1UploadLocked)} />
- <DropZone label="Prior Year 2 (PY2) Trial Balance" file={effPy2} onFile={setPy2File} inputRef={py2InputRef} lockedNote={lockedNoteFor("py2", py2UploadLocked)} />
+ {!isFyo && (
+  <>
+   <DropZone label="Prior Year 1 (PY1) Trial Balance" file={effPy1} onFile={setPy1File} inputRef={py1InputRef} lockedNote={lockedNoteFor("py1", py1UploadLocked)} />
+   <DropZone label="Prior Year 2 (PY2) Trial Balance" file={effPy2} onFile={setPy2File} inputRef={py2InputRef} lockedNote={lockedNoteFor("py2", py2UploadLocked)} />
+  </>
+ )}
  <div className="mt-4">
  <Button className="w-full gap-1.5" disabled={uploadDisabled} onClick={handleUpload}>
  {isUploading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
@@ -873,10 +878,21 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
   </TooltipTrigger>
   <TooltipContent side="left" className="max-w-[240px] z-[200]">All years are connected to an accounting source. To import, set a year to CSV in Edit Engagement.</TooltipContent>
   </Tooltip>
+  ) : isExternallyDisconnected ? (
+  <Tooltip delayDuration={100}>
+  <TooltipTrigger asChild>
+  <div>
+   <DropdownMenuItem className="flex items-center gap-2" disabled>
+  <Upload className="h-4 w-4 text-muted-foreground" />
+  <span>Import</span>
+  </DropdownMenuItem>
+  </div>
+  </TooltipTrigger>
+  <TooltipContent side="left" className="max-w-[240px] z-[200]">Reconnect the source or switch to CSV to import.</TooltipContent>
+  </Tooltip>
   ) : (
   <DropdownMenuItem
-  className="flex items-center gap-2 cursor-pointer"
-  disabled={isExternallyDisconnected}
+   className="flex items-center gap-2 cursor-pointer"
   onClick={handleImportClick}
   >
   <Upload className="h-4 w-4 text-muted-foreground" />
@@ -972,8 +988,17 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  )}
  {disconnectedFrom && (
  <div className="mx-6 mt-4 flex items-center justify-between gap-3 rounded-[10px] border border-amber-300 bg-amber-50 px-3 py-2">
- <span className="text-sm text-amber-800">{isExternallyDisconnected ? "Source connection inactive. Your data is unchanged. Go to Edit Engagement to reconnect or switch to CSV." : `This engagement is now CSV. Source connection is inactive. To reconnect to ${sourceLabel(disconnectedFrom)}, go to Edit Engagement.`}</span>
- <button type="button" className="text-sm font-medium text-[#1C63A6] hover:underline whitespace-nowrap" onClick={() => navigate(`/engagements/${engagementId}/edit`)}>Edit Engagement →</button>
+ <span className="text-sm text-amber-800">{hasNoActiveConnection
+  ? `No source connection found. Data shown is from the last pull from ${sourceLabel(configuredProvider)}. Reconnect on the Clients page, or switch to CSV in Edit Engagement.`
+  : hasProviderMismatch
+   ? `Your client's source connection has changed. Data shown is from ${sourceLabel(configuredProvider)}. Go to Edit Engagement to switch to the new source.`
+   : `This engagement is now CSV. Source connection is inactive. To reconnect to ${sourceLabel(disconnectedFrom)}, go to Edit Engagement.`}</span>
+ <div className="flex items-center gap-4 shrink-0">
+  {hasNoActiveConnection && (
+   <button type="button" className="text-sm font-medium text-[#1C63A6] hover:underline whitespace-nowrap" onClick={() => navigate("/clients")}>Go to Clients →</button>
+  )}
+  <button type="button" className="text-sm font-medium text-[#1C63A6] hover:underline whitespace-nowrap" onClick={() => navigate(`/engagements/${engagementId}/edit`)}>Edit Engagement →</button>
+ </div>
  </div>
  )}
  <AlertDialog open={switchToCsvOpen} onOpenChange={(o) => { setSwitchToCsvOpen(o); if (!o) setDisconnectText(""); }}>
