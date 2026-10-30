@@ -254,9 +254,10 @@ export default function TrialBalance() {
  const handleUpload = () => {
  if (!engagementId || uploadDisabled) return;
  setIsUploading(true);
+ const upCy = effCy, upPy1 = effPy1, upPy2 = effPy2;
  setTimeout(() => {
  {
- const nextUploaded = { cy: uploadedYears.cy || !!cyFile, py1: uploadedYears.py1 || !!py1File, py2: uploadedYears.py2 || !!py2File };
+ const nextUploaded = { cy: uploadedYears.cy || !!upCy, py1: uploadedYears.py1 || !!upPy1, py2: uploadedYears.py2 || !!upPy2 };
  localStorage.setItem(TB_UPLOADED_KEY(engagementId), JSON.stringify(nextUploaded));
  setUploadedYears(nextUploaded);
  }
@@ -265,9 +266,9 @@ export default function TrialBalance() {
  const m = getEngagementMeta(engagementId);
  if (m.yearRemoveData) {
  const next = { ...m.yearRemoveData };
- if (cyFile) delete next.cy;
- if (py1File) delete next.py1;
- if (py2File) delete next.py2;
+ if (upCy) delete next.cy;
+ if (upPy1) delete next.py1;
+ if (upPy2) delete next.py2;
  const hasAny = Object.values(next).some(Boolean);
  setEngagementMeta(engagementId, { ...m, yearRemoveData: hasAny ? next : undefined });
  setMetaVersion(v => v + 1);
@@ -282,6 +283,7 @@ export default function TrialBalance() {
  setMetaVersion(v => v + 1);
  }
  setShowImport(false);
+ setImportDismissed(true);
  setIsUploading(false);
  setCyFile(null); setPy1File(null); setPy2File(null);
  updateEngagement(engagementId, { status: 'In Progress', statusVariant: 'inProgress' });
@@ -382,7 +384,22 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  const py1Blank = py1Removed || !yearHasData("py1", 1);
  const py2Blank = py2Removed || !yearHasData("py2", 2);
  const allYearsBlank = cyBlank && py1Blank && py2Blank;
- const uploadDisabled = status === 'New' && allYearsBlank ? !cyFile : !(cyFile || py1File || py2File);
+ // Per-year upload availability on the Import screen: Source years are locked to their provider
+ const yearIsSource = (y: TbYear, i: number) => yearTabs[i].isSource || srcMeta.yearDataSources?.[y] === "source";
+ const yearProviderName = (y: TbYear) => sourceLabel(srcMeta.yearSourceProviders?.[y] ?? srcMeta.sourceProvider ?? configuredProvider);
+ const uploadLocked = (y: TbYear, i: number) => !pendingCsvSwitch && yearIsSource(y, i);
+ const cyUploadLocked = uploadLocked("cy", 0), py1UploadLocked = uploadLocked("py1", 1), py2UploadLocked = uploadLocked("py2", 2);
+ const effCy = cyUploadLocked ? null : cyFile, effPy1 = py1UploadLocked ? null : py1File, effPy2 = py2UploadLocked ? null : py2File;
+ const uploadDisabled = status === 'New' && allYearsBlank ? !effCy : !(effCy || effPy1 || effPy2);
+ // New engagements with a CSV year that has no data yet land directly on the Import screen
+ const [importDismissed, setImportDismissed] = useState(false);
+ useEffect(() => { setImportDismissed(false); }, [engagementId]);
+ const csvYearMissingData = ([["cy", 0, cyBlank], ["py1", 1, py1Blank], ["py2", 2, py2Blank]] as const)
+  .some(([y, i, blank]) => !yearIsSource(y, i) && blank);
+ const landOnImport = status === 'New' && csvYearMissingData && !importDismissed;
+ const showImportView = showImport || landOnImport;
+ const canLeaveImport = !allYearsBlank;
+ const leaveImport = () => { if (!canLeaveImport) return; setShowImport(false); setImportDismissed(true); };
  const handleImportClick = () => {
  if (isSourceLinked && activeTabIsSource) setSwitchToCsvOpen(true);
  else setShowImport(true);
@@ -453,7 +470,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  );
 
  // ── Empty state — only for New engagements without a loaded TB ──────────
- if (!showImport && allYearsBlank) {
+ if (!showImportView && allYearsBlank) {
  return (
  <Layout title="Engagements" headerContent={trialBalanceBreadcrumb}>
  <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -561,13 +578,18 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  }
 
  // ── Import view ───────────────────────────────────────────────────────────
- if (showImport) {
+ if (showImportView) {
  const years = [cyYear, cyYear - 1, cyYear - 2];
- const DropZone = ({ label, file, onFile, inputRef }: { label: string; file: File | null; onFile: (f: File | null) => void; inputRef: React.RefObject<HTMLInputElement> }) => (
+ const DropZone = ({ label, file, onFile, inputRef, lockedNote }: { label: string; file: File | null; onFile: (f: File | null) => void; inputRef: React.RefObject<HTMLInputElement>; lockedNote?: string }) => (
  <div className="flex items-start gap-6 py-4 border-b border-border last:border-b-0">
- <span className="w-44 shrink-0 text-sm font-medium text-foreground pt-4">{label}</span>
+ <span className={`w-44 shrink-0 text-sm font-medium pt-4 ${lockedNote ? 'text-muted-foreground' : 'text-foreground'}`}>{label}</span>
  <div className="flex-1">
- {file ? (
+ {lockedNote ? (
+ <div aria-disabled="true" data-upload-locked="true" className="border-2 border-dashed border-border rounded-lg p-8 flex flex-col items-center gap-2 bg-muted/60 opacity-60 cursor-not-allowed select-none">
+ <CloudUpload className="h-8 w-8 text-muted-foreground" />
+ <p className="text-sm text-muted-foreground text-center">{lockedNote}</p>
+ </div>
+ ) : file ? (
  <div className="flex items-center gap-3 border border-border rounded-lg px-4 py-3 bg-card">
  <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
  <span className="text-sm text-foreground flex-1 truncate">{file.name}</span>
@@ -587,11 +609,14 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  <p className="text-xs text-muted-foreground">(CSV/Excel/PDF)</p>
  </div>
  )}
+ {!lockedNote && (
  <input ref={inputRef} type="file" accept=".csv,.xlsx,.xls,.pdf" className="hidden"
  onChange={e => { const f = e.target.files?.[0] ?? null; onFile(f); e.target.value = ''; }} />
+ )}
  </div>
  </div>
  );
+ const lockedNoteFor = (y: TbYear, locked: boolean) => locked ? `Connected to ${yearProviderName(y)}. Data is pulled from the source.` : undefined;
 
  return (
  <Layout title="Engagements" headerContent={trialBalanceBreadcrumb}>
@@ -599,15 +624,18 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  {/* Level-1 sticky header — matches main TB page */}
  <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-1.5 border-b border-border bg-gradient-to-r from-card via-card to-secondary/20">
  <div className="flex items-center gap-2">
+ {canLeaveImport && (
  <button
- onClick={() => setShowImport(false)}
+ onClick={leaveImport}
+ aria-label="Back to Trial Balance"
  className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
  >
  <ArrowLeft className="h-4 w-4" />
  </button>
+ )}
  <h1 className="text-lg font-semibold text-foreground">Import Trial Balance</h1>
  </div>
- <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setShowImport(false)}>
+ <Button size="sm" variant="outline" className="gap-1.5" disabled={!canLeaveImport} onClick={leaveImport}>
  <FileSpreadsheet className="h-4 w-4" /> Import TB
  </Button>
  </div>
@@ -650,9 +678,9 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
 
  {/* Upload zones */}
  <div className="bg-card border border-border rounded-xl p-6">
- <DropZone label="Current Year (CY) Trial Balance" file={cyFile} onFile={setCyFile} inputRef={cyInputRef} />
- <DropZone label="Prior Year 1 (PY1) Trial Balance" file={py1File} onFile={setPy1File} inputRef={py1InputRef} />
- <DropZone label="Prior Year 2 (PY2) Trial Balance" file={py2File} onFile={setPy2File} inputRef={py2InputRef} />
+ <DropZone label="Current Year (CY) Trial Balance" file={effCy} onFile={setCyFile} inputRef={cyInputRef} lockedNote={lockedNoteFor("cy", cyUploadLocked)} />
+ <DropZone label="Prior Year 1 (PY1) Trial Balance" file={effPy1} onFile={setPy1File} inputRef={py1InputRef} lockedNote={lockedNoteFor("py1", py1UploadLocked)} />
+ <DropZone label="Prior Year 2 (PY2) Trial Balance" file={effPy2} onFile={setPy2File} inputRef={py2InputRef} lockedNote={lockedNoteFor("py2", py2UploadLocked)} />
  <div className="mt-4">
  <Button className="w-full gap-1.5" disabled={uploadDisabled} onClick={handleUpload}>
  {isUploading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
