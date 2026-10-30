@@ -371,8 +371,11 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  // A year has TB data when: the engagement is a seeded demo, the year is set to Source,
  // or a TB was uploaded for that year. CSV years with no upload stay blank.
  const isSeededEngagement = !!engagementId && SEED_ENGAGEMENTS.some(s => s.id === engagementId);
- const yearHasData = (y: TbYear, i: number) =>
-  isSeededEngagement || uploadedYears[y] || yearTabs[i].isSource || srcMeta.yearDataSources?.[y] === "source";
+ const yearHasData = (y: TbYear, i: number) => tbYearHasData({
+  isSeeded: isSeededEngagement,
+  isSource: yearTabs[i].isSource || srcMeta.yearDataSources?.[y] === "source",
+  uploaded: uploadedYears[y],
+ });
  const cyBlank = cyRemoved || !yearHasData("cy", 0);
  const py1Blank = py1Removed || !yearHasData("py1", 1);
  const py2Blank = py2Removed || !yearHasData("py2", 2);
