@@ -62,7 +62,7 @@ export function SourceConnectionModal({ open, onOpenChange, clientName, connecti
             </div>
             {justDisconnected && <div className="mt-5 flex items-start gap-2 rounded-[10px] border border-connection-warning/30 bg-connection-warning-surface p-3 text-connection-warning">
               <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
-              <p className="text-sm"><strong>Action Required:</strong> For any source connected engagements for this client, go to Edit Engagement and update the Data Source to continue managing your data.</p>
+              <p className="text-sm">Please go to Edit Engagement and change the data source for your engagements.</p>
             </div>}
           </>}
           {step === "loading" && <div role="status" className="flex min-h-40 flex-col items-center justify-center gap-4">
@@ -85,7 +85,7 @@ export function SourceConnectionModal({ open, onOpenChange, clientName, connecti
             </div>
             <div className="mt-5 flex items-start gap-2 rounded-[10px] border border-connection-warning/30 bg-connection-warning-surface p-3 text-connection-warning">
               <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
-              <p className="text-sm">For you to be able to pull data from this source, please go to Edit Engagement and change the data source.</p>
+              <p className="text-sm">Please go to Edit Engagement and change the data source for your engagements.</p>
             </div>
           </>}
         </div>
