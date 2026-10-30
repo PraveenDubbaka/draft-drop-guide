@@ -1284,7 +1284,7 @@ const [ackText, setAckText] = useState("");
      setPy1DataSource(toKind(yearSources[1]));
      setPy2DataSource(toKind(yearSources[2]));
    }, [yearSources]);
-  // Once the client connects, rows picked as "Accounting software · Not connected" become that connection
+  // Once the client connects, rows picked as "Not connected" become that connection
   useEffect(() => {
     if (!clientSourceIntegration) return;
     setYearSources(s => s.map(v => (v === "source:none" ? `source:${clientSourceIntegration}` : v)));
@@ -1418,8 +1418,7 @@ const [ackText, setAckText] = useState("");
  additionalDisclosures !== "" &&
  currentYearStart.trim() !== "" &&
  currentYearEnd.trim() !== "" &&
- (isEditMode || teamMembers.length > 0) &&
- (!isReconnectFlow || hasSelectedActiveConnection);
+ (isEditMode || teamMembers.length > 0);
 
   // Edit-mode scenario: engagement was CSV, client has a source connection, user switched to Source
   const isCsvToSourceSwitch = isEditMode && clientHasSourceConnection && originalDataSource === "csv" && dataSource === "source" && sourceConnected && !savedDisconnectedFrom && !(isFooPeriod);
@@ -1448,15 +1447,30 @@ const [ackText, setAckText] = useState("");
    const dropdownSavedProvider = isReconnectFlow ? savedDisconnectedFrom : savedSourceProvider;
     const isExternallyDisconnected = isEditMode && !clientHasSourceConnection && originalDataSource === "source" && dataSource === "source" && !isSourceLockedStub;
     // Red "No source connection found" error — blocks Create/Update while visible
-    const showNoConnectionError = !clientHasSourceConnection && !isExternallyDisconnected && !isSourceLockedStub
+    // Blocks Create/Update whenever any year is set to Source without an active client connection;
+    // the red error below uses this same condition so the button is never disabled silently.
+    const showNoConnectionError = !clientHasSourceConnection && !isSourceLockedStub
       && (dataSource === "source" || yearErrors.some(Boolean));
     // Mismatch warning only while at least one year row still points to the old provider
     const showMismatchWarning = isSourceProviderMismatch && [0, 1, 2].some(i => yearDisconnectedProvider(i) !== null);
     // Single red "No source connection found" error: never-connected Source selection or an externally disconnected saved source
-    const showRedNoConnectionError = showNoConnectionError
-      || (!showMismatchWarning && isExternallyDisconnected && !!originalCyProvider && !isSourceLockedStub);
+    const showRedNoConnectionError = showNoConnectionError;
     // "Switching…" messages — while either is visible, the generic per-year source note is hidden
-    const showSwitchToCsvMessage = !showMismatchWarning && isSourceToCsvSwitch && !!originalCyProvider && !isSourceLockedStub;
+    const showSwitchToCsvMessage = !showMismatchWarning && !!originalCyProvider && (
+      (isSourceToCsvSwitch && !isSourceLockedStub)
+      // Edit: saved Source engagement switched to Partial Year (shown with the stub note)
+      || (isEditMode && isSourceLockedStub && originalDataSource === "source")
+      // Edit/Roll Forward: saved Source, client disconnected, Current Year set to CSV
+      || (isEditMode && !clientHasSourceConnection && !isSourceLockedStub && originalDataSource === "source" && yearChangeKind(0) === "toCsv")
+    );
+    const switchToCsvMessage = showSwitchToCsvMessage && originalCyProvider ? (
+     <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
+      <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+      <span className="text-sm text-amber-800 dark:text-amber-200">
+       {`Switching to CSV means data will no longer be pulled from ${sourceLabel(originalCyProvider)}.`}
+      </span>
+     </div>
+    ) : null;
     const showSwitchToSourceMessage = !showMismatchWarning && !isSourceLockedStub && (
       (isReconnectFlow && hasSelectedActiveConnection)
       || (isEditMode && clientHasSourceConnection && [0, 1, 2].some(i => yearChangeKind(i) === "toSource"))
@@ -1844,7 +1858,7 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
       </Select>
      ) : (
       <Select value={stubLocked ? "csv" : (val.startsWith("source:") ? val : "csv")} disabled={stubLocked} onValueChange={v => setYearSource(i, v)}>
-       <SelectTrigger className="h-9 text-sm" title={stubLocked || !val.startsWith("source:") ? "CSV / Excel / PDF" : val === "source:none" ? "Accounting software · Not connected" : `${sourceLabel(val.slice(7) as AccountingProvider)}`}><SelectValue /></SelectTrigger>
+       <SelectTrigger className="h-9 text-sm" title={stubLocked || !val.startsWith("source:") ? "CSV / Excel / PDF" : val === "source:none" ? "Not connected" : `${sourceLabel(val.slice(7) as AccountingProvider)}`}><SelectValue /></SelectTrigger>
        <SelectContent>
         {(() => {
          // Exactly one source option: the year's saved provider, else the client's single active connection
@@ -1852,7 +1866,7 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
          const p = cur ?? activeProvider;
          return p
           ? <SelectItem value={`source:${p}`}>{sourceLabel(p)}</SelectItem>
-          : <SelectItem value="source:none">Accounting software · Not connected</SelectItem>;
+          : <SelectItem value="source:none">Not connected</SelectItem>;
         })()}
         <SelectItem value="csv">CSV / Excel / PDF</SelectItem>
        </SelectContent>
@@ -1880,10 +1894,13 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
  })}
 {/* Contextual messages below year rows */}
 {isSourceLockedStub ? (
+ <>
  <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
   <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
   <span className="text-sm text-amber-800 dark:text-amber-200">Data will not be pulled from source for stub periods.</span>
  </div>
+ {switchToCsvMessage}
+ </>
 ) : (
  <>
   {showRedNoConnectionError && (
@@ -1891,7 +1908,6 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
     <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
     <span className="text-sm text-red-800 dark:text-red-200">
      No source connection found. Please go to the Clients page and establish the connection.{" "}
-     <Button variant="link" onClick={() => setShowSourceConnection(true)} className="h-auto p-0 text-sm underline underline-offset-2">Connect Source</Button>{" "}
      <Button variant="link" onClick={() => navigate("/clients")} className="h-auto p-0 text-sm underline underline-offset-2">Go to Clients →</Button>
     </span>
    </div>
@@ -1904,19 +1920,12 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
     </span>
    </div>
   )}
-  {showSwitchToCsvMessage && originalCyProvider && (
-   <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
-    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-    <span className="text-sm text-amber-800 dark:text-amber-200">
-     {`Switching to CSV means data will no longer be pulled from ${sourceLabel(originalCyProvider)}.`}
-    </span>
-   </div>
-  )}
+  {switchToCsvMessage}
   {showMismatchWarning && originalCyProvider && !isSourceLockedStub && (
-   <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
-    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+   <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
+    <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
     <div className="flex flex-col items-start gap-2">
-     <span className="text-sm text-amber-800 dark:text-amber-200">Your client's source connection has changed. Click Switch Connection to update this engagement to the new source.</span>
+     <span className="text-sm text-red-800 dark:text-red-200">Your client's source connection has changed. Click Switch Connection to update this engagement to the new source.</span>
      <Button variant="outline" size="sm" className="h-8 text-sm" onClick={() => {
       setHasSelectedActiveConnection(true);
       setAckText("");
@@ -2076,7 +2085,7 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
  <X className="h-4 w-4" />
  Cancel
  </Button>
- <Button disabled={!isFormValid || showNoConnectionError || (isCyToCsv && !ackChecked)} onClick={handleCreate}>
+ <Button disabled={!isFormValid || showNoConnectionError || showMismatchWarning || (isCyToCsv && !ackChecked)} onClick={handleCreate}>
  {isEditMode ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
  {isEditMode ? "Update Engagement" : "Create Engagement"}
  </Button>
