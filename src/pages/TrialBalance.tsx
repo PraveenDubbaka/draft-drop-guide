@@ -26,7 +26,8 @@ import {
 import { StyledCard } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { getEngagementMeta, setEngagementMeta } from "@/store/engagementsStore";
+import { getEngagementMeta, setEngagementMeta, SEED_ENGAGEMENTS } from "@/store/engagementsStore";
+import { readUploadedYears, tbYearHasData, TB_UPLOADED_KEY, type TbYear } from "@/lib/tbYearData";
 import { sourceLabel, getClientSourceIntegration as getClientSourceIntegrationSafe, VISIBLE_ENGAGEMENT_IDS, type ClientSourceIntegration } from "@/lib/clientSource";
 import xeroLogoFull from "@/assets/xero-logo-full.svg";
 import { accountingProviders } from "@/lib/accountingProviders";
@@ -176,7 +177,6 @@ const totals = { original: 0.00, adj: 0.00, final: 0.00, py1: 0.00, py2: 0.00 };
 const netIncome = { original: 847000, adj: 0.00, final: 847000, py1: 740000, py2: "589,000.00" };
 
 
-const TB_LOADED_KEY = (id: string) => `tb-loaded-${id}`;
 
 function computeAdjFromStorage(engId: string): Record<string, number> {
   const prefix = `adj-entry-${engId}-`;
@@ -218,10 +218,9 @@ export default function TrialBalance() {
    );
  }, [engagementId]);
 
- // TB load state — persisted per engagement
- const [tbLoaded, setTbLoaded] = useState(() =>
- !!engagementId
- );
+ // TB upload state — persisted per engagement, per year
+ const [uploadedYears, setUploadedYears] = useState<Record<TbYear, boolean>>(() => readUploadedYears(engagementId));
+ useEffect(() => { setUploadedYears(readUploadedYears(engagementId)); }, [engagementId]);
  const [showImport, setShowImport] = useState(false);
  const [cyFile, setCyFile] = useState<File | null>(null);
  const [py1File, setPy1File] = useState<File | null>(null);
@@ -256,8 +255,11 @@ export default function TrialBalance() {
  if (!engagementId || uploadDisabled) return;
  setIsUploading(true);
  setTimeout(() => {
- localStorage.setItem(TB_LOADED_KEY(engagementId), '1');
- setTbLoaded(true);
+ {
+ const nextUploaded = { cy: uploadedYears.cy || !!cyFile, py1: uploadedYears.py1 || !!py1File, py2: uploadedYears.py2 || !!py2File };
+ localStorage.setItem(TB_UPLOADED_KEY(engagementId), JSON.stringify(nextUploaded));
+ setUploadedYears(nextUploaded);
+ }
  // Uploaded years get their data back: clear their "removed" flags
  {
  const m = getEngagementMeta(engagementId);
@@ -319,8 +321,6 @@ export default function TrialBalance() {
  const isRemoved = (y: "cy" | "py1" | "py2") => !!removed[y] && srcMeta.yearDataSources?.[y] !== "source";
  const cyRemoved = isRemoved("cy"), py1Removed = isRemoved("py1"), py2Removed = isRemoved("py2");
  const removedYearLabels = [cyRemoved && "Current Year", py1Removed && "Prior Year 1", py2Removed && "Prior Year 2"].filter(Boolean) as string[];
- const allYearsRemoved = cyRemoved && py1Removed && py2Removed;
- const uploadDisabled = status === 'New' && !tbLoaded ? !cyFile : !(cyFile || py1File || py2File);
  const dash = <span className="text-muted-foreground">—</span>;
    const sourceStatusDisconnected = isExternallyDisconnected || !!disconnectedFrom;
 const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
@@ -368,6 +368,19 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  });
  const activeYear = yearTabs.find(t => t.id === activeYearTab) ?? yearTabs[0];
  const activeTabIsSource = !!yearTabs.find(t => t.id === activeYearTab)?.isSource;
+ // A year has TB data when: the engagement is a seeded demo, the year is set to Source,
+ // or a TB was uploaded for that year. CSV years with no upload stay blank.
+ const isSeededEngagement = !!engagementId && SEED_ENGAGEMENTS.some(s => s.id === engagementId);
+ const yearHasData = (y: TbYear, i: number) => tbYearHasData({
+  isSeeded: isSeededEngagement,
+  isSource: yearTabs[i].isSource || srcMeta.yearDataSources?.[y] === "source",
+  uploaded: uploadedYears[y],
+ });
+ const cyBlank = cyRemoved || !yearHasData("cy", 0);
+ const py1Blank = py1Removed || !yearHasData("py1", 1);
+ const py2Blank = py2Removed || !yearHasData("py2", 2);
+ const allYearsBlank = cyBlank && py1Blank && py2Blank;
+ const uploadDisabled = status === 'New' && allYearsBlank ? !cyFile : !(cyFile || py1File || py2File);
  const handleImportClick = () => {
  if (isSourceLinked && activeTabIsSource) setSwitchToCsvOpen(true);
  else setShowImport(true);
@@ -438,7 +451,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  );
 
  // ── Empty state — only for New engagements without a loaded TB ──────────
- if (!showImport && ((!tbLoaded && status === 'New') || allYearsRemoved)) {
+ if (!showImport && allYearsBlank) {
  return (
  <Layout title="Engagements" headerContent={trialBalanceBreadcrumb}>
  <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -1022,16 +1035,16 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
   </span>
   ) : row.description}
  </td>
- <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{cyRemoved ? dash : formatNumber(row.original)}</td>
+ <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{cyBlank ? dash : formatNumber(row.original)}</td>
  <td className="px-6 py-2 text-right whitespace-nowrap">
- {cyRemoved ? dash : <button onClick={() => { setSelectedAdjRow({ accNo: row.accNo, description: row.description }); setAdjModalOpen(true); }} className="text-link font-medium hover:underline focus:outline-none">
+ {cyBlank ? dash : <button onClick={() => { setSelectedAdjRow({ accNo: row.accNo, description: row.description }); setAdjModalOpen(true); }} className="text-link font-medium hover:underline focus:outline-none">
    {formatNumber(row.adj)}
  </button>}
  </td>
- <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{cyRemoved ? dash : formatNumber(row.final)}</td>
- <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{py1Removed ? dash : formatNumber(row.py1)}</td>
- <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{cyRemoved || py1Removed ? dash : row.changePct}</td>
- <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{py2Removed ? dash : row.py2}</td>
+ <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{cyBlank ? dash : formatNumber(row.final)}</td>
+ <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{py1Blank ? dash : formatNumber(row.py1)}</td>
+ <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{cyBlank || py1Blank ? dash : row.changePct}</td>
+ <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{py2Blank ? dash : row.py2}</td>
  <td className="px-6 py-2 text-right whitespace-nowrap">
  <span className="text-link font-medium">{formatNumber(row.mapNo)}</span>
  </td>
@@ -1056,12 +1069,12 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  {/* Totals row */}
  <tr className="bg-muted border-t border-border">
  <td className="px-6 py-2" colSpan={5}></td>
- <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{cyRemoved ? dash : formatNumber(totals.original)}</td>
- <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{cyRemoved ? dash : formatNumber(totals.adj)}</td>
- <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{cyRemoved ? dash : formatNumber(totals.final)}</td>
- <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{py1Removed ? dash : formatNumber(totals.py1)}</td>
+ <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{cyBlank ? dash : formatNumber(totals.original)}</td>
+ <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{cyBlank ? dash : formatNumber(totals.adj)}</td>
+ <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{cyBlank ? dash : formatNumber(totals.final)}</td>
+ <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{py1Blank ? dash : formatNumber(totals.py1)}</td>
  <td className="px-6 py-2"></td>
- <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{py2Removed ? dash : formatNumber(totals.py2)}</td>
+ <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{py2Blank ? dash : formatNumber(totals.py2)}</td>
  <td colSpan={7}></td>
  </tr>
 
@@ -1069,12 +1082,12 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  <tr className="bg-muted border-t border-border">
  <td className="px-6 py-2" colSpan={4}></td>
  <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">Net Income (loss)</td>
- <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{cyRemoved ? dash : formatNumber(netIncome.original)}</td>
- <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{cyRemoved ? dash : formatNumber(netIncome.adj)}</td>
- <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{cyRemoved ? dash : formatNumber(netIncome.final)}</td>
- <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{py1Removed ? dash : formatNumber(netIncome.py1)}</td>
+ <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{cyBlank ? dash : formatNumber(netIncome.original)}</td>
+ <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{cyBlank ? dash : formatNumber(netIncome.adj)}</td>
+ <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{cyBlank ? dash : formatNumber(netIncome.final)}</td>
+ <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{py1Blank ? dash : formatNumber(netIncome.py1)}</td>
  <td className="px-6 py-2"></td>
- <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{py2Removed ? dash : netIncome.py2}</td>
+ <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{py2Blank ? dash : netIncome.py2}</td>
  <td colSpan={7}></td>
  </tr>
  </tfoot>
