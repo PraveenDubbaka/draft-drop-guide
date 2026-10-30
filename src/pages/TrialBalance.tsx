@@ -26,7 +26,7 @@ import {
 import { StyledCard } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { getEngagementMeta, setEngagementMeta } from "@/store/engagementsStore";
+import { getEngagementMeta, setEngagementMeta, SEED_ENGAGEMENTS } from "@/store/engagementsStore";
 import { sourceLabel, getClientSourceIntegration as getClientSourceIntegrationSafe, VISIBLE_ENGAGEMENT_IDS, type ClientSourceIntegration } from "@/lib/clientSource";
 import xeroLogoFull from "@/assets/xero-logo-full.svg";
 import { accountingProviders } from "@/lib/accountingProviders";
@@ -176,7 +176,22 @@ const totals = { original: 0.00, adj: 0.00, final: 0.00, py1: 0.00, py2: 0.00 };
 const netIncome = { original: 847000, adj: 0.00, final: 847000, py1: 740000, py2: "589,000.00" };
 
 
+// Legacy "uploaded" marker (any year) — still honoured as "all years uploaded"
 const TB_LOADED_KEY = (id: string) => `tb-loaded-${id}`;
+// Per-year "uploaded" marker: { cy?: true, py1?: true, py2?: true }
+const TB_UPLOADED_KEY = (id: string) => `tb-uploaded-${id}`;
+type TbYear = "cy" | "py1" | "py2";
+const NO_UPLOADS: Record<TbYear, boolean> = { cy: false, py1: false, py2: false };
+function readUploadedYears(id: string | undefined): Record<TbYear, boolean> {
+  if (!id) return NO_UPLOADS;
+  if (localStorage.getItem(TB_LOADED_KEY(id))) return { cy: true, py1: true, py2: true };
+  try {
+    const v = JSON.parse(localStorage.getItem(TB_UPLOADED_KEY(id)) || "{}");
+    return { cy: !!v.cy, py1: !!v.py1, py2: !!v.py2 };
+  } catch {
+    return NO_UPLOADS;
+  }
+}
 
 function computeAdjFromStorage(engId: string): Record<string, number> {
   const prefix = `adj-entry-${engId}-`;
@@ -218,10 +233,9 @@ export default function TrialBalance() {
    );
  }, [engagementId]);
 
- // TB load state — persisted per engagement
- const [tbLoaded, setTbLoaded] = useState(() =>
- !!engagementId
- );
+ // TB upload state — persisted per engagement, per year
+ const [uploadedYears, setUploadedYears] = useState<Record<TbYear, boolean>>(() => readUploadedYears(engagementId));
+ useEffect(() => { setUploadedYears(readUploadedYears(engagementId)); }, [engagementId]);
  const [showImport, setShowImport] = useState(false);
  const [cyFile, setCyFile] = useState<File | null>(null);
  const [py1File, setPy1File] = useState<File | null>(null);
@@ -256,8 +270,11 @@ export default function TrialBalance() {
  if (!engagementId || uploadDisabled) return;
  setIsUploading(true);
  setTimeout(() => {
- localStorage.setItem(TB_LOADED_KEY(engagementId), '1');
- setTbLoaded(true);
+ {
+ const nextUploaded = { cy: uploadedYears.cy || !!cyFile, py1: uploadedYears.py1 || !!py1File, py2: uploadedYears.py2 || !!py2File };
+ localStorage.setItem(TB_UPLOADED_KEY(engagementId), JSON.stringify(nextUploaded));
+ setUploadedYears(nextUploaded);
+ }
  // Uploaded years get their data back: clear their "removed" flags
  {
  const m = getEngagementMeta(engagementId);
