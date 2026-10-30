@@ -470,7 +470,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  );
 
  // ── Empty state — only for New engagements without a loaded TB ──────────
- if (!showImport && allYearsBlank) {
+ if (!showImportView && allYearsBlank) {
  return (
  <Layout title="Engagements" headerContent={trialBalanceBreadcrumb}>
  <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
