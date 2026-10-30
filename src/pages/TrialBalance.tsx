@@ -578,13 +578,18 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  }
 
  // ── Import view ───────────────────────────────────────────────────────────
- if (showImport) {
+ if (showImportView) {
  const years = [cyYear, cyYear - 1, cyYear - 2];
- const DropZone = ({ label, file, onFile, inputRef }: { label: string; file: File | null; onFile: (f: File | null) => void; inputRef: React.RefObject<HTMLInputElement> }) => (
+ const DropZone = ({ label, file, onFile, inputRef, lockedNote }: { label: string; file: File | null; onFile: (f: File | null) => void; inputRef: React.RefObject<HTMLInputElement>; lockedNote?: string }) => (
  <div className="flex items-start gap-6 py-4 border-b border-border last:border-b-0">
- <span className="w-44 shrink-0 text-sm font-medium text-foreground pt-4">{label}</span>
+ <span className={`w-44 shrink-0 text-sm font-medium pt-4 ${lockedNote ? 'text-muted-foreground' : 'text-foreground'}`}>{label}</span>
  <div className="flex-1">
- {file ? (
+ {lockedNote ? (
+ <div aria-disabled="true" data-upload-locked="true" className="border-2 border-dashed border-border rounded-lg p-8 flex flex-col items-center gap-2 bg-muted/60 opacity-60 cursor-not-allowed select-none">
+ <CloudUpload className="h-8 w-8 text-muted-foreground" />
+ <p className="text-sm text-muted-foreground text-center">{lockedNote}</p>
+ </div>
+ ) : file ? (
  <div className="flex items-center gap-3 border border-border rounded-lg px-4 py-3 bg-card">
  <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
  <span className="text-sm text-foreground flex-1 truncate">{file.name}</span>
@@ -604,11 +609,14 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  <p className="text-xs text-muted-foreground">(CSV/Excel/PDF)</p>
  </div>
  )}
+ {!lockedNote && (
  <input ref={inputRef} type="file" accept=".csv,.xlsx,.xls,.pdf" className="hidden"
  onChange={e => { const f = e.target.files?.[0] ?? null; onFile(f); e.target.value = ''; }} />
+ )}
  </div>
  </div>
  );
+ const lockedNoteFor = (y: TbYear, locked: boolean) => locked ? `Connected to ${yearProviderName(y)}. Data is pulled from the source.` : undefined;
 
  return (
  <Layout title="Engagements" headerContent={trialBalanceBreadcrumb}>
@@ -616,15 +624,18 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  {/* Level-1 sticky header — matches main TB page */}
  <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-1.5 border-b border-border bg-gradient-to-r from-card via-card to-secondary/20">
  <div className="flex items-center gap-2">
+ {canLeaveImport && (
  <button
- onClick={() => setShowImport(false)}
+ onClick={leaveImport}
+ aria-label="Back to Trial Balance"
  className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
  >
  <ArrowLeft className="h-4 w-4" />
  </button>
+ )}
  <h1 className="text-lg font-semibold text-foreground">Import Trial Balance</h1>
  </div>
- <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setShowImport(false)}>
+ <Button size="sm" variant="outline" className="gap-1.5" disabled={!canLeaveImport} onClick={leaveImport}>
  <FileSpreadsheet className="h-4 w-4" /> Import TB
  </Button>
  </div>
