@@ -324,7 +324,13 @@ export default function TrialBalance() {
   : null;
   // Source disconnected outside the app: engagement still linked, but the client's active connection differs / is gone
   const isExternallyDisconnected = !!configuredProvider && clientActiveProvider !== configuredProvider;
+  // A1: client has no active connection at all · A2: client is connected, but to a different provider
+  const hasNoActiveConnection = isExternallyDisconnected && !clientActiveProvider;
+  const hasProviderMismatch = isExternallyDisconnected && !!clientActiveProvider;
   const linkedProvider = isExternallyDisconnected ? null : configuredProvider;
+  // First Year of Operations: PY1 / PY2 don't exist — every year-based rule uses CY only
+  const isFyo = srcMeta.auditPeriodType === "First Year of Operations"
+   || (!!srcMeta.firstYearOfOperations && /^partial year$/i.test(srcMeta.auditPeriodType ?? ""));
   const isSourceLinked = !!linkedProvider;
    const disconnectedFrom: ClientSourceIntegration = isExternallyDisconnected
   ? configuredProvider
