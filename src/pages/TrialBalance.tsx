@@ -342,6 +342,7 @@ export default function TrialBalance() {
  const cyRemoved = isRemoved("cy"), py1Removed = isRemoved("py1"), py2Removed = isRemoved("py2");
  const removedYearLabels = [cyRemoved && "Current Year", py1Removed && "Prior Year 1", py2Removed && "Prior Year 2"].filter(Boolean) as string[];
  const dash = <span className="text-muted-foreground">—</span>;
+ // FYO: PY1 / PY2 don't exist for First Year of Operations
  const noData = <span className="text-muted-foreground">No data</span>;
    const sourceStatusDisconnected = isExternallyDisconnected || !!disconnectedFrom;
 const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
