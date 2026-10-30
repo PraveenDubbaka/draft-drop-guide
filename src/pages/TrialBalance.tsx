@@ -251,8 +251,16 @@ export default function TrialBalance() {
  };
  const clearFilters = () => setActiveFilters(new Set());
 
+ // CSV → CSV re-import: confirm before replacing data in CSV years that already have data
+ const [reimportOpen, setReimportOpen] = useState(false);
  const handleUpload = () => {
  if (!engagementId || uploadDisabled) return;
+ if (reimportYearLabels.length > 0) { setReimportOpen(true); return; }
+ runUpload();
+ };
+ const runUpload = () => {
+ if (!engagementId || uploadDisabled) return;
+ setReimportOpen(false);
  setIsUploading(true);
  const upCy = effCy, upPy1 = effPy1, upPy2 = effPy2;
  setTimeout(() => {
@@ -391,6 +399,12 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  const cyUploadLocked = uploadLocked("cy", 0), py1UploadLocked = uploadLocked("py1", 1), py2UploadLocked = uploadLocked("py2", 2);
  const effCy = cyUploadLocked ? null : cyFile, effPy1 = py1UploadLocked ? null : py1File, effPy2 = py2UploadLocked ? null : py2File;
  const uploadDisabled = status === 'New' && allYearsBlank ? !effCy : !(effCy || effPy1 || effPy2);
+ // Years being re-imported: a file is selected for a CSV year that already has data
+ const reimportYearLabels = ([
+  [effCy, "cy", 0, cyBlank, "Current Year"],
+  [effPy1, "py1", 1, py1Blank, "Prior Year 1"],
+  [effPy2, "py2", 2, py2Blank, "Prior Year 2"],
+ ] as const).filter(([file, y, i, blank]) => !!file && !blank && !yearIsSource(y, i)).map(([, , , , label]) => label);
   // New engagements with no data in any year (all CSV, nothing uploaded) land directly on the Import screen
  const [importDismissed, setImportDismissed] = useState(false);
  useEffect(() => { setImportDismissed(false); }, [engagementId]);
