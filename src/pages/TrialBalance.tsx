@@ -254,9 +254,10 @@ export default function TrialBalance() {
  const handleUpload = () => {
  if (!engagementId || uploadDisabled) return;
  setIsUploading(true);
+ const upCy = effCy, upPy1 = effPy1, upPy2 = effPy2;
  setTimeout(() => {
  {
- const nextUploaded = { cy: uploadedYears.cy || !!cyFile, py1: uploadedYears.py1 || !!py1File, py2: uploadedYears.py2 || !!py2File };
+ const nextUploaded = { cy: uploadedYears.cy || !!upCy, py1: uploadedYears.py1 || !!upPy1, py2: uploadedYears.py2 || !!upPy2 };
  localStorage.setItem(TB_UPLOADED_KEY(engagementId), JSON.stringify(nextUploaded));
  setUploadedYears(nextUploaded);
  }
@@ -265,9 +266,9 @@ export default function TrialBalance() {
  const m = getEngagementMeta(engagementId);
  if (m.yearRemoveData) {
  const next = { ...m.yearRemoveData };
- if (cyFile) delete next.cy;
- if (py1File) delete next.py1;
- if (py2File) delete next.py2;
+ if (upCy) delete next.cy;
+ if (upPy1) delete next.py1;
+ if (upPy2) delete next.py2;
  const hasAny = Object.values(next).some(Boolean);
  setEngagementMeta(engagementId, { ...m, yearRemoveData: hasAny ? next : undefined });
  setMetaVersion(v => v + 1);
@@ -282,6 +283,7 @@ export default function TrialBalance() {
  setMetaVersion(v => v + 1);
  }
  setShowImport(false);
+ setImportDismissed(true);
  setIsUploading(false);
  setCyFile(null); setPy1File(null); setPy2File(null);
  updateEngagement(engagementId, { status: 'In Progress', statusVariant: 'inProgress' });
