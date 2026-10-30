@@ -71,8 +71,12 @@ import {
  CloudUpload,
  Plug,
  Lock,
+ FilePen,
+ FolderPlus,
+ MessageSquareText,
 } from "lucide-react";
 import { SourceSwitchDisclaimer } from "@/components/SourceSwitchDisclaimer";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 // Filter categories with badge colors and short labels (matching screenshot)
 const FILTER_CATEGORIES = [
@@ -251,8 +255,16 @@ export default function TrialBalance() {
  };
  const clearFilters = () => setActiveFilters(new Set());
 
+ // CSV → CSV re-import: confirm before replacing data in CSV years that already have data
+ const [reimportOpen, setReimportOpen] = useState(false);
  const handleUpload = () => {
  if (!engagementId || uploadDisabled) return;
+ if (reimportYearLabels.length > 0) { setReimportOpen(true); return; }
+ runUpload();
+ };
+ const runUpload = () => {
+ if (!engagementId || uploadDisabled) return;
+ setReimportOpen(false);
  setIsUploading(true);
  const upCy = effCy, upPy1 = effPy1, upPy2 = effPy2;
  setTimeout(() => {
@@ -391,6 +403,12 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  const cyUploadLocked = uploadLocked("cy", 0), py1UploadLocked = uploadLocked("py1", 1), py2UploadLocked = uploadLocked("py2", 2);
  const effCy = cyUploadLocked ? null : cyFile, effPy1 = py1UploadLocked ? null : py1File, effPy2 = py2UploadLocked ? null : py2File;
  const uploadDisabled = status === 'New' && allYearsBlank ? !effCy : !(effCy || effPy1 || effPy2);
+ // Years being re-imported: a file is selected for a CSV year that already has data
+ const reimportYearLabels = ([
+  [effCy, "cy", 0, cyBlank, "Current Year"],
+  [effPy1, "py1", 1, py1Blank, "Prior Year 1"],
+  [effPy2, "py2", 2, py2Blank, "Prior Year 2"],
+ ] as const).filter(([file, y, i, blank]) => !!file && !blank && !yearIsSource(y, i)).map(([, , , , label]) => label);
   // New engagements with no data in any year (all CSV, nothing uploaded) land directly on the Import screen
  const [importDismissed, setImportDismissed] = useState(false);
  useEffect(() => { setImportDismissed(false); }, [engagementId]);
@@ -690,6 +708,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  </div>
  </div>
  </div>
+ <ReimportWarningModal open={reimportOpen} onOpenChange={setReimportOpen} yearLabels={reimportYearLabels} onProceed={runUpload} />
  </Layout>
  );
  }
@@ -1205,5 +1224,51 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  <EngagementRightPanel />
  </div>
  </Layout>
+ );
+}
+
+/** CSV → CSV re-import confirmation (neutral styling, DELETE to confirm). */
+function ReimportWarningModal({ open, onOpenChange, yearLabels, onProceed }: {
+ open: boolean;
+ onOpenChange: (open: boolean) => void;
+ yearLabels: string[];
+ onProceed: () => void;
+}) {
+ const [confirmText, setConfirmText] = useState("");
+ useEffect(() => { if (open) setConfirmText(""); }, [open]);
+ const items = [
+  { icon: FilePen, text: "Adjusting entries will be deleted" },
+  { icon: FolderPlus, text: "Manually added accounts will be deleted" },
+  { icon: MessageSquareText, text: "Issues, comments and requests will be deleted" },
+  { icon: FileText, text: "Documents will only move after data is imported" },
+ ];
+ return (
+  <Dialog open={open} onOpenChange={onOpenChange}>
+   <DialogContent className="max-w-md bg-background">
+    <div className="flex flex-col items-center text-center gap-2 pt-2">
+     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-950/40">
+      <AlertTriangle className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+     </div>
+     <DialogTitle className="text-lg font-semibold text-foreground">Reimport Warning</DialogTitle>
+     <DialogDescription className="text-xs text-muted-foreground">Re-importing: {yearLabels.join(", ")}</DialogDescription>
+    </div>
+    <ul className="space-y-2">
+     {items.map(({ icon: Icon, text }) => (
+      <li key={text} className="flex items-start gap-2 text-sm text-foreground">
+       <Icon className="h-4 w-4 shrink-0 mt-0.5 text-foreground" />
+       <span>{text}</span>
+      </li>
+     ))}
+    </ul>
+    <div className="space-y-1.5">
+     <label htmlFor="reimport-confirm" className="text-sm text-foreground">Please type DELETE below to confirm your understanding *</label>
+     <Input id="reimport-confirm" value={confirmText} onChange={e => setConfirmText(e.target.value)} placeholder="DELETE" autoComplete="off" />
+    </div>
+    <div className="flex gap-3">
+     <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>Cancel</Button>
+     <Button className="flex-1" disabled={confirmText !== "DELETE"} onClick={onProceed}>Proceed</Button>
+    </div>
+   </DialogContent>
+  </Dialog>
  );
 }
