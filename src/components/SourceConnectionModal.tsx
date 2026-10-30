@@ -14,9 +14,11 @@ interface SourceConnectionModalProps {
   onComplete?: () => void;
   initialStep?: "select" | "connected";
   initialProvider?: AccountingProvider | null;
+  /** Show the "go to Edit Engagement" hint — only when opened from the Clients page */
+  showEditEngagementHint?: boolean;
 }
 
-export function SourceConnectionModal({ open, onOpenChange, clientName, connectionName = clientName, engagementId, onComplete, initialStep, initialProvider }: SourceConnectionModalProps) {
+export function SourceConnectionModal({ open, onOpenChange, clientName, connectionName = clientName, engagementId, onComplete, initialStep, initialProvider, showEditEngagementHint = false }: SourceConnectionModalProps) {
   const [step, setStep] = useState<"select" | "loading" | "connected">("select");
   const [provider, setProvider] = useState<AccountingProvider>("quickbooks");
   const [justDisconnected, setJustDisconnected] = useState(false);

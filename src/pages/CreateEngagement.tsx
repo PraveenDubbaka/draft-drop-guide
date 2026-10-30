@@ -9,7 +9,7 @@ import { clientsData as appClientsData } from "@/data/clientsData";
 import { getClientSourceIntegration, sourceLabel, getClientConnectionState, CLIENT_CONNECTION_EVENT, type AccountingProvider } from "@/lib/clientSource";
 import { accountingProviders } from "@/lib/accountingProviders";
 import { SourceConnectionModal } from "@/components/SourceConnectionModal";
-import { ArrowLeft, Briefcase, Calendar, Users, ChevronDown, Plus, Pencil, Trash2, Search, ExternalLink, X, Building2, FileText, Settings2, Check, UserPlus, Link2, AlertTriangle, XCircle, Info, FilePen, FolderPlus, MessageSquareText } from "lucide-react";
+import { ArrowLeft, Briefcase, Calendar, Users, ChevronDown, Plus, Pencil, Trash2, Search, ExternalLink, X, Building2, FileText, Settings2, Check, UserPlus, Link2, AlertTriangle, XCircle, FilePen, FolderPlus, MessageSquareText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -21,7 +21,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as DatePickerCalendar } from "@/components/ui/calendar";
 import { format as formatDateFns } from "date-fns";
 
-const CSV_LABEL = "Non-Source Connected (CSV/Excel import required)";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { TemplatePickerPanel } from "@/components/TemplatePickerPanel";
@@ -1870,7 +1869,7 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
    {!showMismatchWarning && !isExternallyDisconnected && !locked && !noData && !stubLocked && disconnectedP && (
     <div className="grid grid-cols-[176px_minmax(0,1fr)] gap-4 mt-2">
      <span />
-     <div className="flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 px-3 py-2 text-amber-800" role="status">
+     <div className="flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-amber-800 dark:text-amber-200" role="status">
       <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
       <p className="text-sm">{sourceLabel(disconnectedP)} is disconnected for this year. Select a new data source from the Data Source dropdown.</p>
      </div>
@@ -1887,7 +1886,7 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
  </div>
 ) : (
  <>
-  {showNoConnectionError && (
+  {showRedNoConnectionError && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
     <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
     <span className="text-sm text-red-800 dark:text-red-200">
@@ -1897,7 +1896,7 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
     </span>
    </div>
   )}
-  {!showMismatchWarning && clientHasSourceConnection && !isSourceToCsvSwitch && yearSourceMix.csv > 0 && !isSourceLockedStub && !isFooPeriod && (
+  {!showMismatchWarning && clientHasSourceConnection && !isSourceToCsvSwitch && yearSourceMix.csv > 0 && !isSourceLockedStub && !isFooPeriod && !showSwitchToCsvMessage && !showSwitchToSourceMessage && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">
@@ -1905,26 +1904,11 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
     </span>
    </div>
   )}
-  {!showMismatchWarning && isSourceToCsvSwitch && originalCyProvider && !isSourceLockedStub && (
+  {showSwitchToCsvMessage && originalCyProvider && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">
      {`Switching to CSV means data will no longer be pulled from ${sourceLabel(originalCyProvider)}.`}
-    </span>
-   </div>
-  )}
-  {!showMismatchWarning && isReconnectFlow && hasSelectedActiveConnection && !isSourceLockedStub && (
-   <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
-    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-    <span className="text-sm text-amber-800 dark:text-amber-200">Switching back to Source will replace your current CSV trial balance data. Years available from {sourceLabel(clientSourceIntegration)} will be refreshed.</span>
-   </div>
-  )}
-  {!showMismatchWarning && isExternallyDisconnected && originalCyProvider && !isSourceLockedStub && (
-   <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
-    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-    <span className="text-sm text-amber-800 dark:text-amber-200">
-     Your client has no active source connection. Connect a source, or set the affected years to CSV / Excel / PDF.{" "}
-     <Button variant="link" onClick={() => setShowSourceConnection(true)} className="h-auto p-0 text-sm underline underline-offset-2">Connect Source</Button>
     </span>
    </div>
   )}
@@ -1942,7 +1926,7 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
     </div>
    </div>
   )}
-  {!showMismatchWarning && isEditMode && clientHasSourceConnection && !isSourceLockedStub && [0, 1, 2].some(i => yearChangeKind(i) === "toSource") && (
+  {showSwitchToSourceMessage && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
     <span className="text-sm text-amber-800 dark:text-amber-200">Switching to Source will replace your existing CSV trial balance data. Years selected for source will be refreshed.</span>
