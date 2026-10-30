@@ -336,8 +336,6 @@ export default function TrialBalance() {
  const isRemoved = (y: "cy" | "py1" | "py2") => !!removed[y] && srcMeta.yearDataSources?.[y] !== "source";
  const cyRemoved = isRemoved("cy"), py1Removed = isRemoved("py1"), py2Removed = isRemoved("py2");
  const removedYearLabels = [cyRemoved && "Current Year", py1Removed && "Prior Year 1", py2Removed && "Prior Year 2"].filter(Boolean) as string[];
- const allYearsRemoved = cyRemoved && py1Removed && py2Removed;
- const uploadDisabled = status === 'New' && !tbLoaded ? !cyFile : !(cyFile || py1File || py2File);
  const dash = <span className="text-muted-foreground">—</span>;
    const sourceStatusDisconnected = isExternallyDisconnected || !!disconnectedFrom;
 const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
@@ -385,6 +383,16 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  });
  const activeYear = yearTabs.find(t => t.id === activeYearTab) ?? yearTabs[0];
  const activeTabIsSource = !!yearTabs.find(t => t.id === activeYearTab)?.isSource;
+ // A year has TB data when: the engagement is a seeded demo, the year is set to Source,
+ // or a TB was uploaded for that year. CSV years with no upload stay blank.
+ const isSeededEngagement = !!engagementId && SEED_ENGAGEMENTS.some(s => s.id === engagementId);
+ const yearHasData = (y: TbYear, i: number) =>
+  isSeededEngagement || uploadedYears[y] || yearTabs[i].isSource || srcMeta.yearDataSources?.[y] === "source";
+ const cyBlank = cyRemoved || !yearHasData("cy", 0);
+ const py1Blank = py1Removed || !yearHasData("py1", 1);
+ const py2Blank = py2Removed || !yearHasData("py2", 2);
+ const allYearsBlank = cyBlank && py1Blank && py2Blank;
+ const uploadDisabled = status === 'New' && allYearsBlank ? !cyFile : !(cyFile || py1File || py2File);
  const handleImportClick = () => {
  if (isSourceLinked && activeTabIsSource) setSwitchToCsvOpen(true);
  else setShowImport(true);
