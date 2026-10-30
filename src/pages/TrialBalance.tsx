@@ -368,6 +368,8 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  });
  const activeYear = yearTabs.find(t => t.id === activeYearTab) ?? yearTabs[0];
  const activeTabIsSource = !!yearTabs.find(t => t.id === activeYearTab)?.isSource;
+ // Edit / Merge are allowed only when no year is a Source year
+ const allYearsCsv = !yearTabs.some(t => t.isSource || srcMeta.yearDataSources?.[t.id] === "source");
  // A year has TB data when: the engagement is a seeded demo, the year is set to Source,
  // or a TB was uploaded for that year. CSV years with no upload stay blank.
  const isSeededEngagement = !!engagementId && SEED_ENGAGEMENTS.some(s => s.id === engagementId);
@@ -545,9 +547,9 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  <Plug className="h-7 w-7 text-primary" />
  </div>
  <p className="text-sm font-semibold text-foreground">Integrate with Accounting Software</p>
- <p className="text-xs text-muted-foreground text-center">Instantly import data by login and linking to the accounting source</p>
- <Button size="sm" variant="outline" className="mt-auto gap-1.5" onClick={() => toast.info('Accounting source integration coming soon')}>
- <Plug className="h-4 w-4" /> Select Account Source
+ <p className="text-xs text-muted-foreground text-center">Set a year's data source to your accounting software in Edit Engagement.</p>
+ <Button size="sm" variant="outline" className="mt-auto gap-1.5" onClick={() => navigate(`/engagements/${engagementId}/edit`)}>
+ <Plug className="h-4 w-4" /> Change Data Source
  </Button>
  </div>
  </div>
@@ -766,10 +768,24 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  <Plus className="h-4 w-4 text-muted-foreground" />
  <span>Add</span>
  </DropdownMenuItem>
- <DropdownMenuItem className="flex items-center gap-2 cursor-pointer" disabled={activeTabIsSource}>
+ {allYearsCsv ? (
+ <DropdownMenuItem className="flex items-center gap-2 cursor-pointer">
  <GitMerge className="h-4 w-4 text-muted-foreground" />
  <span>Merge</span>
  </DropdownMenuItem>
+ ) : (
+ <Tooltip delayDuration={100}>
+ <TooltipTrigger asChild>
+ <div>
+ <DropdownMenuItem className="flex items-center gap-2" disabled>
+ <GitMerge className="h-4 w-4 text-muted-foreground" />
+ <span>Merge</span>
+ </DropdownMenuItem>
+ </div>
+ </TooltipTrigger>
+ <TooltipContent side="left" className="max-w-[240px] z-[200]">Merge is available only when all years are set to CSV. Change data sources in Edit Engagement.</TooltipContent>
+ </Tooltip>
+ )}
  <DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-destructive focus:text-destructive" disabled={activeTabIsSource}>
  <Trash2 className="h-4 w-4 text-destructive" />
  <span>Delete</span>
@@ -1014,7 +1030,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  </div>
  </td>
   <td className="px-2 py-2 text-center">
-  {!activeTabIsSource && (
+  {allYearsCsv && (
   <button className="text-muted-foreground hover:text-foreground">
   <MoreVertical className="h-3.5 w-3.5" />
   </button>
@@ -1023,13 +1039,13 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
   <td className="px-2 py-2"><Checkbox /></td>
   <td className="px-6 py-2 text-foreground whitespace-nowrap">{row.accNo}</td>
   <td className="px-6 py-2 text-foreground whitespace-nowrap">
-  {activeTabIsSource ? (
+  {!allYearsCsv ? (
   <span className="inline-flex items-center gap-1.5">
   <Tooltip delayDuration={100}>
   <TooltipTrigger asChild>
   <span tabIndex={0} aria-label="Locked" className="inline-flex cursor-help"><Lock className="h-3 w-3 text-foreground shrink-0" /></span>
   </TooltipTrigger>
-  <TooltipContent side="top" className="max-w-[240px] z-[200]">Locked on source-connected years to prevent duplication errors.</TooltipContent>
+  <TooltipContent side="top" className="max-w-[240px] z-[200]">Editing is available only when all years are set to CSV.</TooltipContent>
   </Tooltip>
   <span className="cursor-not-allowed">{row.description}</span>
   </span>
