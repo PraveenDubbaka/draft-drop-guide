@@ -391,12 +391,10 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  const cyUploadLocked = uploadLocked("cy", 0), py1UploadLocked = uploadLocked("py1", 1), py2UploadLocked = uploadLocked("py2", 2);
  const effCy = cyUploadLocked ? null : cyFile, effPy1 = py1UploadLocked ? null : py1File, effPy2 = py2UploadLocked ? null : py2File;
  const uploadDisabled = status === 'New' && allYearsBlank ? !effCy : !(effCy || effPy1 || effPy2);
- // New engagements with a CSV year that has no data yet land directly on the Import screen
+  // New engagements with no data in any year (all CSV, nothing uploaded) land directly on the Import screen
  const [importDismissed, setImportDismissed] = useState(false);
  useEffect(() => { setImportDismissed(false); }, [engagementId]);
- const csvYearMissingData = ([["cy", 0, cyBlank], ["py1", 1, py1Blank], ["py2", 2, py2Blank]] as const)
-  .some(([y, i, blank]) => !yearIsSource(y, i) && blank);
- const landOnImport = status === 'New' && csvYearMissingData && !importDismissed;
+ const landOnImport = status === 'New' && allYearsBlank && !importDismissed;
  const showImportView = showImport || landOnImport;
  const canLeaveImport = !allYearsBlank;
  const leaveImport = () => { if (!canLeaveImport) return; setShowImport(false); setImportDismissed(true); };
