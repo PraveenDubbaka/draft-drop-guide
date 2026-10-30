@@ -85,7 +85,7 @@ export function SourceConnectionModal({ open, onOpenChange, clientName, connecti
             </div>
             <div className="mt-5 flex items-start gap-2 rounded-[10px] border border-connection-warning/30 bg-connection-warning-surface p-3 text-connection-warning">
               <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
-              <p className="text-sm"><strong>Action Required:</strong> For any CSV engagements created for this client, go to Edit Engagement and update the Data Source to start pulling data.</p>
+              <p className="text-sm">For you to be able to pull data from this source, please go to Edit Engagement and change the data source.</p>
             </div>
           </>}
         </div>
