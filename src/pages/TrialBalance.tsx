@@ -382,7 +382,22 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  const py1Blank = py1Removed || !yearHasData("py1", 1);
  const py2Blank = py2Removed || !yearHasData("py2", 2);
  const allYearsBlank = cyBlank && py1Blank && py2Blank;
- const uploadDisabled = status === 'New' && allYearsBlank ? !cyFile : !(cyFile || py1File || py2File);
+ // Per-year upload availability on the Import screen: Source years are locked to their provider
+ const yearIsSource = (y: TbYear, i: number) => yearTabs[i].isSource || srcMeta.yearDataSources?.[y] === "source";
+ const yearProviderName = (y: TbYear) => sourceLabel(srcMeta.yearSourceProviders?.[y] ?? srcMeta.sourceProvider ?? configuredProvider);
+ const uploadLocked = (y: TbYear, i: number) => !pendingCsvSwitch && yearIsSource(y, i);
+ const cyUploadLocked = uploadLocked("cy", 0), py1UploadLocked = uploadLocked("py1", 1), py2UploadLocked = uploadLocked("py2", 2);
+ const effCy = cyUploadLocked ? null : cyFile, effPy1 = py1UploadLocked ? null : py1File, effPy2 = py2UploadLocked ? null : py2File;
+ const uploadDisabled = status === 'New' && allYearsBlank ? !effCy : !(effCy || effPy1 || effPy2);
+ // New engagements with a CSV year that has no data yet land directly on the Import screen
+ const [importDismissed, setImportDismissed] = useState(false);
+ useEffect(() => { setImportDismissed(false); }, [engagementId]);
+ const csvYearMissingData = ([["cy", 0, cyBlank], ["py1", 1, py1Blank], ["py2", 2, py2Blank]] as const)
+  .some(([y, i, blank]) => !yearIsSource(y, i) && blank);
+ const landOnImport = status === 'New' && csvYearMissingData && !importDismissed;
+ const showImportView = showImport || landOnImport;
+ const canLeaveImport = !allYearsBlank;
+ const leaveImport = () => { if (!canLeaveImport) return; setShowImport(false); setImportDismissed(true); };
  const handleImportClick = () => {
  if (isSourceLinked && activeTabIsSource) setSwitchToCsvOpen(true);
  else setShowImport(true);
