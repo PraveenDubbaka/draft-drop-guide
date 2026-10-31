@@ -324,7 +324,13 @@ export default function TrialBalance() {
   : null;
   // Source disconnected outside the app: engagement still linked, but the client's active connection differs / is gone
   const isExternallyDisconnected = !!configuredProvider && clientActiveProvider !== configuredProvider;
+  // A1: client has no active connection at all · A2: client is connected, but to a different provider
+  const hasNoActiveConnection = isExternallyDisconnected && !clientActiveProvider;
+  const hasProviderMismatch = isExternallyDisconnected && !!clientActiveProvider;
   const linkedProvider = isExternallyDisconnected ? null : configuredProvider;
+  // First Year of Operations: PY1 / PY2 don't exist — every year-based rule uses CY only
+  const isFyo = srcMeta.auditPeriodType === "First Year of Operations"
+   || (!!srcMeta.firstYearOfOperations && /^partial year$/i.test(srcMeta.auditPeriodType ?? ""));
   const isSourceLinked = !!linkedProvider;
    const disconnectedFrom: ClientSourceIntegration = isExternallyDisconnected
   ? configuredProvider
@@ -336,6 +342,8 @@ export default function TrialBalance() {
  const cyRemoved = isRemoved("cy"), py1Removed = isRemoved("py1"), py2Removed = isRemoved("py2");
  const removedYearLabels = [cyRemoved && "Current Year", py1Removed && "Prior Year 1", py2Removed && "Prior Year 2"].filter(Boolean) as string[];
  const dash = <span className="text-muted-foreground">—</span>;
+ // FYO: PY1 / PY2 don't exist for First Year of Operations
+ const noData = <span className="text-muted-foreground">No data</span>;
    const sourceStatusDisconnected = isExternallyDisconnected || !!disconnectedFrom;
 const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  if (!engagementId) return;
@@ -382,8 +390,8 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  });
  const activeYear = yearTabs.find(t => t.id === activeYearTab) ?? yearTabs[0];
  const activeTabIsSource = !!yearTabs.find(t => t.id === activeYearTab)?.isSource;
- // Edit / Merge are allowed only when no year is a Source year
- const allYearsCsv = !yearTabs.some(t => t.isSource || srcMeta.yearDataSources?.[t.id] === "source");
+ // Edit / Merge are allowed only when no year is a Source year (FYO: CY only)
+ const allYearsCsv = !(isFyo ? yearTabs.slice(0, 1) : yearTabs).some(t => t.isSource || srcMeta.yearDataSources?.[t.id] === "source");
  // A year has TB data when: the engagement is a seeded demo, the year is set to Source,
  // or a TB was uploaded for that year. CSV years with no upload stay blank.
  const isSeededEngagement = !!engagementId && SEED_ENGAGEMENTS.some(s => s.id === engagementId);
@@ -395,13 +403,15 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  const cyBlank = cyRemoved || !yearHasData("cy", 0);
  const py1Blank = py1Removed || !yearHasData("py1", 1);
  const py2Blank = py2Removed || !yearHasData("py2", 2);
- const allYearsBlank = cyBlank && py1Blank && py2Blank;
+ // FYO: PY1 / PY2 don't exist, so they never count as years needing an upload
+ const allYearsBlank = isFyo ? cyBlank : cyBlank && py1Blank && py2Blank;
  // Per-year upload availability on the Import screen: Source years are locked to their provider
  const yearIsSource = (y: TbYear, i: number) => yearTabs[i].isSource || srcMeta.yearDataSources?.[y] === "source";
  const yearProviderName = (y: TbYear) => sourceLabel(srcMeta.yearSourceProviders?.[y] ?? srcMeta.sourceProvider ?? configuredProvider);
  const uploadLocked = (y: TbYear, i: number) => !pendingCsvSwitch && yearIsSource(y, i);
  const cyUploadLocked = uploadLocked("cy", 0), py1UploadLocked = uploadLocked("py1", 1), py2UploadLocked = uploadLocked("py2", 2);
- const effCy = cyUploadLocked ? null : cyFile, effPy1 = py1UploadLocked ? null : py1File, effPy2 = py2UploadLocked ? null : py2File;
+ const effCy = cyUploadLocked ? null : cyFile;
+ const effPy1 = isFyo || py1UploadLocked ? null : py1File, effPy2 = isFyo || py2UploadLocked ? null : py2File;
  const uploadDisabled = status === 'New' && allYearsBlank ? !effCy : !(effCy || effPy1 || effPy2);
  // Years being re-imported: a file is selected for a CSV year that already has data
  const reimportYearLabels = ([
@@ -409,10 +419,10 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
   [effPy1, "py1", 1, py1Blank, "Prior Year 1"],
   [effPy2, "py2", 2, py2Blank, "Prior Year 2"],
  ] as const).filter(([file, y, i, blank]) => !!file && !blank && !yearIsSource(y, i)).map(([, , , , label]) => label);
-  // New engagements with no data in any year (all CSV, nothing uploaded) land directly on the Import screen
+  // Engagements with no data in any year (all CSV, nothing uploaded) land directly on the Import screen — any status
  const [importDismissed, setImportDismissed] = useState(false);
  useEffect(() => { setImportDismissed(false); }, [engagementId]);
- const landOnImport = status === 'New' && allYearsBlank && !importDismissed;
+ const landOnImport = allYearsBlank && !importDismissed;
  const showImportView = showImport || landOnImport;
  const canLeaveImport = !allYearsBlank;
  const leaveImport = () => { if (!canLeaveImport) return; setShowImport(false); setImportDismissed(true); };
@@ -603,7 +613,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
 
  // ── Import view ───────────────────────────────────────────────────────────
  if (showImportView) {
- const years = [cyYear, cyYear - 1, cyYear - 2];
+ const years = isFyo ? [cyYear] : [cyYear, cyYear - 1, cyYear - 2];
  const DropZone = ({ label, file, onFile, inputRef, lockedNote }: { label: string; file: File | null; onFile: (f: File | null) => void; inputRef: React.RefObject<HTMLInputElement>; lockedNote?: string }) => (
  <div className="flex items-start gap-6 py-4 border-b border-border last:border-b-0">
  <span className={`w-44 shrink-0 text-sm font-medium pt-4 ${lockedNote ? 'text-muted-foreground' : 'text-foreground'}`}>{label}</span>
@@ -703,8 +713,12 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  {/* Upload zones */}
  <div className="bg-card border border-border rounded-xl p-6">
  <DropZone label="Current Year (CY) Trial Balance" file={effCy} onFile={setCyFile} inputRef={cyInputRef} lockedNote={lockedNoteFor("cy", cyUploadLocked)} />
- <DropZone label="Prior Year 1 (PY1) Trial Balance" file={effPy1} onFile={setPy1File} inputRef={py1InputRef} lockedNote={lockedNoteFor("py1", py1UploadLocked)} />
- <DropZone label="Prior Year 2 (PY2) Trial Balance" file={effPy2} onFile={setPy2File} inputRef={py2InputRef} lockedNote={lockedNoteFor("py2", py2UploadLocked)} />
+ {!isFyo && (
+  <>
+   <DropZone label="Prior Year 1 (PY1) Trial Balance" file={effPy1} onFile={setPy1File} inputRef={py1InputRef} lockedNote={lockedNoteFor("py1", py1UploadLocked)} />
+   <DropZone label="Prior Year 2 (PY2) Trial Balance" file={effPy2} onFile={setPy2File} inputRef={py2InputRef} lockedNote={lockedNoteFor("py2", py2UploadLocked)} />
+  </>
+ )}
  <div className="mt-4">
  <Button className="w-full gap-1.5" disabled={uploadDisabled} onClick={handleUpload}>
  {isUploading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
@@ -865,10 +879,21 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
   </TooltipTrigger>
   <TooltipContent side="left" className="max-w-[240px] z-[200]">All years are connected to an accounting source. To import, set a year to CSV in Edit Engagement.</TooltipContent>
   </Tooltip>
+  ) : isExternallyDisconnected ? (
+  <Tooltip delayDuration={100}>
+  <TooltipTrigger asChild>
+  <div>
+   <DropdownMenuItem className="flex items-center gap-2" disabled>
+  <Upload className="h-4 w-4 text-muted-foreground" />
+  <span>Import</span>
+  </DropdownMenuItem>
+  </div>
+  </TooltipTrigger>
+  <TooltipContent side="left" className="max-w-[240px] z-[200]">Reconnect the source or switch to CSV to import.</TooltipContent>
+  </Tooltip>
   ) : (
   <DropdownMenuItem
-  className="flex items-center gap-2 cursor-pointer"
-  disabled={isExternallyDisconnected}
+   className="flex items-center gap-2 cursor-pointer"
   onClick={handleImportClick}
   >
   <Upload className="h-4 w-4 text-muted-foreground" />
@@ -964,8 +989,17 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  )}
  {disconnectedFrom && (
  <div className="mx-6 mt-4 flex items-center justify-between gap-3 rounded-[10px] border border-amber-300 bg-amber-50 px-3 py-2">
- <span className="text-sm text-amber-800">{isExternallyDisconnected ? "Source connection inactive. Your data is unchanged. Go to Edit Engagement to reconnect or switch to CSV." : `This engagement is now CSV. Source connection is inactive. To reconnect to ${sourceLabel(disconnectedFrom)}, go to Edit Engagement.`}</span>
- <button type="button" className="text-sm font-medium text-[#1C63A6] hover:underline whitespace-nowrap" onClick={() => navigate(`/engagements/${engagementId}/edit`)}>Edit Engagement →</button>
+ <span className="text-sm text-amber-800">{hasNoActiveConnection
+  ? `No source connection found. Data shown is from the last pull from ${sourceLabel(configuredProvider)}. Reconnect on the Clients page, or switch to CSV in Edit Engagement.`
+  : hasProviderMismatch
+   ? `Your client's source connection has changed. Data shown is from ${sourceLabel(configuredProvider)}. Go to Edit Engagement to switch to the new source.`
+   : `This engagement is now CSV. Source connection is inactive. To reconnect to ${sourceLabel(disconnectedFrom)}, go to Edit Engagement.`}</span>
+ <div className="flex items-center gap-4 shrink-0">
+  {hasNoActiveConnection && (
+   <button type="button" className="text-sm font-medium text-[#1C63A6] hover:underline whitespace-nowrap" onClick={() => navigate("/clients")}>Go to Clients →</button>
+  )}
+  <button type="button" className="text-sm font-medium text-[#1C63A6] hover:underline whitespace-nowrap" onClick={() => navigate(`/engagements/${engagementId}/edit`)}>Edit Engagement →</button>
+ </div>
  </div>
  )}
  <AlertDialog open={switchToCsvOpen} onOpenChange={(o) => { setSwitchToCsvOpen(o); if (!o) setDisconnectText(""); }}>
@@ -1111,9 +1145,9 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  </button>}
  </td>
  <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{cyBlank ? dash : formatNumber(row.final)}</td>
- <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{py1Blank ? dash : formatNumber(row.py1)}</td>
+ <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{isFyo ? noData : py1Blank ? dash : formatNumber(row.py1)}</td>
  <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{cyBlank || py1Blank ? dash : row.changePct}</td>
- <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{py2Blank ? dash : row.py2}</td>
+ <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{isFyo ? noData : py2Blank ? dash : row.py2}</td>
  <td className="px-6 py-2 text-right whitespace-nowrap">
  <span className="text-link font-medium">{formatNumber(row.mapNo)}</span>
  </td>
@@ -1141,9 +1175,9 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{cyBlank ? dash : formatNumber(totals.original)}</td>
  <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{cyBlank ? dash : formatNumber(totals.adj)}</td>
  <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{cyBlank ? dash : formatNumber(totals.final)}</td>
- <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{py1Blank ? dash : formatNumber(totals.py1)}</td>
+ <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{isFyo ? noData : py1Blank ? dash : formatNumber(totals.py1)}</td>
  <td className="px-6 py-2"></td>
- <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{py2Blank ? dash : formatNumber(totals.py2)}</td>
+ <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{isFyo ? noData : py2Blank ? dash : formatNumber(totals.py2)}</td>
  <td colSpan={7}></td>
  </tr>
 
@@ -1154,9 +1188,9 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{cyBlank ? dash : formatNumber(netIncome.original)}</td>
  <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{cyBlank ? dash : formatNumber(netIncome.adj)}</td>
  <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{cyBlank ? dash : formatNumber(netIncome.final)}</td>
- <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{py1Blank ? dash : formatNumber(netIncome.py1)}</td>
+ <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{isFyo ? noData : py1Blank ? dash : formatNumber(netIncome.py1)}</td>
  <td className="px-6 py-2"></td>
- <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{py2Blank ? dash : netIncome.py2}</td>
+ <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{isFyo ? noData : py2Blank ? dash : netIncome.py2}</td>
  <td colSpan={7}></td>
  </tr>
  </tfoot>
