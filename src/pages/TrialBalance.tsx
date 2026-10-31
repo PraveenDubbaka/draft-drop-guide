@@ -1145,9 +1145,9 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  </button>}
  </td>
  <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{cyBlank ? dash : formatNumber(row.final)}</td>
- <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{py1Blank ? dash : formatNumber(row.py1)}</td>
+ <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{isFyo ? noData : py1Blank ? dash : formatNumber(row.py1)}</td>
  <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{cyBlank || py1Blank ? dash : row.changePct}</td>
- <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{py2Blank ? dash : row.py2}</td>
+ <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{isFyo ? noData : py2Blank ? dash : row.py2}</td>
  <td className="px-6 py-2 text-right whitespace-nowrap">
  <span className="text-link font-medium">{formatNumber(row.mapNo)}</span>
  </td>
@@ -1175,9 +1175,9 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{cyBlank ? dash : formatNumber(totals.original)}</td>
  <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{cyBlank ? dash : formatNumber(totals.adj)}</td>
  <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{cyBlank ? dash : formatNumber(totals.final)}</td>
- <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{py1Blank ? dash : formatNumber(totals.py1)}</td>
+ <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{isFyo ? noData : py1Blank ? dash : formatNumber(totals.py1)}</td>
  <td className="px-6 py-2"></td>
- <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{py2Blank ? dash : formatNumber(totals.py2)}</td>
+ <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{isFyo ? noData : py2Blank ? dash : formatNumber(totals.py2)}</td>
  <td colSpan={7}></td>
  </tr>
 
@@ -1188,9 +1188,9 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{cyBlank ? dash : formatNumber(netIncome.original)}</td>
  <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{cyBlank ? dash : formatNumber(netIncome.adj)}</td>
  <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{cyBlank ? dash : formatNumber(netIncome.final)}</td>
- <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{py1Blank ? dash : formatNumber(netIncome.py1)}</td>
+ <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{isFyo ? noData : py1Blank ? dash : formatNumber(netIncome.py1)}</td>
  <td className="px-6 py-2"></td>
- <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{py2Blank ? dash : netIncome.py2}</td>
+ <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{isFyo ? noData : py2Blank ? dash : netIncome.py2}</td>
  <td colSpan={7}></td>
  </tr>
  </tfoot>
