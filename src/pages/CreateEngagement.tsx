@@ -1214,6 +1214,20 @@ export default function CreateEngagement() {
  const isReconnectFlow = isEditMode && clientHasSourceConnection && originalDataSource === "csv" && dataSource === "source" && !!savedDisconnectedFrom;
  // Roll forward: Current Year pulls from source, prior years stay CSV
  const isRollForwardSource = isEditMode && !!editingMeta?.sourceRollForward;
+ // Roll forward: where a locked prior year came from (priorYearSources, else its saved per-year source)
+ const lockedYearSource = (k: "py1" | "py2"): "csv" | "nodata" | AccountingProvider => {
+   const pys = editingMeta?.priorYearSources?.[k];
+   if (pys) return pys;
+   return editingMeta?.yearDataSources?.[k] === "source"
+     ? (editingMeta?.yearSourceProviders?.[k] ?? editingMeta?.sourceProvider ?? "csv")
+     : "csv";
+ };
+ // Roll forward of a First Year of Operations file: PY2 is a "No data" year (business didn't exist)
+ const rfPy2NoData = isRollForwardSource && editingMeta?.priorYearSources?.py2 === "nodata";
+ // First locked prior year that pulled from a software (used when Partial year turns it to CSV)
+ const lockedPriorProvider: AccountingProvider | null = isRollForwardSource
+   ? ((["py1", "py2"] as const).map(k => lockedYearSource(k)).find(v => v !== "csv" && v !== "nodata") as AccountingProvider | undefined) ?? null
+   : null;
  // Years of data available in the connected source (demo) — drives the dynamic info alert
  const yearsAvailable = editingMeta?.sourceYearsAvailable ?? 3;
   const cyYear = parseInt(currentYearEnd.split("/")[2]) || 0;
@@ -1250,7 +1264,7 @@ const [ackText, setAckText] = useState("");
      if (isRollForwardSource) {
        const cyProv = editingMeta?.yearSourceProviders?.cy ?? editingMeta?.sourceProvider ?? p;
        const cy = editingMeta?.yearDataSources?.cy === "csv" ? "csv" : cyProv ? `source:${cyProv}` : "csv";
-       return [cy, "locked", "locked"];
+       return [cy, "locked", rfPy2NoData ? "nodata" : "locked"];
      }
      if (isEditMode) {
        const savedProvider = editingMeta?.sourceProvider ?? p;
@@ -1298,7 +1312,7 @@ const [ackText, setAckText] = useState("");
       // Keep the picked "not connected" software visible in the dropdown (save stays blocked)
       if (j === i) return v;
        // Full year: source years run in order from CY; roll-forward locked rows never change
-       if (!isFullYearPeriod || err || x === "locked") return x;
+       if (!isFullYearPeriod || err || x === "locked" || x === "nodata") return x;
        if (v.startsWith("source:") && j < i) return v;
        if (v === "csv" && j > i) return "csv";
        return x;
@@ -1311,6 +1325,11 @@ const [ackText, setAckText] = useState("");
      const o = originalYearSources[i];
      // Partial year locks every non-locked row to CSV, so a Source row becomes a switch to CSV
      const c = isSourceLockedStub && yearSources[i] !== "locked" ? "csv" : yearSources[i];
+     // Partial year on a roll forward also turns locked prior years to CSV
+     if (o === "locked" && c === "locked" && isSourceLockedStub && i > 0) {
+       const k = lockedYearSource(i === 1 ? "py1" : "py2");
+       return k !== "csv" && k !== "nodata" ? "toCsv" : null;
+     }
      if (!o || !c || o === c || o === "locked" || c === "locked") return null;
      if (o.startsWith("source:") && c === "csv") return "toCsv";
      if (o === "csv" && c.startsWith("source:") && c !== "source:none") return "toSource";
@@ -1428,6 +1447,7 @@ const [ackText, setAckText] = useState("");
    const yearSourceMix = (() => {
      let csv = 0, src = 0;
      for (let i = 0; i < 3; i++) {
+       if (rfPy2NoData && i === 2) continue;
        if (isRollForwardSource && i > 0) { src++; continue; }
        if (fooDerived && i > 0) continue;
        const v = yearSources[i] ?? "csv";
@@ -1456,18 +1476,20 @@ const [ackText, setAckText] = useState("");
     // Single red "No source connection found" error: never-connected Source selection or an externally disconnected saved source
     const showRedNoConnectionError = showNoConnectionError;
     // "Switching…" messages — while either is visible, the generic per-year source note is hidden
-    const showSwitchToCsvMessage = !showMismatchWarning && !!originalCyProvider && (
+    // Software the year(s) switching to CSV pulled from: CY's, else (Partial year on a roll forward) a locked prior year's
+    const switchFromProvider: AccountingProvider | null = originalCyProvider ?? (isSourceLockedStub ? lockedPriorProvider : null);
+    const showSwitchToCsvMessage = !showMismatchWarning && !!switchFromProvider && (
       (isSourceToCsvSwitch && !isSourceLockedStub)
-      // Edit: saved Source engagement switched to Partial Year (shown with the stub note)
-      || (isEditMode && isSourceLockedStub && originalDataSource === "source")
+      // Edit: saved Source engagement (or a roll forward with a Source prior year) switched to Partial Year (shown with the stub note)
+      || (isEditMode && isSourceLockedStub && (originalDataSource === "source" || !!lockedPriorProvider))
       // Edit/Roll Forward: saved Source, client disconnected, Current Year set to CSV
       || (isEditMode && !clientHasSourceConnection && !isSourceLockedStub && originalDataSource === "source" && yearChangeKind(0) === "toCsv")
     );
-    const switchToCsvMessage = showSwitchToCsvMessage && originalCyProvider ? (
+    const switchToCsvMessage = showSwitchToCsvMessage && switchFromProvider ? (
      <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
       <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
       <span className="text-sm text-amber-800 dark:text-amber-200">
-       {`Switching to CSV means data will no longer be pulled from ${sourceLabel(originalCyProvider)}.`}
+       {`Switching to CSV means data will no longer be pulled from ${sourceLabel(switchFromProvider)}.`}
       </span>
      </div>
     ) : null;
@@ -1480,17 +1502,10 @@ const [ackText, setAckText] = useState("");
     const isRollForwardNoSource = isRollForwardSource && !clientHasSourceConnection;
     const rollForwardPriorProvider: AccountingProvider = savedDisconnectedFrom ?? savedSourceProvider
       ?? (clientSourceIntegration === "quickbooks" ? "xero" : "quickbooks");
-    // Roll forward: where a locked prior year came from (priorYearSources, else its saved per-year source)
-    const lockedYearSource = (k: "py1" | "py2"): "csv" | AccountingProvider => {
-      const pys = editingMeta?.priorYearSources?.[k];
-      if (pys) return pys;
-      return editingMeta?.yearDataSources?.[k] === "source"
-        ? (editingMeta?.yearSourceProviders?.[k] ?? editingMeta?.sourceProvider ?? "csv")
-        : "csv";
-    };
     const lockedYearLabel = (k: "py1" | "py2") => {
       const v = lockedYearSource(k);
-      return v === "csv" ? "CSV / Excel / PDF · Prior year" : `${sourceLabel(v)} · Prior year`;
+      // Partial year turns every year to CSV, including locked prior years
+      return v === "csv" || v === "nodata" || isSourceLockedStub ? "CSV / Excel / PDF · Prior year" : `${sourceLabel(v)} · Prior year`;
     };
     // Year selection (CY locked; PY1/PY2 optional, in order)
     const originalSourceYears = originalDataSource === "source" ? (editingMeta?.sourceYears ?? 1) : 0;
@@ -1524,11 +1539,12 @@ const performSave = () => {
    const isSourceRow = (v?: string) => !!v && v.startsWith("source:") && v !== "source:none";
    const YEAR_KEYS = ["cy", "py1", "py2"] as const;
    // Locked roll-forward rows keep the source they inherited from last year
-   const lockedKind = (i: number) => lockedYearSource(YEAR_KEYS[i] as "py1" | "py2");
+   // Partial year saves every year as CSV, including locked prior years
+   const lockedKind = (i: number) => (isSourceLockedStub ? "csv" : lockedYearSource(YEAR_KEYS[i] as "py1" | "py2"));
    const rowKind = (v: string | undefined, i: number): "csv" | "source" =>
-     v === "locked" ? (lockedKind(i) === "csv" ? "csv" : "source") : (v && v.startsWith("source:") ? "source" : "csv");
+     v === "locked" ? (lockedKind(i) === "csv" || lockedKind(i) === "nodata" ? "csv" : "source") : (v && v.startsWith("source:") ? "source" : "csv");
    const rowProvider = (v: string | undefined, i: number): AccountingProvider | undefined => {
-     if (v === "locked") { const k = lockedKind(i); return k === "csv" ? undefined : k; }
+     if (v === "locked") { const k = lockedKind(i); return k === "csv" || k === "nodata" ? undefined : k; }
      return isSourceRow(v) ? (v!.slice(7) as AccountingProvider) : undefined;
    };
    const firstSourceRow = effectiveYearSources.find(isSourceRow);
@@ -1567,7 +1583,9 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
  sourceYears: savedDataSource === "source" ? Math.max(1, effectiveYearSources.filter(isSourceRow).length) : undefined,
  teamMembers,
  sourceProvider: savedDataSource === "source" ? (firstSourceProvider ?? clientSourceIntegration ?? undefined) : (editingMeta?.sourceDisconnectedFrom ? editingMeta.sourceProvider : undefined),
- priorYearSources: editingMeta?.priorYearSources,
+ priorYearSources: isSourceLockedStub && editingMeta?.priorYearSources
+  ? { py1: "csv", py2: editingMeta.priorYearSources.py2 === "nodata" ? "nodata" : "csv" }
+  : editingMeta?.priorYearSources,
  sourceDisconnectedFrom: savedDataSource === "csv" ? editingMeta?.sourceDisconnectedFrom : undefined,
  sourceRollForward: editingMeta?.sourceRollForward,
  sourceYearsAvailable: editingMeta?.sourceYearsAvailable,
@@ -1816,10 +1834,10 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
  {[
  { label: "Current Year", required: true, start: currentYearStart, setStart: handleCurrentYearStartChange, end: currentYearEnd, setEnd: handleCurrentYearEndChange, disabled: false, note: "" },
  { label: "Prior Year 1", required: false, start: fooDerived ? "" : priorYear1Start, setStart: setPriorYear1Start, end: fooDerived ? "" : priorYear1End, setEnd: setPriorYear1End, disabled: isFullYearPeriod || fooDerived, note: fooDerived ? "No data for this period" : isFullYearPeriod ? "Auto-derived from Current Year dates" : "" },
- { label: "Prior Year 2", required: false, start: fooDerived ? "" : priorYear2Start, setStart: setPriorYear2Start, end: fooDerived ? "" : priorYear2End, setEnd: setPriorYear2End, disabled: isFullYearPeriod || fooDerived, note: fooDerived ? "No data for this period" : isFullYearPeriod ? "Auto-derived from Current Year dates" : "" },
+ { label: "Prior Year 2", required: false, start: fooDerived || rfPy2NoData ? "" : priorYear2Start, setStart: setPriorYear2Start, end: fooDerived || rfPy2NoData ? "" : priorYear2End, setEnd: setPriorYear2End, disabled: isFullYearPeriod || fooDerived || rfPy2NoData, note: fooDerived || rfPy2NoData ? "No data for this period" : isFullYearPeriod ? "Auto-derived from Current Year dates" : "" },
  ].filter((_, i) => !(fooDerived && i > 0)).map((row, i) => {
-  const locked = isRollForwardSource && i > 0;
-  const noData = fooDerived && i > 0;
+  const noData = (fooDerived && i > 0) || (rfPy2NoData && i === 2);
+  const locked = isRollForwardSource && i > 0 && !noData;
   const stubLocked = isSourceLockedStub;
   const val = yearSources[i] ?? "csv";
   const disconnectedP = yearDisconnectedProvider(i);
@@ -1828,7 +1846,7 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
    <div className={`grid grid-cols-[176px_minmax(0,176px)_minmax(0,176px)_minmax(200px,320px)] gap-4 items-start ${i === 0 ? "mt-4" : ""}`}>
     <div className="flex flex-col gap-1">
      <span className="text-xs font-medium text-foreground opacity-0" aria-hidden="true">Period</span>
-     <span className="flex h-9 items-center text-sm text-foreground whitespace-nowrap">{row.label}{row.required && <span className="text-destructive ml-0.5">*</span>}</span>
+     <span className={`flex h-9 items-center text-sm text-foreground whitespace-nowrap ${noData ? "opacity-60" : ""}`}>{row.label}{row.required && <span className="text-destructive ml-0.5">*</span>}</span>
     </div>
     <div className={row.disabled ? "opacity-60" : ""}>
      <DateField label="Start Date" value={row.start} onChange={row.setStart} disabled={row.disabled} />
