@@ -178,8 +178,9 @@ export type EngagementMeta = {
  sourceYears?: number; // 1 = CY only, 2 = CY + PY1, 3 = all years connected to source
  sourceDisconnectedFrom?: "xero" | "quickbooks" | "sage"; // set when a CSV import disconnected a source engagement
  sourceRollForward?: boolean; // roll forward: CY from source, prior years stay CSV
- /** Roll forward: where each locked prior year came from (last year's CY → PY1, last year's PY1 → PY2). */
- priorYearSources?: { py1: YearSourceKind; py2: YearSourceKind };
+ /** Roll forward: where each locked prior year came from (last year's CY → PY1, last year's PY1 → PY2).
+  *  py2 is "nodata" when last year was the entity's First Year of Operations (no year before it). */
+ priorYearSources?: { py1: YearSourceKind; py2: YearSourceKind | "nodata" };
  sourceYearsAvailable?: number; // years of data available in the source (demo)
  sourceProvider?: "xero" | "quickbooks" | "sage"; // which accounting source the engagement is linked to
  teamMembers?: {
@@ -213,6 +214,11 @@ function bumpLastYear(s: string, n = 1): string {
  return s.replace(LAST_YEAR_RE, (y) => String(Number(y) + n));
 }
 
+function toMdY(d: Date): string {
+ const pad = (n: number) => String(n).padStart(2, "0");
+ return `${pad(d.getMonth() + 1)}/${pad(d.getDate())}/${d.getFullYear()}`;
+}
+
 function nowDateCreated(): string {
  const now = new Date();
  return now.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) +
@@ -235,8 +241,15 @@ export function createRollForward(
  // Last year's source per year
  const lastYear = (y: "cy" | "py1" | "py2"): YearSourceKind =>
   m.yearDataSources?.[y] === "source" ? (m.yearSourceProviders?.[y] ?? m.sourceProvider ?? "csv") : "csv";
+ // Last year was First Year of Operations / Partial year → this year is a normal 12-month Full year
+ const srcIsFyo = m.auditPeriodType === "First Year of Operations"
+  || (!!m.firstYearOfOperations && /^partial year$/i.test(m.auditPeriodType ?? ""));
+ const srcIsPartial = !srcIsFyo && /^partial year$/i.test(m.auditPeriodType ?? "");
  const py1: YearSourceKind = lastYear("cy");
- const py2: YearSourceKind = m.sourceRollForward && m.priorYearSources?.py1 ? m.priorYearSources.py1 : lastYear("py1");
+ // FYO: the business didn't exist two years back → PY2 is a "No data" year
+ const py2: YearSourceKind | "nodata" = srcIsFyo
+  ? "nodata"
+  : m.sourceRollForward && m.priorYearSources?.py1 ? m.priorYearSources.py1 : lastYear("py1");
  const cyKind: "csv" | "source" = clientConnection ? "source" : "csv";
 
  // New ID: bump the last year, de-duplicate with -2, -3, …
@@ -255,11 +268,24 @@ export function createRollForward(
   dateCreated: nowDateCreated(),
  };
 
- const kind = (v: YearSourceKind): "csv" | "source" => (v === "csv" ? "csv" : "source");
+ const kind = (v: YearSourceKind | "nodata"): "csv" | "source" => (v === "csv" || v === "nodata" ? "csv" : "source");
  const yearSourceProviders: NonNullable<EngagementMeta["yearSourceProviders"]> = {};
  if (cyKind === "source" && clientConnection) yearSourceProviders.cy = clientConnection;
  if (py1 !== "csv") yearSourceProviders.py1 = py1;
- if (py2 !== "csv") yearSourceProviders.py2 = py2;
+ if (py2 !== "csv" && py2 !== "nodata") yearSourceProviders.py2 = py2;
+
+ // Period: FYO / Partial year roll into a Full year = the 12 months ending on the new year-end
+ const resetToFullYear = srcIsFyo || srcIsPartial;
+ let periodStart = m.periodStart ? bumpLastYear(m.periodStart) : undefined;
+ let periodEnd = m.periodEnd ? bumpLastYear(m.periodEnd) : undefined;
+ if (resetToFullYear) {
+  const end = new Date(periodEnd ?? record.yearEnd);
+  if (!isNaN(end.getTime())) {
+   const start = new Date(end.getFullYear() - 1, end.getMonth(), end.getDate() + 1);
+   periodStart = toMdY(start);
+   periodEnd = toMdY(end);
+  }
+ }
 
  const meta: EngagementMeta = {
   firstYearAudit: record.firstYearAudit,
@@ -268,9 +294,9 @@ export function createRollForward(
   accountingFramework: m.accountingFramework,
   budget: m.budget,
   teamMembers: m.teamMembers ? m.teamMembers.map((t) => ({ ...t })) : undefined,
-  auditPeriodType: m.auditPeriodType,
-  periodStart: m.periodStart ? bumpLastYear(m.periodStart) : undefined,
-  periodEnd: m.periodEnd ? bumpLastYear(m.periodEnd) : undefined,
+  auditPeriodType: resetToFullYear ? (src.type === "Audit (AUD)" ? "Full Year" : "Full year") : m.auditPeriodType,
+  periodStart,
+  periodEnd,
   sourceRollForward: true,
   dataSource: cyKind,
   sourceProvider: clientConnection ?? undefined,

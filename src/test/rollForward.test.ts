@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { createRollForward, getEngagementMeta, loadEngagements, saveEngagements } from "@/store/engagementsStore";
+import { createRollForward, getEngagementMeta, loadEngagements, saveEngagements, setEngagementMeta } from "@/store/engagementsStore";
 
 describe("createRollForward", () => {
   beforeEach(() => localStorage.clear());
@@ -33,6 +33,48 @@ describe("createRollForward", () => {
     const m = getEngagementMeta(r.id);
     expect(m.dataSource).toBe("csv");
     expect(m.yearDataSources).toEqual({ cy: "csv", py1: "csv", py2: "csv" });
+    expect(m.priorYearSources).toEqual({ py1: "csv", py2: "csv" });
+  });
+
+  it("First Year of Operations rolls into a Full year: 12-month CY, PY1 = last CY, PY2 = No data", () => {
+    setEngagementMeta("COM-NEW-Dec312024", {
+      firstYearAudit: false, dataSource: "source", sourceProvider: "quickbooks",
+      auditPeriodType: "First Year of Operations", firstYearOfOperations: true,
+      periodStart: "03/15/2024", periodEnd: "12/31/2024",
+      yearDataSources: { cy: "source", py1: "csv", py2: "csv" }, yearSourceProviders: { cy: "quickbooks" },
+    });
+    const r = createRollForward("COM-NEW-Dec312024", "quickbooks")!;
+    const m = getEngagementMeta(r.id);
+    expect(m.auditPeriodType).toBe("Full year");
+    expect(m.firstYearOfOperations).toBeUndefined();
+    expect(m.periodStart).toBe("01/01/2025");
+    expect(m.periodEnd).toBe("12/31/2025");
+    expect(m.priorYearSources).toEqual({ py1: "quickbooks", py2: "nodata" });
+    expect(m.yearSourceProviders?.py2).toBeUndefined();
+  });
+
+  it("rolling a rolled-forward FYO file again: PY1 = last CY, PY2 = last PY1", () => {
+    setEngagementMeta("COM-NEW-Dec312024", {
+      firstYearAudit: false, dataSource: "csv", auditPeriodType: "Full year", sourceRollForward: true,
+      periodStart: "01/01/2024", periodEnd: "12/31/2024",
+      priorYearSources: { py1: "csv", py2: "nodata" },
+      yearDataSources: { cy: "csv", py1: "csv", py2: "csv" },
+    });
+    const r = createRollForward("COM-NEW-Dec312024", null)!;
+    expect(getEngagementMeta(r.id).priorYearSources).toEqual({ py1: "csv", py2: "csv" });
+  });
+
+  it("Partial year rolls into a Full year with the 12 months ending on the new year-end", () => {
+    setEngagementMeta("COM-NEW-Dec312024", {
+      firstYearAudit: false, dataSource: "csv", auditPeriodType: "Partial year",
+      periodStart: "04/01/2024", periodEnd: "12/31/2024",
+    });
+    const r = createRollForward("COM-NEW-Dec312024", "xero")!;
+    const m = getEngagementMeta(r.id);
+    expect(m.auditPeriodType).toBe("Full year");
+    expect(m.periodStart).toBe("01/01/2025");
+    expect(m.periodEnd).toBe("12/31/2025");
+    expect(m.yearDataSources?.cy).toBe("source");
     expect(m.priorYearSources).toEqual({ py1: "csv", py2: "csv" });
   });
 });
