@@ -331,6 +331,8 @@ export default function TrialBalance() {
   // First Year of Operations: PY1 / PY2 don't exist — every year-based rule uses CY only
   const isFyo = srcMeta.auditPeriodType === "First Year of Operations"
    || (!!srcMeta.firstYearOfOperations && /^partial year$/i.test(srcMeta.auditPeriodType ?? ""));
+  // Roll forward of a First Year of Operations file: PY2 is a "No data" year (can't be imported or refreshed)
+  const py2NoData = !!srcMeta.sourceRollForward && srcMeta.priorYearSources?.py2 === "nodata";
   const isSourceLinked = !!linkedProvider;
    const disconnectedFrom: ClientSourceIntegration = isExternallyDisconnected
   ? configuredProvider
@@ -391,7 +393,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  const activeYear = yearTabs.find(t => t.id === activeYearTab) ?? yearTabs[0];
  const activeTabIsSource = !!yearTabs.find(t => t.id === activeYearTab)?.isSource;
  // Edit / Merge are allowed only when no year is a Source year (FYO: CY only)
- const allYearsCsv = !(isFyo ? yearTabs.slice(0, 1) : yearTabs).some(t => t.isSource || srcMeta.yearDataSources?.[t.id] === "source");
+ const allYearsCsv = !(isFyo ? yearTabs.slice(0, 1) : py2NoData ? yearTabs.slice(0, 2) : yearTabs).some(t => t.isSource || srcMeta.yearDataSources?.[t.id] === "source");
  // A year has TB data when: the engagement is a seeded demo, the year is set to Source,
  // or a TB was uploaded for that year. CSV years with no upload stay blank.
  const isSeededEngagement = !!engagementId && SEED_ENGAGEMENTS.some(s => s.id === engagementId);
@@ -404,14 +406,14 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  const py1Blank = py1Removed || !yearHasData("py1", 1);
  const py2Blank = py2Removed || !yearHasData("py2", 2);
  // FYO: PY1 / PY2 don't exist, so they never count as years needing an upload
- const allYearsBlank = isFyo ? cyBlank : cyBlank && py1Blank && py2Blank;
+ const allYearsBlank = isFyo ? cyBlank : py2NoData ? cyBlank && py1Blank : cyBlank && py1Blank && py2Blank;
  // Per-year upload availability on the Import screen: Source years are locked to their provider
  const yearIsSource = (y: TbYear, i: number) => yearTabs[i].isSource || srcMeta.yearDataSources?.[y] === "source";
  const yearProviderName = (y: TbYear) => sourceLabel(srcMeta.yearSourceProviders?.[y] ?? srcMeta.sourceProvider ?? configuredProvider);
  const uploadLocked = (y: TbYear, i: number) => !pendingCsvSwitch && yearIsSource(y, i);
  const cyUploadLocked = uploadLocked("cy", 0), py1UploadLocked = uploadLocked("py1", 1), py2UploadLocked = uploadLocked("py2", 2);
  const effCy = cyUploadLocked ? null : cyFile;
- const effPy1 = isFyo || py1UploadLocked ? null : py1File, effPy2 = isFyo || py2UploadLocked ? null : py2File;
+ const effPy1 = isFyo || py1UploadLocked ? null : py1File, effPy2 = isFyo || py2NoData || py2UploadLocked ? null : py2File;
  const uploadDisabled = status === 'New' && allYearsBlank ? !effCy : !(effCy || effPy1 || effPy2);
  // Years being re-imported: a file is selected for a CSV year that already has data
  const reimportYearLabels = ([
@@ -433,7 +435,24 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
   updateEngagement(engagementId, { status: 'In Progress', statusVariant: 'inProgress' });
  }, [engagementId, isSeededEngagement, contextEng, status, pullsFromSource, updateEngagement]);
  // Import is available whenever at least one year is CSV, regardless of the selected year tab
- const allYearsSource = (["cy", "py1", "py2"] as TbYear[]).every((y, i) => yearIsSource(y, i));
+ const allYearsSource = ((py2NoData ? ["cy", "py1"] : ["cy", "py1", "py2"]) as TbYear[]).every((y, i) => yearIsSource(y, i));
+ // Roll forward: locked prior years on a software that isn't the client's active connection (stale, can't refresh).
+ // Years already covered by the "No source connection" / "connection has changed" banner are skipped.
+ const stalePriorYears = (() => {
+  if (!srcMeta.sourceRollForward) return [] as { provider: NonNullable<ClientSourceIntegration>; labels: string[] }[];
+  const groups = new Map<NonNullable<ClientSourceIntegration>, string[]>();
+  ([["py1", "Prior Year 1"], ["py2", "Prior Year 2"]] as const).forEach(([y, label]) => {
+   if (y === "py2" && py2NoData) return;
+   const pys = srcMeta.priorYearSources?.[y];
+   const p = (pys && pys !== "csv" && pys !== "nodata")
+    ? pys
+    : srcMeta.yearDataSources?.[y] === "source" ? (srcMeta.yearSourceProviders?.[y] ?? srcMeta.sourceProvider ?? null) : null;
+   if (!p || p === clientActiveProvider) return;
+   if (disconnectedFrom && p === configuredProvider) return;
+   groups.set(p, [...(groups.get(p) ?? []), label]);
+  });
+  return [...groups.entries()].map(([provider, labels]) => ({ provider, labels }));
+ })();
  const handleImportClick = () => {
  if (allYearsSource) return;
  setShowImport(true);
@@ -716,7 +735,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  {!isFyo && (
   <>
    <DropZone label="Prior Year 1 (PY1) Trial Balance" file={effPy1} onFile={setPy1File} inputRef={py1InputRef} lockedNote={lockedNoteFor("py1", py1UploadLocked)} />
-   <DropZone label="Prior Year 2 (PY2) Trial Balance" file={effPy2} onFile={setPy2File} inputRef={py2InputRef} lockedNote={lockedNoteFor("py2", py2UploadLocked)} />
+   <DropZone label="Prior Year 2 (PY2) Trial Balance" file={effPy2} onFile={setPy2File} inputRef={py2InputRef} lockedNote={py2NoData ? "No data for this period." : lockedNoteFor("py2", py2UploadLocked)} />
   </>
  )}
  <div className="mt-4">
@@ -799,7 +818,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  </Button>
  </DropdownMenuTrigger>
   <DropdownMenuContent align="start" className="w-auto min-w-72">
- {yearTabs.map((year) => (
+ {(isFyo ? yearTabs.slice(0, 1) : yearTabs).map((year) => (
   <DropdownMenuItem
    key={year.id}
    onClick={() => setActiveYearTab(year.id)}
@@ -925,7 +944,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  { id: "cy", label: "Current Year", idx: 0 },
  { id: "py1", label: "Prior Year 1", idx: 1 },
  { id: "py2", label: "Prior Year 2", idx: 2 },
- ] as const).map(opt => {
+ ] as const).filter(opt => !isFyo || opt.id === "cy").map(opt => {
  const enabled = isYearSource(opt.id, opt.idx);
  return (
  <label key={opt.id} className={`flex items-center gap-2 px-2 py-1 text-sm ${enabled ? "cursor-pointer" : "opacity-40 cursor-not-allowed"}`}>
@@ -987,6 +1006,11 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  <Button size="sm" variant="secondary" className="gap-1.5" onClick={() => setShowImport(true)}><Upload className="h-4 w-4" /> Import</Button>
  </div>
  )}
+ {stalePriorYears.map(({ provider, labels }) => (
+ <div key={provider} className="mx-6 mt-4 flex items-center justify-between gap-3 rounded-[10px] border border-amber-300 bg-amber-50 px-3 py-2">
+  <span className="text-sm text-amber-800">{`${sourceLabel(provider)} is disconnected for ${labels.join(" and ")}. Data shown is from the last pull and can't be refreshed.`}</span>
+ </div>
+ ))}
  {disconnectedFrom && (
  <div className="mx-6 mt-4 flex items-center justify-between gap-3 rounded-[10px] border border-amber-300 bg-amber-50 px-3 py-2">
  <span className="text-sm text-amber-800">{hasNoActiveConnection
@@ -1080,11 +1104,13 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  <th className="text-right px-6 py-3 text-xs font-semibold text-foreground whitespace-nowrap">Original</th>
  <th className="text-right px-6 py-3 text-xs font-semibold text-foreground whitespace-nowrap">Adj</th>
  <th className="text-right px-6 py-3 text-xs font-semibold text-foreground whitespace-nowrap">Final</th>
+ {!isFyo && <>
  <th className="text-right px-6 py-3 text-xs font-semibold text-foreground whitespace-nowrap">PY1</th>
  <th className="text-right px-6 py-3 text-xs font-semibold text-foreground whitespace-nowrap">
  Change (%) <ChevronDown className="inline h-3 w-3" />
  </th>
  <th className="text-right px-6 py-3 text-xs font-semibold text-foreground whitespace-nowrap">PY2</th>
+ </>}
  <th className="text-right px-6 py-3 text-xs font-semibold text-foreground whitespace-nowrap">Map No.</th>
  <th className="text-center px-6 py-3 text-xs font-semibold text-foreground whitespace-nowrap">LS</th>
  <th className="text-left px-6 py-3 text-xs font-semibold text-foreground whitespace-nowrap">Grouping</th>
@@ -1145,9 +1171,11 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  </button>}
  </td>
  <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{cyBlank ? dash : formatNumber(row.final)}</td>
- <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{isFyo ? noData : py1Blank ? dash : formatNumber(row.py1)}</td>
+ {!isFyo && <>
+ <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{py1Blank ? dash : formatNumber(row.py1)}</td>
  <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{cyBlank || py1Blank ? dash : row.changePct}</td>
- <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{isFyo ? noData : py2Blank ? dash : row.py2}</td>
+ <td className="px-6 py-2 text-right text-foreground whitespace-nowrap">{py2NoData ? noData : py2Blank ? dash : row.py2}</td>
+ </>}
  <td className="px-6 py-2 text-right whitespace-nowrap">
  <span className="text-link font-medium">{formatNumber(row.mapNo)}</span>
  </td>
@@ -1175,9 +1203,11 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{cyBlank ? dash : formatNumber(totals.original)}</td>
  <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{cyBlank ? dash : formatNumber(totals.adj)}</td>
  <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{cyBlank ? dash : formatNumber(totals.final)}</td>
- <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{isFyo ? noData : py1Blank ? dash : formatNumber(totals.py1)}</td>
+ {!isFyo && <>
+ <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{py1Blank ? dash : formatNumber(totals.py1)}</td>
  <td className="px-6 py-2"></td>
- <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{isFyo ? noData : py2Blank ? dash : formatNumber(totals.py2)}</td>
+ <td className="px-6 py-2 text-right font-semibold text-foreground whitespace-nowrap">{py2NoData ? noData : py2Blank ? dash : formatNumber(totals.py2)}</td>
+ </>}
  <td colSpan={7}></td>
  </tr>
 
@@ -1188,9 +1218,11 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{cyBlank ? dash : formatNumber(netIncome.original)}</td>
  <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{cyBlank ? dash : formatNumber(netIncome.adj)}</td>
  <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{cyBlank ? dash : formatNumber(netIncome.final)}</td>
- <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{isFyo ? noData : py1Blank ? dash : formatNumber(netIncome.py1)}</td>
+ {!isFyo && <>
+ <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{py1Blank ? dash : formatNumber(netIncome.py1)}</td>
  <td className="px-6 py-2"></td>
- <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{isFyo ? noData : py2Blank ? dash : netIncome.py2}</td>
+ <td className="px-6 py-2 text-right font-bold text-foreground whitespace-nowrap">{py2NoData ? noData : py2Blank ? dash : netIncome.py2}</td>
+ </>}
  <td colSpan={7}></td>
  </tr>
  </tfoot>
