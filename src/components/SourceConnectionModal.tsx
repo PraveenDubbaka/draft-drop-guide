@@ -14,11 +14,9 @@ interface SourceConnectionModalProps {
   onComplete?: () => void;
   initialStep?: "select" | "connected";
   initialProvider?: AccountingProvider | null;
-  /** Show the "go to Edit Engagement" hint — only when opened from the Clients page */
-  showEditEngagementHint?: boolean;
 }
 
-export function SourceConnectionModal({ open, onOpenChange, clientName, connectionName = clientName, engagementId, onComplete, initialStep, initialProvider, showEditEngagementHint = false }: SourceConnectionModalProps) {
+export function SourceConnectionModal({ open, onOpenChange, clientName, connectionName = clientName, engagementId, onComplete, initialStep, initialProvider }: SourceConnectionModalProps) {
   const [step, setStep] = useState<"select" | "loading" | "connected">("select");
   const [provider, setProvider] = useState<AccountingProvider>("quickbooks");
   const [justDisconnected, setJustDisconnected] = useState(false);
@@ -62,7 +60,7 @@ export function SourceConnectionModal({ open, onOpenChange, clientName, connecti
                 </Button>
               ))}
             </div>
-            {showEditEngagementHint && justDisconnected && <div className="mt-5 flex items-start gap-2 rounded-[10px] border border-connection-warning/30 bg-connection-warning-surface p-3 text-connection-warning">
+            {justDisconnected && <div className="mt-5 flex items-start gap-2 rounded-[10px] border border-connection-warning/30 bg-connection-warning-surface p-3 text-connection-warning">
               <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
               <p className="text-sm">Please go to Edit Engagement and change the data source for your engagements.</p>
             </div>}
@@ -85,7 +83,7 @@ export function SourceConnectionModal({ open, onOpenChange, clientName, connecti
                 onComplete?.();
               }}>Disconnect from {platform.name}</Button>
             </div>
-            {showEditEngagementHint && <div className="mt-5 flex items-start gap-2 rounded-[10px] border border-connection-warning/30 bg-connection-warning-surface p-3 text-connection-warning">
+            {<div className="mt-5 flex items-start gap-2 rounded-[10px] border border-connection-warning/30 bg-connection-warning-surface p-3 text-connection-warning">
               <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
               <p className="text-sm">Please go to Edit Engagement and change the data source for your engagements.</p>
             </div>}
