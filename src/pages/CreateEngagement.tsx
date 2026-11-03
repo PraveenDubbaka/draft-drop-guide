@@ -1245,17 +1245,13 @@ export default function CreateEngagement() {
       const [unconnectedYearsAction, setUnconnectedYearsAction] = useState<"keep" | "reset">("keep");
 const [ackText, setAckText] = useState("");
     const ackChecked = ackText.trim() === "DELETE";
-    const setAckChecked = (_v: boolean) => setAckText("");
    // Connecting to source defaults to all available years (user can only reduce)
-   useEffect(() => {
+    useEffect(() => {
      if (isEditMode && originalDataSource === "csv" && dataSource === "source") {
        setYearsChoice("all");
        setSourceYears(maxSourceYears);
      }
-     setAckChecked(false);
    }, [dataSource]);
-   useEffect(() => { setAckChecked(false); }, [sourceYears, hasSelectedActiveConnection]);
-   useEffect(() => { setAckChecked(false); }, [currentYearEnd]);
    // Per-year data source (V2): "csv" | "source:<provider>" | "locked"
    // Single source connection per client
    const activeProvider: AccountingProvider | null = clientSourceIntegration;
@@ -1310,7 +1306,6 @@ const [ackText, setAckText] = useState("");
     setYearErrors([false, false, false]);
   }, [clientSourceIntegration]);
   const setYearSource = (i: number, v: string) => {
-    setAckText("");
     const err = v === "source:none";
     setYearErrors(e => e.map((x, j) => (j === i ? err : x)));
     setYearSources(s => s.map((x, j) => {
@@ -1361,27 +1356,13 @@ const [ackText, setAckText] = useState("");
      const p = o.slice(7) as AccountingProvider;
      return p === activeProvider ? null : p;
    };
-   const joinYears = (l: string[]) => l.length <= 1 ? (l[0] ?? "") : `${l.slice(0, -1).join(", ")} and ${l[l.length - 1]}`;
    const visibleYearIdx = [0, 1, 2].filter(i => (!isFooPeriod || i < fyoChain) && !(rfPy2NoData && i === 2) && yearSources[i] !== "nodata");
-   const yearsWhere = (f: (i: number) => boolean) => visibleYearIdx.filter(f).map(i => YEAR_LABELS[i]);
-   const changedToSource = (() => {
-     const l = yearsWhere(i => yearChangeKind(i) === "toSource");
-     return l.length || !isReconnectFlow ? l : yearsWhere(i => !!yearSources[i]?.startsWith("source:"));
-   })();
-   const changedToCsv = isSourceLockedStub && isEditMode
-     ? (() => { const l = yearsWhere(i => yearChangeKind(i) === "toCsv"); return l.length ? l : yearsWhere(() => true); })()
-     : yearsWhere(i => yearChangeKind(i) === "toCsv");
-   const providerSwitchYears = (() => {
-     const l = yearsWhere(i => yearChangeKind(i) === "toOtherSource");
-     if (l.length || changedToSource.length || changedToCsv.length) return l;
-     return yearsWhere(i => !!yearSources[i]?.startsWith("source:"));
-   })();
-   const notAffectedFor = (affected: string[]) => visibleYearIdx.map(i => YEAR_LABELS[i]).filter(y => !affected.includes(y));
-   const notAffectedSentence = (affected: string[]) => { const n = notAffectedFor(affected); return n.length ? ` ${joinYears(n)} ${n.length === 1 ? "is" : "are"} not affected.` : ""; };
-   const thisThese = (l: string[]) => l.length === 1 ? "this year" : "these years";
    // Edit: changing the Current Year end date (any period type) resets the whole trial balance
    const yearEndChanged = isEditMode && (toMmDdYyyy(currentYearEnd) ?? currentYearEnd) !== initialCyEnd;
    const isCyToCsv = [0, 1, 2].some(i => yearChangeKind(i) !== null) || (isEditMode && hasSelectedActiveConnection && !!editingMeta?.sourceProvider && editingMeta.sourceProvider !== clientSourceIntegration);
+   const showDeleteBlock = isCyToCsv || yearEndChanged;
+   // Keep the typed DELETE while the red block stays visible; clear it once the block goes away
+   useEffect(() => { if (!showDeleteBlock) setAckText(""); }, [showDeleteBlock]);
 
  const applyFullYearPriors = (cyStart: string, cyEnd: string) => {
  setPriorYear1Start(shiftYearStr(cyStart, -1));
@@ -1517,7 +1498,7 @@ const [ackText, setAckText] = useState("");
      <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
       <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
       <span className="text-sm text-amber-800 dark:text-amber-200">
-       {`${joinYears(changedToCsv.length ? changedToCsv : visibleYearIdx.map(i => YEAR_LABELS[i]))} will switch to CSV. Data will no longer be pulled from ${sourceLabel(switchFromProvider)} for ${thisThese(changedToCsv.length ? changedToCsv : visibleYearIdx.map(String))}.${notAffectedSentence(changedToCsv.length ? changedToCsv : visibleYearIdx.map(i => YEAR_LABELS[i]))}`}
+       {`Years switched to CSV will no longer pull data from ${sourceLabel(switchFromProvider)}.`}
       </span>
      </div>
     ) : null;
@@ -1985,7 +1966,7 @@ yearSourceProviders: yearFields.yearSourceProviders,
   {showSwitchToSourceMessage && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-    <span className="text-sm text-amber-800 dark:text-amber-200">{`${joinYears(changedToSource)} will switch to ${sourceLabel(activeProvider as AccountingProvider)}. The CSV trial balance data for ${thisThese(changedToSource)} will be replaced with data pulled from ${sourceLabel(activeProvider as AccountingProvider)}.${notAffectedSentence(changedToSource)}`}</span>
+    <span className="text-sm text-amber-800 dark:text-amber-200">{`Years switched to ${sourceLabel(activeProvider as AccountingProvider)} will have their CSV trial balance data replaced with data pulled from ${sourceLabel(activeProvider as AccountingProvider)}.`}</span>
    </div>
   )}
  </>
@@ -2000,9 +1981,7 @@ yearSourceProviders: yearFields.yearSourceProviders,
    <XCircle className="h-4 w-4 text-red-500 shrink-0 mt-1" />
    <div className="min-w-0 flex-1">
     <p className="text-lg font-bold leading-snug text-red-700 dark:text-red-300">Please read carefully — THIS ACTION CANNOT BE UNDONE</p>
-    {(() => { const a = yearEndChanged ? visibleYearIdx.map(i => YEAR_LABELS[i]) : [...changedToSource, ...changedToCsv, ...providerSwitchYears].filter((y, i, arr) => arr.indexOf(y) === i); const n = yearEndChanged ? [] : notAffectedFor(a); return (
-     <p className="mt-1 text-sm text-red-800 dark:text-red-200">{`Applies to: ${joinYears(a)}.`}{n.length ? ` Not affected: ${joinYears(n)}.` : ""}</p>
-    ); })()}
+    <p className="mt-1 text-sm text-red-800 dark:text-red-200">{yearEndChanged ? "Applies to all years, because the period dates changed." : "Applies to the years whose data source was changed."}</p>
     <ul className="mt-2 space-y-1.5">
      {yearEndChanged && <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><Calendar className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Trial balance data for all years will be reset to the new period dates</span></li>}
      <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><FilePen className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Adjusting entries will be deleted</span></li>
