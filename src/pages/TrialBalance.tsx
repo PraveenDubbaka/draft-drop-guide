@@ -27,8 +27,7 @@ import { StyledCard } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { getEngagementMeta, setEngagementMeta, SEED_ENGAGEMENTS } from "@/store/engagementsStore";
-import { isYearOnProvider } from "@/lib/tbYearData";
-import { readUploadedYears, tbYearHasData, TB_UPLOADED_KEY, type TbYear } from "@/lib/tbYearData";
+import { isYearOnProvider, readUploadedYears, tbYearHasData, TB_UPLOADED_KEY, type TbYear } from "@/lib/tbYearData";
 import { sourceLabel, getClientSourceIntegration as getClientSourceIntegrationSafe, VISIBLE_ENGAGEMENT_IDS, type ClientSourceIntegration } from "@/lib/clientSource";
 import xeroLogoFull from "@/assets/xero-logo-full.svg";
 import { accountingProviders } from "@/lib/accountingProviders";
@@ -359,12 +358,6 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  };
  setRefreshOpen(false);
  toast.success(`Refreshed ${labels[years]} from ${sourceLabel(linkedProvider)}`);
- };
- // A year is Source (and refreshable) only if it is set to Source AND its provider is the linked provider
- const yearMatchesProvider = (y: "cy" | "py1" | "py2", provider: ClientSourceIntegration) => {
- const yds = srcMeta.yearDataSources;
- if (!provider || !yds) return false;
- return yds[y] === "source" && (srcMeta.yearSourceProviders?.[y] ?? srcMeta.sourceProvider) === provider;
  };
  // Roll-forward prior years also count when their inherited source (priorYearSources) is the linked provider
  const isYearSource = (y: "cy" | "py1" | "py2", idx: number) => {
