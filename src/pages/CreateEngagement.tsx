@@ -1255,6 +1255,7 @@ const [ackText, setAckText] = useState("");
      setAckChecked(false);
    }, [dataSource]);
    useEffect(() => { setAckChecked(false); }, [sourceYears, hasSelectedActiveConnection]);
+   useEffect(() => { setAckChecked(false); }, [currentYearEnd]);
    // Per-year data source (V2): "csv" | "source:<provider>" | "locked"
    // Single source connection per client
    const activeProvider: AccountingProvider | null = clientSourceIntegration;
@@ -1378,6 +1379,8 @@ const [ackText, setAckText] = useState("");
    const notAffectedFor = (affected: string[]) => visibleYearIdx.map(i => YEAR_LABELS[i]).filter(y => !affected.includes(y));
    const notAffectedSentence = (affected: string[]) => { const n = notAffectedFor(affected); return n.length ? ` ${joinYears(n)} ${n.length === 1 ? "is" : "are"} not affected.` : ""; };
    const thisThese = (l: string[]) => l.length === 1 ? "this year" : "these years";
+   // Edit: changing the Current Year end date (any period type) resets the whole trial balance
+   const yearEndChanged = isEditMode && (toMmDdYyyy(currentYearEnd) ?? currentYearEnd) !== initialCyEnd;
    const isCyToCsv = [0, 1, 2].some(i => yearChangeKind(i) !== null) || (isEditMode && hasSelectedActiveConnection && !!editingMeta?.sourceProvider && editingMeta.sourceProvider !== clientSourceIntegration);
 
  const applyFullYearPriors = (cyStart: string, cyEnd: string) => {
@@ -1608,6 +1611,11 @@ yearSourceProviders: yearFields.yearSourceProviders,
  sourceDisconnectedFrom: savedDataSource === "csv" ? editingMeta?.sourceDisconnectedFrom : undefined,
  sourceRollForward: yearFields.sourceRollForward,
  sourceYearsAvailable: editingMeta?.sourceYearsAvailable,
+ // Year end changed: existing CSV data is removed (Source years are pulled again for the new dates)
+ yearRemoveData: yearEndChanged
+  ? Object.fromEntries(visibleYearIdx.map(i => (["cy", "py1", "py2"] as const)[i]).filter(k => yearFields.yearDataSources?.[k] === "csv").map(k => [k, true]))
+  : undefined,
+ dataPulledAsOf: yearEndChanged ? undefined : editingMeta?.dataPulledAsOf,
   auditPeriodType: periodType,
   firstYearOfOperations: isFooPeriod ? true : undefined,
   fyoChainYear: isFooPeriod ? editingMeta?.fyoChainYear : undefined,
@@ -1986,16 +1994,17 @@ yearSourceProviders: yearFields.yearSourceProviders,
  </div>
 
 
- {isCyToCsv && (
+ {(isCyToCsv || yearEndChanged) && (
  <div className="rounded-[10px] border border-red-200 border-l-4 border-l-red-500 bg-red-50 dark:bg-red-950/30 px-3 py-2.5">
   <div className="flex items-start gap-2">
    <XCircle className="h-4 w-4 text-red-500 shrink-0 mt-1" />
    <div className="min-w-0 flex-1">
     <p className="text-lg font-bold leading-snug text-red-700 dark:text-red-300">Please read carefully — THIS ACTION CANNOT BE UNDONE</p>
-    {(() => { const a = [...changedToSource, ...changedToCsv, ...providerSwitchYears].filter((y, i, arr) => arr.indexOf(y) === i); const n = notAffectedFor(a); return (
+    {(() => { const a = yearEndChanged ? visibleYearIdx.map(i => YEAR_LABELS[i]) : [...changedToSource, ...changedToCsv, ...providerSwitchYears].filter((y, i, arr) => arr.indexOf(y) === i); const n = yearEndChanged ? [] : notAffectedFor(a); return (
      <p className="mt-1 text-sm text-red-800 dark:text-red-200">{`Applies to: ${joinYears(a)}.`}{n.length ? ` Not affected: ${joinYears(n)}.` : ""}</p>
     ); })()}
     <ul className="mt-2 space-y-1.5">
+     {yearEndChanged && <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><Calendar className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Trial balance data for all years will be reset to the new period dates</span></li>}
      <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><FilePen className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Adjusting entries will be deleted</span></li>
      <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><FolderPlus className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Manually added accounts will be deleted</span></li>
      <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><MessageSquareText className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Issues, comments and requests will be deleted</span></li>
@@ -2127,7 +2136,7 @@ yearSourceProviders: yearFields.yearSourceProviders,
  <X className="h-4 w-4" />
  Cancel
  </Button>
- <Button disabled={!isFormValid || showNoConnectionError || showMismatchWarning || (isCyToCsv && !ackChecked)} onClick={handleCreate}>
+ <Button disabled={!isFormValid || showNoConnectionError || showMismatchWarning || ((isCyToCsv || yearEndChanged) && !ackChecked)} onClick={handleCreate}>
  {isEditMode ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
  {isEditMode ? "Update Engagement" : "Create Engagement"}
  </Button>
