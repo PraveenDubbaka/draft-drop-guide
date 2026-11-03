@@ -36,7 +36,7 @@ describe("createRollForward", () => {
     expect(m.priorYearSources).toEqual({ py1: "csv", py2: "csv" });
   });
 
-  it("First Year of Operations rolls into a Full year: 12-month CY, PY1 = last CY, PY2 = No data", () => {
+  it("First Year of Operations (chain 1) rolls into FOO chain 2: 12-month CY, PY1 = last CY, PY2 = No data", () => {
     setEngagementMeta("COM-NEW-Dec312024", {
       firstYearAudit: false, dataSource: "source", sourceProvider: "quickbooks",
       auditPeriodType: "First Year of Operations", firstYearOfOperations: true,
@@ -45,12 +45,41 @@ describe("createRollForward", () => {
     });
     const r = createRollForward("COM-NEW-Dec312024", "quickbooks")!;
     const m = getEngagementMeta(r.id);
-    expect(m.auditPeriodType).toBe("Full year");
-    expect(m.firstYearOfOperations).toBeUndefined();
+    expect(m.auditPeriodType).toBe("First Year of Operations");
+    expect(m.firstYearOfOperations).toBe(true);
+    expect(m.fyoChainYear).toBe(2);
     expect(m.periodStart).toBe("01/01/2025");
     expect(m.periodEnd).toBe("12/31/2025");
     expect(m.priorYearSources).toEqual({ py1: "quickbooks", py2: "nodata" });
     expect(m.yearSourceProviders?.py2).toBeUndefined();
+  });
+
+  it("FOO chain 2 rolls into chain 3: PY2 inherits last year's PY1", () => {
+    setEngagementMeta("COM-NEW-Dec312024", {
+      firstYearAudit: false, dataSource: "source", sourceProvider: "quickbooks", sourceRollForward: true,
+      auditPeriodType: "First Year of Operations", firstYearOfOperations: true, fyoChainYear: 2,
+      periodStart: "01/01/2024", periodEnd: "12/31/2024",
+      priorYearSources: { py1: "quickbooks", py2: "nodata" },
+      yearDataSources: { cy: "source", py1: "source", py2: "csv" }, yearSourceProviders: { cy: "quickbooks", py1: "quickbooks" },
+    });
+    const m = getEngagementMeta(createRollForward("COM-NEW-Dec312024", "quickbooks")!.id);
+    expect(m.auditPeriodType).toBe("First Year of Operations");
+    expect(m.fyoChainYear).toBe(3);
+    expect(m.priorYearSources).toEqual({ py1: "quickbooks", py2: "quickbooks" });
+  });
+
+  it("FOO chain 3 rolls into a normal Full year without fyoChainYear", () => {
+    setEngagementMeta("COM-NEW-Dec312024", {
+      firstYearAudit: false, dataSource: "source", sourceProvider: "quickbooks", sourceRollForward: true,
+      auditPeriodType: "First Year of Operations", firstYearOfOperations: true, fyoChainYear: 3,
+      periodStart: "01/01/2024", periodEnd: "12/31/2024",
+      priorYearSources: { py1: "quickbooks", py2: "quickbooks" },
+      yearDataSources: { cy: "source", py1: "source", py2: "source" },
+    });
+    const m = getEngagementMeta(createRollForward("COM-NEW-Dec312024", "quickbooks")!.id);
+    expect(m.auditPeriodType).toBe("Full year");
+    expect(m.firstYearOfOperations).toBeUndefined();
+    expect(m.fyoChainYear).toBeUndefined();
   });
 
   it("rolling a rolled-forward FYO file again: PY1 = last CY, PY2 = last PY1", () => {
