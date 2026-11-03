@@ -27,6 +27,7 @@ import { StyledCard } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { getEngagementMeta, setEngagementMeta, SEED_ENGAGEMENTS } from "@/store/engagementsStore";
+import { isYearOnProvider } from "@/lib/tbYearData";
 import { readUploadedYears, tbYearHasData, TB_UPLOADED_KEY, type TbYear } from "@/lib/tbYearData";
 import { sourceLabel, getClientSourceIntegration as getClientSourceIntegrationSafe, VISIBLE_ENGAGEMENT_IDS, type ClientSourceIntegration } from "@/lib/clientSource";
 import xeroLogoFull from "@/assets/xero-logo-full.svg";
@@ -365,10 +366,10 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  if (!provider || !yds) return false;
  return yds[y] === "source" && (srcMeta.yearSourceProviders?.[y] ?? srcMeta.sourceProvider) === provider;
  };
+ // Roll-forward prior years also count when their inherited source (priorYearSources) is the linked provider
  const isYearSource = (y: "cy" | "py1" | "py2", idx: number) => {
  if (!isSourceLinked) return false;
- if (srcMeta.yearDataSources) return yearMatchesProvider(y, linkedProvider);
- return idx < sourceYearCount;
+ return isYearOnProvider(srcMeta, y, idx, linkedProvider, sourceYearCount);
  };
  const confirmRefreshYears = (years: ("cy" | "py1" | "py2")[]) => {
  if (!years.length) return;
@@ -386,13 +387,13 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  ] as const).map((t, i) => {
   const yearEnd = contextEng?.yearEnd || staticEng?.yearEnd || `Dec 31, ${cyYear}`;
   const date = yearEnd.replace(/\d{4}/, String(cyYear - i)).replace(',', '');
-  const isSource = configuredProvider
-   ? (srcMeta.yearDataSources ? yearMatchesProvider(t.id, configuredProvider) : i < sourceYearCount)
-   : false;
+  const isSource = isYearOnProvider(srcMeta, t.id, i, configuredProvider, sourceYearCount);
   return { ...t, date, isSource };
  });
  const activeYear = yearTabs.find(t => t.id === activeYearTab) ?? yearTabs[0];
  const activeTabIsSource = !!yearTabs.find(t => t.id === activeYearTab)?.isSource;
+ // Refresh is available whenever at least one visible year pulls from the linked provider
+ const anyYearRefreshable = (["cy", "py1", "py2"] as const).slice(0, visibleYearCount).some((y, i) => isYearSource(y, i));
  // Edit / Merge are allowed only when no year is a Source year (FYO: CY only)
  const allYearsCsv = !yearTabs.slice(0, visibleYearCount).some(t => t.isSource || srcMeta.yearDataSources?.[t.id] === "source");
  // A year has TB data when: the engagement is a seeded demo, the year is set to Source,
@@ -929,13 +930,13 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
 
  {/* Refresh button beside Actions */}
  {isSourceLinked || disconnectedFrom ? (
- <Popover open={refreshOpen} onOpenChange={(o) => { if (o) setRefreshChecked({ cy: isYearSource("cy", 0), py1: isYearSource("py1", 1), py2: isYearSource("py2", 2) }); setRefreshOpen(o); }}>
+ <Popover open={refreshOpen} onOpenChange={(o) => { if (o) setRefreshChecked({ cy: isYearSource("cy", 0), py1: visibleYearCount >= 2 && isYearSource("py1", 1), py2: visibleYearCount >= 3 && isYearSource("py2", 2) }); setRefreshOpen(o); }}>
  <PopoverTrigger asChild>
  <ExpandableIconButton
  variant="secondary"
  icon={<RefreshCw className="h-4 w-4" />}
  label={<span className="inline-flex items-center gap-1">Refresh<ChevronDown className="h-3 w-3" /></span>}
- disabled={!isSourceLinked || !activeTabIsSource}
+ disabled={!isSourceLinked || !anyYearRefreshable}
  />
  </PopoverTrigger>
  <PopoverContent align="end" className="w-56 p-3 z-[100]">
@@ -963,8 +964,8 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  variant="secondary"
  size="sm"
  className="mt-3"
- disabled={!(["cy", "py1", "py2"] as const).some((y, i) => isYearSource(y, i) && refreshChecked[y])}
- onClick={() => confirmRefreshYears((["cy", "py1", "py2"] as const).filter((y, i) => isYearSource(y, i) && refreshChecked[y]))}
+ disabled={!(["cy", "py1", "py2"] as const).some((y, i) => i < visibleYearCount && isYearSource(y, i) && refreshChecked[y])}
+ onClick={() => confirmRefreshYears((["cy", "py1", "py2"] as const).filter((y, i) => i < visibleYearCount && isYearSource(y, i) && refreshChecked[y]))}
  >
  Refresh
  </Button>
