@@ -27,7 +27,7 @@ import { StyledCard } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { getEngagementMeta, setEngagementMeta, SEED_ENGAGEMENTS } from "@/store/engagementsStore";
-import { isYearOnProvider, readUploadedYears, tbYearHasData, TB_UPLOADED_KEY, type TbYear } from "@/lib/tbYearData";
+import { isYearOnProvider, isFutureYearEnd as isFutureDate, parseDateOnly, todayMdY, readUploadedYears, tbYearHasData, TB_UPLOADED_KEY, type TbYear } from "@/lib/tbYearData";
 import { sourceLabel, getClientSourceIntegration as getClientSourceIntegrationSafe, VISIBLE_ENGAGEMENT_IDS, type ClientSourceIntegration } from "@/lib/clientSource";
 import xeroLogoFull from "@/assets/xero-logo-full.svg";
 import { accountingProviders } from "@/lib/accountingProviders";
@@ -348,8 +348,15 @@ export default function TrialBalance() {
  const removedYearLabels = [cyRemoved && "Current Year", py1Removed && "Prior Year 1", py2Removed && "Prior Year 2"].filter(Boolean) as string[];
  const dash = <span className="text-muted-foreground">—</span>;
    const sourceStatusDisconnected = isExternallyDisconnected || !!disconnectedFrom;
+// Refreshing the Current Year moves the "pulled as of" date to today
+ const stampPulledAsOf = () => {
+ if (!engagementId) return;
+ setEngagementMeta(engagementId, { ...getEngagementMeta(engagementId), dataPulledAsOf: todayMdY() });
+ setMetaVersion(v => v + 1);
+ };
 const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  if (!engagementId) return;
+ if (years === "cy" || years === "all") stampPulledAsOf();
  const labels: Record<typeof years, string> = {
  cy: "Current Year",
  py1: "Prior Year 1",
@@ -366,6 +373,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  };
  const confirmRefreshYears = (years: ("cy" | "py1" | "py2")[]) => {
  if (!years.length) return;
+ if (years.includes("cy")) stampPulledAsOf();
  const labels = { cy: "Current Year", py1: "Prior Year 1", py2: "Prior Year 2" } as const;
  setRefreshOpen(false);
  setRefreshChecked({ cy: false, py1: false, py2: false });
@@ -429,6 +437,22 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
   if (!engagementId || isSeededEngagement || !contextEng || status !== 'New' || !pullsFromSource) return;
   updateEngagement(engagementId, { status: 'In Progress', statusVariant: 'inProgress' });
  }, [engagementId, isSeededEngagement, contextEng, status, pullsFromSource, updateEngagement]);
+ // Future year end: the Current Year hasn't finished — data is shown as of the date it was pulled (nothing is blocked)
+ const cyYearEndStr = srcMeta.periodEnd || contextEng?.yearEnd || staticEng?.yearEnd;
+ const isFutureYearEnd = isFutureDate(cyYearEndStr);
+ const cyIsSourcePull = isYearSource("cy", 0);
+ useEffect(() => {
+  if (!engagementId || !isFutureYearEnd || !cyIsSourcePull || srcMeta.dataPulledAsOf) return;
+  setEngagementMeta(engagementId, { ...getEngagementMeta(engagementId), dataPulledAsOf: todayMdY() });
+  setMetaVersion(v => v + 1);
+ }, [engagementId, isFutureYearEnd, cyIsSourcePull, srcMeta.dataPulledAsOf]);
+ const fmtLong = (d: Date | null) => d ? d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
+ const cyYearEndLabel = fmtLong(parseDateOnly(cyYearEndStr));
+ const pulledAsOfDate = parseDateOnly(srcMeta.dataPulledAsOf) ?? new Date();
+ const pulledAsOfLabel = fmtLong(pulledAsOfDate);
+ const pulledAsOfShort = pulledAsOfDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+ const asOfBadge = <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-800 whitespace-nowrap">As of {pulledAsOfShort}</span>;
+ const showAsOfBadge = isFutureYearEnd && cyIsSourcePull;
  // Import is available whenever at least one year is CSV, regardless of the selected year tab
  const allYearsSource = ((["cy", "py1", "py2"] as TbYear[]).slice(0, visibleYearCount)).every((y, i) => yearIsSource(y, i));
  // Roll forward: locked prior years on a software that isn't the client's active connection (stale, can't refresh).
@@ -809,6 +833,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  <DropdownMenuTrigger asChild>
  <Button variant="secondary" size="sm" className="h-9 text-xs gap-1.5">
    <span className="whitespace-nowrap">{activeYear.date}</span>
+   {showAsOfBadge && activeYear.id === "cy" && asOfBadge}
  <ChevronDown className="h-3.5 w-3.5" />
  </Button>
  </DropdownMenuTrigger>
@@ -822,6 +847,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
    <span className="flex shrink-0 items-center gap-2">
      <span className="w-7 shrink-0 text-xs font-semibold text-muted-foreground whitespace-nowrap">{year.label.split(' ')[0]}</span>
      <span className="text-sm text-foreground whitespace-nowrap">{year.date}</span>
+     {showAsOfBadge && year.id === "cy" && asOfBadge}
    </span>
    <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium whitespace-nowrap">
     <span className={`h-1.5 w-1.5 rounded-full ${year.isSource ? "bg-emerald-500" : "bg-gray-400"}`} />
@@ -995,6 +1021,13 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  </div>
  </div>
 
+ {isFutureYearEnd && (
+ <div className="mx-6 mt-4 flex items-center justify-between gap-3 rounded-[10px] border border-blue-200 bg-blue-50 px-3 py-2">
+ <span className="text-sm text-blue-900">{cyIsSourcePull
+  ? `This year ends on ${cyYearEndLabel} and hasn't finished yet. Data is pulled as of ${pulledAsOfLabel}. The numbers will change each time you refresh.`
+  : `This year ends on ${cyYearEndLabel} and hasn't finished yet. Data shown is from the last import.`}</span>
+ </div>
+ )}
  {removedYearLabels.length > 0 && (
  <div className="mx-6 mt-4 flex items-center justify-between gap-3 rounded-[10px] border border-amber-300 bg-amber-50 px-3 py-2">
  <span className="text-sm text-amber-800">Existing data was removed for {removedYearLabels.join(" / ")}. Import a new trial balance for these years.</span>
