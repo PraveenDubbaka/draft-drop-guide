@@ -16,7 +16,7 @@ const META_KEY = (id: string) => `engagement-meta-${id}`;
 
 export const SEED_ENGAGEMENTS: EngagementRecord[] = [
   { id: "COM-NEW-Dec312024", client: "Cedar Point Logistics", type: "Compilation (COM)", yearEnd: "Dec 31, 2024", team: "View Assignees", status: "New", statusVariant: "new", hasRF: false, dateCreated: "Jan 13, 2026 09:00 AM", firstYearAudit: false },
-  { id: "COM-FYO-RF-Dec312025", client: "Harbor Freight", type: "Compilation (COM)", yearEnd: "Dec 31, 2025", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: true, dateCreated: "Jan 12, 2026 09:00 AM", firstYearAudit: false },
+  { id: "COM-FYO-RF-Dec312025", client: "Harbor Freight Logistics LLC", type: "Compilation (COM)", yearEnd: "Dec 31, 2025", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: true, dateCreated: "Jan 12, 2026 09:00 AM", firstYearAudit: false },
   { id: "COM-INPROGRESS-Dec312024", client: "Riverstone Capital", type: "Compilation (COM)", yearEnd: "Dec 31, 2024", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: true, dateCreated: "Jan 10, 2026 09:00 AM", firstYearAudit: false },
 ];
 
