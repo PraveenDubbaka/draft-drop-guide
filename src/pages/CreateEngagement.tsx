@@ -1507,7 +1507,7 @@ const [ackText, setAckText] = useState("");
      <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
       <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
       <span className="text-sm text-amber-800 dark:text-amber-200">
-       {`${joinYears(changedToCsv.length ? changedToCsv : visibleYearIdx.map(i => YEAR_LABELS[i]))} will switch to CSV. Data will no longer be pulled from ${sourceLabel(switchFromProvider)} for ${thisThese(changedToCsv.length ? changedToCsv : visibleYearIdx)}.${notAffectedSentence(changedToCsv.length ? changedToCsv : visibleYearIdx.map(i => YEAR_LABELS[i]))}`}
+       {`${joinYears(changedToCsv.length ? changedToCsv : visibleYearIdx.map(i => YEAR_LABELS[i]))} will switch to CSV. Data will no longer be pulled from ${sourceLabel(switchFromProvider)} for ${thisThese(changedToCsv.length ? changedToCsv : visibleYearIdx.map(String))}.${notAffectedSentence(changedToCsv.length ? changedToCsv : visibleYearIdx.map(i => YEAR_LABELS[i]))}`}
       </span>
      </div>
     ) : null;
