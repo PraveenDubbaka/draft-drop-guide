@@ -75,7 +75,9 @@ function seedDemoEngagementMeta() {
       const meta: EngagementMeta = raw ? JSON.parse(raw) : { firstYearAudit: false };
       // Respect a user-saved data source (Edit Engagement writes dataSource + yearDataSources);
       // only apply seed defaults when the user has never saved this engagement's data source.
-      if (meta.dataSource === undefined) {
+      // Saved via Edit Engagement at least once → keep the user's prior-year sources and period
+      const neverSaved = meta.dataSource === undefined;
+      if (neverSaved) {
         meta.dataSource = seed.dataSource;
         if (seed.sourceProvider) meta.sourceProvider = seed.sourceProvider; else delete meta.sourceProvider;
         delete meta.sourceDisconnectedFrom;
@@ -89,9 +91,11 @@ function seedDemoEngagementMeta() {
         if (seed.yearSourceProviders) meta.yearSourceProviders = seed.yearSourceProviders;
       }
       meta.sourceYearsAvailable = seed.sourceYearsAvailable ?? 3;
-      if (seed.priorYearSources) meta.priorYearSources = seed.priorYearSources;
+      if (seed.priorYearSources && (neverSaved || !meta.priorYearSources)) meta.priorYearSources = seed.priorYearSources;
       delete (meta as EngagementMeta & { priorYearProvider?: unknown }).priorYearProvider;
-      if (seed.periodType === 'stub') {
+      if (!neverSaved) {
+        // keep the saved period type / dates
+      } else if (seed.periodType === 'stub') {
         meta.auditPeriodType = 'Partial year';
         meta.firstYearOfOperations = !!seed.firstYearOfOperations;
         meta.periodStart = '04/01/2024';
