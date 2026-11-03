@@ -22,3 +22,23 @@ export function readUploadedYears(id: string | undefined): Record<TbYear, boolea
 export function tbYearHasData(opts: { isSeeded: boolean; isSource: boolean; uploaded: boolean }): boolean {
   return opts.isSeeded || opts.isSource || opts.uploaded;
 }
+
+type YearSourceMeta = {
+  sourceProvider?: string;
+  sourceRollForward?: boolean;
+  yearDataSources?: Partial<Record<TbYear, "csv" | "source">>;
+  yearSourceProviders?: Partial<Record<TbYear, string>>;
+  priorYearSources?: { py1?: string; py2?: string };
+};
+
+/**
+ * A year pulls from `provider` when it is set to Source with that provider, or — on a roll forward —
+ * when the locked prior year inherited that provider (priorYearSources). Without per-year sources,
+ * the first `sourceYearCount` years count as Source.
+ */
+export function isYearOnProvider(meta: YearSourceMeta, y: TbYear, idx: number, provider: string | null | undefined, sourceYearCount: number): boolean {
+  if (!provider) return false;
+  if (y !== "cy" && meta.sourceRollForward && meta.priorYearSources?.[y] === provider) return true;
+  if (meta.yearDataSources) return meta.yearDataSources[y] === "source" && (meta.yearSourceProviders?.[y] ?? meta.sourceProvider) === provider;
+  return idx < sourceYearCount;
+}

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { savedYearSources } from "@/lib/yearSourceSave";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useEngagements } from "@/store/EngagementsContext";
 import { type EngagementMeta, EngagementRecord, setEngagementMeta, getEngagementMeta, loadEngagements } from "@/store/engagementsStore";
@@ -1323,13 +1324,16 @@ const [ackText, setAckText] = useState("");
    };
    const YEAR_LABELS = ["Current Year", "Prior Year 1", "Prior Year 2"];
    const [originalYearSources] = useState<string[]>(initYearSources);
+   // Roll forward: Current Year switched Source → CSV turns every locked prior year to CSV too (data kept)
+   const rfCyToCsv = isRollForwardSource && !!originalYearSources[0]?.startsWith("source:") && yearSources[0] === "csv";
+   const priorYearsToCsv = isSourceLockedStub || rfCyToCsv;
    const yearChangeKind = (i: number): "toCsv" | "toSource" | "toOtherSource" | null => {
      if (!isEditMode) return null;
      const o = originalYearSources[i];
      // Partial year locks every non-locked row to CSV, so a Source row becomes a switch to CSV
      const c = isSourceLockedStub && yearSources[i] !== "locked" ? "csv" : yearSources[i];
      // Partial year on a roll forward also turns locked prior years to CSV
-     if (o === "locked" && c === "locked" && isSourceLockedStub && i > 0) {
+     if (o === "locked" && c === "locked" && priorYearsToCsv && i > 0) {
        const k = lockedYearSource(i === 1 ? "py1" : "py2");
        return k !== "csv" && k !== "nodata" ? "toCsv" : null;
      }
@@ -1526,7 +1530,7 @@ const [ackText, setAckText] = useState("");
     const lockedYearLabel = (k: "py1" | "py2") => {
       const v = lockedYearSource(k);
       // Partial year turns every year to CSV, including locked prior years
-      return v === "csv" || v === "nodata" || isSourceLockedStub ? "CSV / Excel / PDF · Prior year" : `${sourceLabel(v)} · Prior year`;
+      return v === "csv" || v === "nodata" || priorYearsToCsv ? "CSV / Excel / PDF · Prior year" : `${sourceLabel(v)} · Prior year`;
     };
     // Year selection (CY locked; PY1/PY2 optional, in order)
     const originalSourceYears = originalDataSource === "source" ? (editingMeta?.sourceYears ?? 1) : 0;
@@ -1558,16 +1562,12 @@ const performSave = () => {
    // Save what each row actually uses: Partial year forces every non-locked row to CSV
    const effectiveYearSources = isSourceLockedStub ? yearSources.map(v => (v === "locked" ? v : "csv")) : yearSources;
    const isSourceRow = (v?: string) => !!v && v.startsWith("source:") && v !== "source:none";
-   const YEAR_KEYS = ["cy", "py1", "py2"] as const;
-   // Locked roll-forward rows keep the source they inherited from last year
-   // Partial year saves every year as CSV, including locked prior years
-   const lockedKind = (i: number) => (isSourceLockedStub ? "csv" : lockedYearSource(YEAR_KEYS[i] as "py1" | "py2"));
-   const rowKind = (v: string | undefined, i: number): "csv" | "source" =>
-     v === "locked" ? (lockedKind(i) === "csv" || lockedKind(i) === "nodata" ? "csv" : "source") : (v && v.startsWith("source:") ? "source" : "csv");
-   const rowProvider = (v: string | undefined, i: number): AccountingProvider | undefined => {
-     if (v === "locked") { const k = lockedKind(i); return k === "csv" || k === "nodata" ? undefined : k; }
-     return isSourceRow(v) ? (v!.slice(7) as AccountingProvider) : undefined;
-   };
+   // Locked roll-forward rows keep the source they inherited from last year;
+   // Partial year / roll forward CY Source → CSV save every year as CSV, including locked prior years
+   const yearFields = savedYearSources({
+     rows: effectiveYearSources, lockedSource: lockedYearSource, priorToCsv: priorYearsToCsv,
+     priorYearSources: editingMeta?.priorYearSources, sourceRollForward: editingMeta?.sourceRollForward,
+   });
    const firstSourceRow = effectiveYearSources.find(isSourceRow);
    const firstSourceProvider = firstSourceRow ? (firstSourceRow.slice(7) as AccountingProvider) : undefined;
  const record: EngagementRecord = {
@@ -1599,16 +1599,14 @@ const performSave = () => {
  periodStart: currentYearStart,
  periodEnd: currentYearEnd,
 dataSource: savedDataSource,
-yearDataSources: { cy: rowKind(effectiveYearSources[0], 0), py1: rowKind(effectiveYearSources[1], 1), py2: rowKind(effectiveYearSources[2], 2) },
-yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(effectiveYearSources[i], i)]).filter(([, v]) => v)) as EngagementMeta["yearSourceProviders"],
+yearDataSources: yearFields.yearDataSources,
+yearSourceProviders: yearFields.yearSourceProviders,
  sourceYears: savedDataSource === "source" ? Math.max(1, effectiveYearSources.filter(isSourceRow).length) : undefined,
  teamMembers,
  sourceProvider: savedDataSource === "source" ? (firstSourceProvider ?? clientSourceIntegration ?? undefined) : (editingMeta?.sourceDisconnectedFrom ? editingMeta.sourceProvider : undefined),
- priorYearSources: isSourceLockedStub && editingMeta?.priorYearSources
-  ? { py1: "csv", py2: editingMeta.priorYearSources.py2 === "nodata" ? "nodata" : "csv" }
-  : editingMeta?.priorYearSources,
+ priorYearSources: yearFields.priorYearSources,
  sourceDisconnectedFrom: savedDataSource === "csv" ? editingMeta?.sourceDisconnectedFrom : undefined,
- sourceRollForward: editingMeta?.sourceRollForward,
+ sourceRollForward: yearFields.sourceRollForward,
  sourceYearsAvailable: editingMeta?.sourceYearsAvailable,
   auditPeriodType: periodType,
   firstYearOfOperations: isFooPeriod ? true : undefined,
