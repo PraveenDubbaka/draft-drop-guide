@@ -1207,6 +1207,9 @@ export default function CreateEngagement() {
   const isFooPeriod = periodType === "First Year of Operations";
   // Partial year periods are locked to CSV; First Year of Operations allows source
   const isSourceLockedStub = isStubPeriod;
+  // FOO roll-forward chain: 1 = FOO year (CY only), 2 = CY + PY1, 3 = all years; locked until all three are full years
+  const fyoChain = isFooPeriod ? (editingMeta?.fyoChainYear ?? 1) : 0;
+  const isFyoRolled = fyoChain >= 2;
  const clientSourceIntegration = resolveClientConnection();
  const clientHasSourceConnection = clientSourceIntegration !== null;
  // Engagement was disconnected from its source by a CSV import; switching back to Source reconnects it
@@ -1354,7 +1357,7 @@ const [ackText, setAckText] = useState("");
      return p === activeProvider ? null : p;
    };
    const joinYears = (l: string[]) => l.length <= 1 ? (l[0] ?? "") : `${l.slice(0, -1).join(", ")} and ${l[l.length - 1]}`;
-   const visibleYearIdx = [0, 1, 2].filter(i => !(isFooPeriod && i > 0) && yearSources[i] !== "nodata");
+   const visibleYearIdx = [0, 1, 2].filter(i => (!isFooPeriod || i < fyoChain) && !(rfPy2NoData && i === 2) && yearSources[i] !== "nodata");
    const yearsWhere = (f: (i: number) => boolean) => visibleYearIdx.filter(f).map(i => YEAR_LABELS[i]);
    const changedToSource = (() => {
      const l = yearsWhere(i => yearChangeKind(i) === "toSource");
@@ -1404,7 +1407,7 @@ const [ackText, setAckText] = useState("");
   };
 
   const [fooYearEnd, setFooYearEnd] = useState<string>(""); // MM/dd
-  const fooDerived = isFooPeriod;
+  const fooDerived = isFooPeriod && fyoChain === 1;
   // First Year of Operations: Current Year dates derive from the Year-End Date only (12 months ending on it)
   useEffect(() => {
     return; // FOO: dates entered manually
@@ -1609,6 +1612,7 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
  sourceYearsAvailable: editingMeta?.sourceYearsAvailable,
   auditPeriodType: periodType,
   firstYearOfOperations: isFooPeriod ? true : undefined,
+  fyoChainYear: isFooPeriod ? editingMeta?.fyoChainYear : undefined,
  annualizeInterim: isAudit && periodType === "Interim (6-month)" ? annualizeInterim : undefined,
  firstTimeAdoption: isAudit ? firstTimeAdoption : undefined,
  });
@@ -1840,20 +1844,21 @@ yearSourceProviders: Object.fromEntries(YEAR_KEYS.map((k, i) => [k, rowProvider(
  <div className="flex items-center gap-4 py-2.5">
  <span className="text-sm text-foreground w-44 shrink-0 whitespace-nowrap">Period Type<span className="text-destructive ml-0.5">*</span></span>
  <div className="flex-1 min-w-0 max-w-sm">
- <Select value={periodType} onValueChange={handlePeriodTypeChange}>
- <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select..." /></SelectTrigger>
+ <Select value={periodType} onValueChange={handlePeriodTypeChange} disabled={isFyoRolled}>
+ <SelectTrigger className={`h-9 text-sm ${isFyoRolled ? "opacity-60" : ""}`}><SelectValue placeholder="Select..." /></SelectTrigger>
  <SelectContent>
  {periodTypeOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
  </SelectContent>
  </Select>
+ {isFyoRolled && <p className="mt-1 text-xs text-muted-foreground">Locked until all three years are full years.</p>}
  </div>
  </div>
  {/* Year rows */}
  {[
- { label: "Current Year", required: true, start: currentYearStart, setStart: handleCurrentYearStartChange, end: currentYearEnd, setEnd: handleCurrentYearEndChange, disabled: false, note: "" },
- { label: "Prior Year 1", required: false, start: fooDerived ? "" : priorYear1Start, setStart: setPriorYear1Start, end: fooDerived ? "" : priorYear1End, setEnd: setPriorYear1End, disabled: isFullYearPeriod || fooDerived, note: fooDerived ? "No data for this period" : isFullYearPeriod ? "Auto-derived from Current Year dates" : "" },
- { label: "Prior Year 2", required: false, start: fooDerived || rfPy2NoData ? "" : priorYear2Start, setStart: setPriorYear2Start, end: fooDerived || rfPy2NoData ? "" : priorYear2End, setEnd: setPriorYear2End, disabled: isFullYearPeriod || fooDerived || rfPy2NoData, note: fooDerived || rfPy2NoData ? "No data for this period" : isFullYearPeriod ? "Auto-derived from Current Year dates" : "" },
- ].filter((_, i) => !(fooDerived && i > 0)).map((row, i) => {
+ { label: "Current Year", required: true, start: currentYearStart, setStart: handleCurrentYearStartChange, end: currentYearEnd, setEnd: handleCurrentYearEndChange, disabled: isFyoRolled, note: "" },
+ { label: "Prior Year 1", required: false, start: fooDerived ? "" : priorYear1Start, setStart: setPriorYear1Start, end: fooDerived ? "" : priorYear1End, setEnd: setPriorYear1End, disabled: isFullYearPeriod || fooDerived || isFyoRolled, note: fooDerived ? "No data for this period" : isFullYearPeriod ? "Auto-derived from Current Year dates" : "" },
+ { label: "Prior Year 2", required: false, start: fooDerived || rfPy2NoData ? "" : priorYear2Start, setStart: setPriorYear2Start, end: fooDerived || rfPy2NoData ? "" : priorYear2End, setEnd: setPriorYear2End, disabled: isFullYearPeriod || fooDerived || rfPy2NoData || isFyoRolled, note: fooDerived || rfPy2NoData ? "No data for this period" : isFullYearPeriod ? "Auto-derived from Current Year dates" : "" },
+ ].filter((_, i) => !(fooDerived && i > 0) && !(rfPy2NoData && i === 2) && !(isFyoRolled && i >= fyoChain)).map((row, i) => {
   const noData = (fooDerived && i > 0) || (rfPy2NoData && i === 2);
   const locked = isRollForwardSource && i > 0 && !noData;
   const stubLocked = isSourceLockedStub;

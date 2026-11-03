@@ -6,6 +6,7 @@ export type ClientSourceIntegration = AccountingProvider | null;
 const DEMO_DATA_SOURCES: Readonly<Record<string, "csv" | "source">> = {
   "COM-NEW-Dec312024": "csv",
   "COM-INPROGRESS-Dec312024": "source",
+  "COM-FYO-RF-Dec312025": "source",
 };
 
 /** Exact client-name connections for demo engagements (exact match only, so "Cedar Point Logistics" stays unconnected). */

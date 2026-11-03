@@ -16,6 +16,7 @@ const META_KEY = (id: string) => `engagement-meta-${id}`;
 
 export const SEED_ENGAGEMENTS: EngagementRecord[] = [
   { id: "COM-NEW-Dec312024", client: "Cedar Point Logistics", type: "Compilation (COM)", yearEnd: "Dec 31, 2024", team: "View Assignees", status: "New", statusVariant: "new", hasRF: false, dateCreated: "Jan 13, 2026 09:00 AM", firstYearAudit: false },
+  { id: "COM-FYO-RF-Dec312025", client: "Harbor Freight Logistics LLC", type: "Compilation (COM)", yearEnd: "Dec 31, 2025", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: true, dateCreated: "Jan 12, 2026 09:00 AM", firstYearAudit: false },
   { id: "COM-INPROGRESS-Dec312024", client: "Riverstone Capital", type: "Compilation (COM)", yearEnd: "Dec 31, 2024", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: true, dateCreated: "Jan 10, 2026 09:00 AM", firstYearAudit: false },
 ];
 
@@ -44,8 +45,16 @@ function seedDemoEngagementMeta() {
     { id: 'tm-staff', role: 'Staff / Assistant', name: 'Sarah Chen', email: 'sarahc@countable.co', title: 'Staff Auditor', hourlyRate: '65.00', timeAllocation: '20' },
   ]);
 
-  const seeds: Record<string, { dataSource: 'csv' | 'source'; sourceProvider?: 'xero' | 'quickbooks'; sourceYearsAvailable?: number; sourceYears?: number; sourceRollForward?: boolean; periodType?: 'stub' | 'full'; firstYearOfOperations?: boolean; yearDataSources?: EngagementMeta['yearDataSources']; yearSourceProviders?: EngagementMeta['yearSourceProviders']; priorYearSources?: EngagementMeta['priorYearSources'] }> = {
+  const seeds: Record<string, { dataSource: 'csv' | 'source'; sourceProvider?: 'xero' | 'quickbooks'; sourceYearsAvailable?: number; sourceYears?: number; sourceRollForward?: boolean; periodType?: 'stub' | 'full' | 'fyoChain2'; firstYearOfOperations?: boolean; yearDataSources?: EngagementMeta['yearDataSources']; yearSourceProviders?: EngagementMeta['yearSourceProviders']; priorYearSources?: EngagementMeta['priorYearSources'] }> = {
     'COM-NEW-Dec312024': { dataSource: 'csv' },
+    // First Year of Operations, 1st roll forward (chain 2): CY + PY1 from QuickBooks, PY2 hidden
+    'COM-FYO-RF-Dec312025': {
+      dataSource: 'source', sourceProvider: 'quickbooks', sourceYearsAvailable: 3, sourceYears: 1, sourceRollForward: true,
+      periodType: 'fyoChain2',
+      priorYearSources: { py1: 'quickbooks', py2: 'nodata' },
+      yearDataSources: { cy: 'source', py1: 'source', py2: 'csv' },
+      yearSourceProviders: { cy: 'quickbooks', py1: 'quickbooks' },
+    },
     'COM-INPROGRESS-Dec312024': {
       dataSource: 'source', sourceProvider: 'quickbooks', sourceYearsAvailable: 3, sourceYears: 1, sourceRollForward: true,
       priorYearSources: { py1: 'quickbooks', py2: 'csv' },
@@ -80,6 +89,12 @@ function seedDemoEngagementMeta() {
         meta.firstYearOfOperations = !!seed.firstYearOfOperations;
         meta.periodStart = '04/01/2024';
         meta.periodEnd = '12/31/2024';
+      } else if (seed.periodType === 'fyoChain2') {
+        meta.auditPeriodType = 'First Year of Operations';
+        meta.firstYearOfOperations = true;
+        meta.fyoChainYear = 2;
+        meta.periodStart = '01/01/2025';
+        meta.periodEnd = '12/31/2025';
       } else if (seed.periodType === 'full') {
         meta.auditPeriodType = 'Full Year';
         delete meta.firstYearOfOperations;
@@ -164,6 +179,8 @@ export type EngagementMeta = {
  auditPeriodType?: string; // "Full Year" | "Interim (6-month)" | "Partial Year" | "Other"
  annualizeInterim?: boolean; // true by default when auditPeriodType === "Interim (6-month)"
  firstYearOfOperations?: boolean; // stub period that is the entity's first year — allows source
+ /** First Year of Operations roll-forward chain: 1 = the FOO year, 2 = 1st roll forward (CY + PY1), 3 = 2nd roll forward (all years). */
+ fyoChainYear?: 1 | 2 | 3;
  firstTimeAdoption?: boolean; // first-time adoption of accounting standard
  dataSource?: "csv" | "source";
  yearDataSources?: {
@@ -245,9 +262,12 @@ export function createRollForward(
  const srcIsFyo = m.auditPeriodType === "First Year of Operations"
   || (!!m.firstYearOfOperations && /^partial year$/i.test(m.auditPeriodType ?? ""));
  const srcIsPartial = !srcIsFyo && /^partial year$/i.test(m.auditPeriodType ?? "");
+ const srcChain = srcIsFyo ? (m.fyoChainYear ?? 1) : 0;
+ // FOO stays FOO through roll forward until all three years are full years (chain 1 → 2 → 3 → Full year)
+ const keepFyo = srcIsFyo && srcChain < 3;
  const py1: YearSourceKind = lastYear("cy");
- // FYO: the business didn't exist two years back → PY2 is a "No data" year
- const py2: YearSourceKind | "nodata" = srcIsFyo
+ // FYO: the business didn't exist two years back → PY2 is a "No data" year (only on the 1st roll forward)
+ const py2: YearSourceKind | "nodata" = srcIsFyo && srcChain === 1
   ? "nodata"
   : m.sourceRollForward && m.priorYearSources?.py1 ? m.priorYearSources.py1 : lastYear("py1");
  const cyKind: "csv" | "source" = clientConnection ? "source" : "csv";
@@ -294,7 +314,8 @@ export function createRollForward(
   accountingFramework: m.accountingFramework,
   budget: m.budget,
   teamMembers: m.teamMembers ? m.teamMembers.map((t) => ({ ...t })) : undefined,
-  auditPeriodType: resetToFullYear ? (src.type === "Audit (AUD)" ? "Full Year" : "Full year") : m.auditPeriodType,
+  auditPeriodType: keepFyo ? "First Year of Operations" : resetToFullYear ? (src.type === "Audit (AUD)" ? "Full Year" : "Full year") : m.auditPeriodType,
+  ...(keepFyo ? { firstYearOfOperations: true, fyoChainYear: (srcChain + 1) as 2 | 3 } : {}),
   periodStart,
   periodEnd,
   sourceRollForward: true,
