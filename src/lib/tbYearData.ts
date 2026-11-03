@@ -38,8 +38,10 @@ type YearSourceMeta = {
  */
 export function isYearOnProvider(meta: YearSourceMeta, y: TbYear, idx: number, provider: string | null | undefined, sourceYearCount: number): boolean {
   if (!provider) return false;
-  if (y !== "cy" && meta.sourceRollForward && meta.priorYearSources?.[y] === provider) return true;
-  if (meta.yearDataSources) return meta.yearDataSources[y] === "source" && (meta.yearSourceProviders?.[y] ?? meta.sourceProvider) === provider;
+  const inherited = y !== "cy" && meta.sourceRollForward ? meta.priorYearSources?.[y] : undefined;
+  // A saved per-year source is authoritative
+  if (meta.yearDataSources) return meta.yearDataSources[y] === "source" && (meta.yearSourceProviders?.[y] ?? inherited ?? meta.sourceProvider) === provider;
+  if (inherited !== undefined) return inherited === provider;
   return idx < sourceYearCount;
 }
 
