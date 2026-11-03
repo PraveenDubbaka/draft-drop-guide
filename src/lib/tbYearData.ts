@@ -42,3 +42,26 @@ export function isYearOnProvider(meta: YearSourceMeta, y: TbYear, idx: number, p
   if (meta.yearDataSources) return meta.yearDataSources[y] === "source" && (meta.yearSourceProviders?.[y] ?? meta.sourceProvider) === provider;
   return idx < sourceYearCount;
 }
+
+/** Parses "MM/dd/yyyy" or a display date like "Dec 31, 2026" to a local date (time stripped). */
+export function parseDateOnly(s: string | undefined | null): Date | null {
+  if (!s) return null;
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  const d = m ? new Date(Number(m[3]), Number(m[1]) - 1, Number(m[2])) : new Date(s);
+  if (isNaN(d.getTime())) return null;
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+/** Current Year end is after today (dates only) — the year hasn't finished yet. */
+export function isFutureYearEnd(yearEnd: string | undefined | null, today: Date = new Date()): boolean {
+  const d = parseDateOnly(yearEnd);
+  if (!d) return false;
+  const t = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  return d.getTime() > t.getTime();
+}
+
+/** Today as MM/dd/yyyy (stored as the "pulled as of" date). */
+export function todayMdY(today: Date = new Date()): string {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${p(today.getMonth() + 1)}/${p(today.getDate())}/${today.getFullYear()}`;
+}
