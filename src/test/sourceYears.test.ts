@@ -10,6 +10,16 @@ describe("Trial Balance refresh across roll-forward source years", () => {
     expect(isYearOnProvider(meta, "py2", 2, "quickbooks", 1)).toBe(false);
   });
 
+  it("saved yearDataSources wins: PY1 set to CSV is not refreshable even if it inherited QuickBooks", () => {
+    const meta = {
+      sourceProvider: "quickbooks", sourceRollForward: true,
+      priorYearSources: { py1: "quickbooks", py2: "csv" },
+      yearDataSources: { cy: "source" as const, py1: "csv" as const, py2: "csv" as const },
+    };
+    expect(isYearOnProvider(meta, "cy", 0, "quickbooks", 1)).toBe(true);
+    expect(isYearOnProvider(meta, "py1", 1, "quickbooks", 1)).toBe(false);
+  });
+
   it("an inherited prior-year provider that isn't the linked one is not refreshable", () => {
     const meta = { sourceProvider: "quickbooks", sourceRollForward: true, priorYearSources: { py1: "xero", py2: "csv" } };
     expect(isYearOnProvider(meta, "py1", 1, "quickbooks", 1)).toBe(false);
