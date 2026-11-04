@@ -1280,13 +1280,13 @@ const [ackText, setAckText] = useState("");
        const n = editingMeta?.dataSource === "source" && savedProvider ? (editingMeta?.sourceYears ?? 1) : 0;
        return [0, 1, 2].map(i => (i < n ? `source:${savedProvider}` : "csv"));
      }
-     return [p ? `source:${p}` : "csv", "csv", "csv"];
+     return p ? [`source:${p}`, `source:${p}`, `source:${p}`] : ["csv", "csv", "csv"];
    };
    const [yearSources, setYearSources] = useState<string[]>(initYearSources);
    const [originalCySource] = useState<string>(() => initYearSources()[0]);
    const originalCyProvider = (originalCySource.startsWith("source:") ? originalCySource.slice(7) : null) as AccountingProvider | null;
    const [yearErrors, setYearErrors] = useState<boolean[]>([false, false, false]);
-   useEffect(() => { if (!isEditMode) setYearSources(initYearSources()); }, [clientSourceIntegration]); // eslint-disable-line react-hooks/exhaustive-deps
+   useEffect(() => { if (!isEditMode) setYearSources(initYearSources()); }, [clientSourceIntegration, clientName]); // eslint-disable-line react-hooks/exhaustive-deps
    useEffect(() => {
      setDataSource(yearSources.some(s => s?.startsWith("source:")) ? "source" : "csv");
      let n = 0; for (const s of yearSources) { if (s.startsWith("source:")) n++; else break; }
