@@ -27,13 +27,16 @@ import { Label } from "@/components/ui/label";
 import { TemplatePickerPanel } from "@/components/TemplatePickerPanel";
 import { TEMPLATE_CONFIG } from "@/lib/engagementTemplatesData";
 
+export const unchangedEditYearSources = (isEditMode: boolean, yearSources: string[], originalYearSources: string[]) =>
+  isEditMode && yearSources.every((source, i) => source === originalYearSources[i]);
+
 export const connectionBlocksSave = (
   isEditMode: boolean,
   yearSources: string[],
   originalYearSources: string[],
   showNoConnectionError: boolean,
   showMismatchWarning: boolean,
-) => (!isEditMode || yearSources.some((source, i) => source !== originalYearSources[i]))
+) => !unchangedEditYearSources(isEditMode, yearSources, originalYearSources)
   && (showNoConnectionError || showMismatchWarning);
 
 const INDUSTRIES = [
@@ -1450,7 +1453,7 @@ const [ackText, setAckText] = useState("");
  engagementTemplate.trim() !== "" &&
  engagementType !== "" &&
  budget.trim() !== "" &&
- (isSourceLockedStub || dataSource !== "source" || clientHasSourceConnection || sourceConnected || (isEditMode && yearSources.every((source, i) => source === originalYearSources[i]))) &&
+ (isSourceLockedStub || dataSource !== "source" || clientHasSourceConnection || sourceConnected || unchangedEditYearSources(isEditMode, yearSources, originalYearSources)) &&
  accountingStandards !== "" &&
  additionalDisclosures !== "" &&
  currentYearStart.trim() !== "" &&

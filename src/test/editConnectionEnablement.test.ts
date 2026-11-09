@@ -1,8 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { connectionBlocksSave } from "@/pages/CreateEngagement";
+import { connectionBlocksSave, unchangedEditYearSources } from "@/pages/CreateEngagement";
 
 describe("connection-related save blockers", () => {
   const original = ["source:quickbooks", "csv", "csv"];
+
+  it("exempts only unchanged Edit sources from the form's connection requirement", () => {
+    expect(unchangedEditYearSources(true, [...original], original)).toBe(true);
+    expect(unchangedEditYearSources(true, ["source:xero", "csv", "csv"], original)).toBe(false);
+    expect(unchangedEditYearSources(false, [...original], original)).toBe(false);
+  });
 
   it("does not block unchanged saved sources when the client is disconnected", () => {
     expect(connectionBlocksSave(true, [...original], original, true, false)).toBe(false);
