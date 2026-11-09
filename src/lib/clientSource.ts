@@ -51,8 +51,9 @@ const DEMO_EXACT_CONNECTIONS: Readonly<Record<string, "xero" | "quickbooks">> = 
  * User-made connections/disconnections (overrides) win over demo seeds and client data.
  */
 export function getClientSourceIntegration(clientName: string): ClientSourceIntegration {
-  const normalized = (clientName || "").trim().toLowerCase();
-  if (!normalized) return null;
+  const given = (clientName || "").trim().toLowerCase();
+  if (!given) return null;
+  const normalized = LEGACY_CLIENT_ALIASES[given] ?? given;
   const client = clientsData.find(
     (c) =>
       c.legalEntityName.toLowerCase() === normalized ||
@@ -163,7 +164,7 @@ export function getClientConnectionState(
   ...names: (string | undefined | null)[]
 ): AccountingProvider | null | undefined {
   const overrides = readOverrides();
-  for (const raw of names) {
+  for (const raw of names.flatMap(n => (n ? clientKeys(n) : []))) {
     const n = (raw || "").trim().toLowerCase();
     if (!n || !(n in overrides)) continue;
     const val = overrides[n];
@@ -177,7 +178,7 @@ export function getClientConnectionState(
 /** Id of the client's active connection (null when not connected). Legacy plain values = `${provider}-initial`. */
 export function getClientConnectionId(...names: (string | undefined | null)[]): string | null {
   const overrides = readOverrides();
-  for (const raw of names) {
+  for (const raw of names.flatMap(n => (n ? clientKeys(n) : []))) {
     const n = (raw || "").trim().toLowerCase();
     if (!n || !(n in overrides)) continue;
     const val = overrides[n];
@@ -207,13 +208,20 @@ export function getEngagementConnectionOverride(_engagementId?: string | null): 
   return null;
 }
 
-/** All names a client may be stored under (given name plus entity/legal names). */
+/** Former display names, so overrides saved under them (and callers using them) still resolve. */
+const LEGACY_CLIENT_ALIASES: Readonly<Record<string, string>> = {
+  "harbor freight logistics": "harbor freight logistics llc",
+};
+
+/** All names a client may be stored under (given name plus entity/legal names and legacy aliases). */
 function clientKeys(clientName: string): string[] {
-  const normalized = clientName.trim().toLowerCase();
+  const given = clientName.trim().toLowerCase();
+  const normalized = LEGACY_CLIENT_ALIASES[given] ?? given;
   const client = clientsData.find(
     c => c.entityName.toLowerCase() === normalized || c.legalEntityName.toLowerCase() === normalized
   );
   const names = client ? [clientName, client.entityName, client.legalEntityName] : [clientName];
+  for (const [alias, target] of Object.entries(LEGACY_CLIENT_ALIASES)) if (names.some(n => n.trim().toLowerCase() === target)) names.push(alias);
   return Array.from(new Set(names.map(n => n.trim().toLowerCase()).filter(Boolean)));
 }
 
