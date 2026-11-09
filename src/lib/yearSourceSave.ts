@@ -23,7 +23,7 @@ export function savedYearSources(opts: {
     v === "locked" ? (lockedKind(i) === "csv" || lockedKind(i) === "nodata" ? "csv" : "source") : (isSourceRow(v) || v?.startsWith("source:") ? "source" : "csv");
   const rowProvider = (v: string | undefined, i: number): AccountingProvider | undefined => {
     if (v === "locked") { const k = lockedKind(i); return k === "csv" || k === "nodata" ? undefined : k; }
-    return isSourceRow(v) ? (v!.slice(7) as AccountingProvider) : undefined;
+    return isSourceRow(v) ? (v!.slice(7).split("|")[0] as AccountingProvider) : undefined;
   };
   return {
     yearDataSources: { cy: rowKind(rows[0], 0), py1: rowKind(rows[1], 1), py2: rowKind(rows[2], 2) },

@@ -8,7 +8,37 @@ const DEMO_DATA_SOURCES: Readonly<Record<string, "csv" | "source">> = {
   "COM-INPROGRESS-Dec312024": "source",
   "COM-FYO-RF-Dec312025": "source",
   "COM-QB-Dec312026": "source",
+  "COM-MRD-Dec312025": "source",
 };
+
+/** Demo: clients whose current connection was re-made outside the engagement (same provider, new connection id). */
+const DEMO_CONNECTION_IDS: Readonly<Record<string, string>> = {
+  "maple ridge dental corp.": "quickbooks-reconnected-1",
+  "maple ridge dental": "quickbooks-reconnected-1",
+};
+
+/** Default connection id for engagements/connections saved before connection ids existed. */
+export const initialConnectionId = (provider: AccountingProvider) => `${provider}-initial`;
+
+/** Provider of a year-row value ("source:<provider>" or "source:<provider>|prev"). */
+export const rowProvider = (v: string) => v.slice(7).split("|")[0] as AccountingProvider;
+
+/**
+ * True when an engagement source pulled from savedProvider/savedConnectionId can no longer use the
+ * client's active connection: different provider, or same provider re-connected (new connection id).
+ */
+export function isConnectionChanged(
+  savedProvider: AccountingProvider | null | undefined,
+  savedConnectionId: string | null | undefined,
+  activeProvider: AccountingProvider | null | undefined,
+  activeConnectionId: string | null | undefined,
+): boolean {
+  if (!savedProvider || !activeProvider) return false;
+  if (savedProvider !== activeProvider) return true;
+  const saved = savedConnectionId ?? initialConnectionId(savedProvider);
+  const active = activeConnectionId ?? initialConnectionId(activeProvider);
+  return saved !== active;
+}
 
 /** Exact client-name connections for demo engagements (exact match only, so "Cedar Point Logistics" stays unconnected). */
 const DEMO_EXACT_CONNECTIONS: Readonly<Record<string, "xero" | "quickbooks">> = {
@@ -86,7 +116,7 @@ export function filterVisibleEngagements<T extends { id: string }>(list: T[]): T
 const CONN_OVERRIDE_KEY = "client-connection-overrides";
 export const CLIENT_CONNECTION_EVENT = "client-connection-changed";
 
-type StoredConnection = AccountingProvider | "none";
+type StoredConnection = AccountingProvider | "none" | { provider: AccountingProvider; connectionId: string };
 
 function readOverrides(): Record<string, StoredConnection> {
   try {
@@ -112,9 +142,31 @@ export function getClientConnectionState(
     if (!n || !(n in overrides)) continue;
     const val = overrides[n];
     if (isProvider(val)) return val;
+    if (val && typeof val === "object" && isProvider(val.provider)) return val.provider;
     if (val === "none") return null;
   }
   return undefined;
+}
+
+/** Id of the client's active connection (null when not connected). Legacy plain values = `${provider}-initial`. */
+export function getClientConnectionId(...names: (string | undefined | null)[]): string | null {
+  const overrides = readOverrides();
+  for (const raw of names) {
+    const n = (raw || "").trim().toLowerCase();
+    if (!n || !(n in overrides)) continue;
+    const val = overrides[n];
+    if (isProvider(val)) return initialConnectionId(val);
+    if (val && typeof val === "object" && isProvider(val.provider)) return val.connectionId || initialConnectionId(val.provider);
+    if (val === "none") return null;
+  }
+  const first = names.find(Boolean) || "";
+  const provider = getClientSourceIntegration(first);
+  if (!provider) return null;
+  for (const raw of [first, ...clientKeys(first)]) {
+    const id = DEMO_CONNECTION_IDS[(raw || "").trim().toLowerCase()];
+    if (id) return id;
+  }
+  return initialConnectionId(provider);
 }
 
 /** Connection the user made from the Clients page or inline on Edit Engagement. */
@@ -146,7 +198,9 @@ export function connectClientSource(
 ) {
   if (engagementId) localStorage.removeItem(`${ENGAGEMENT_CONN_PREFIX}${engagementId}`);
   const overrides = readOverrides();
-  for (const key of clientKeys(clientName)) overrides[key] = provider;
+  // Every connect (including switching provider) creates a new connection
+  const connectionId = `${provider}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  for (const key of clientKeys(clientName)) overrides[key] = { provider, connectionId };
   localStorage.setItem(CONN_OVERRIDE_KEY, JSON.stringify(overrides));
   window.dispatchEvent(new Event(CLIENT_CONNECTION_EVENT));
 }
