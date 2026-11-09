@@ -27,6 +27,18 @@ import { Label } from "@/components/ui/label";
 import { TemplatePickerPanel } from "@/components/TemplatePickerPanel";
 import { TEMPLATE_CONFIG } from "@/lib/engagementTemplatesData";
 
+export const unchangedEditYearSources = (isEditMode: boolean, yearSources: string[], originalYearSources: string[]) =>
+  isEditMode && yearSources.every((source, i) => source === originalYearSources[i]);
+
+export const connectionBlocksSave = (
+  isEditMode: boolean,
+  yearSources: string[],
+  originalYearSources: string[],
+  showNoConnectionError: boolean,
+  showMismatchWarning: boolean,
+) => !unchangedEditYearSources(isEditMode, yearSources, originalYearSources)
+  && (showNoConnectionError || showMismatchWarning);
+
 const INDUSTRIES = [
  "Construction & Real Estate", "Financial Services", "Healthcare & Life Sciences",
  "Hospitality & Tourism", "Manufacturing", "Mining & Resources", "Not-for-Profit",
@@ -1441,7 +1453,7 @@ const [ackText, setAckText] = useState("");
  engagementTemplate.trim() !== "" &&
  engagementType !== "" &&
  budget.trim() !== "" &&
- (isSourceLockedStub || dataSource !== "source" || clientHasSourceConnection || sourceConnected) &&
+ (isSourceLockedStub || dataSource !== "source" || clientHasSourceConnection || sourceConnected || unchangedEditYearSources(isEditMode, yearSources, originalYearSources)) &&
  accountingStandards !== "" &&
  additionalDisclosures !== "" &&
  currentYearStart.trim() !== "" &&
@@ -2109,7 +2121,7 @@ yearSourceProviders: yearFields.yearSourceProviders,
  <X className="h-4 w-4" />
  Cancel
  </Button>
- <Button disabled={!isFormValid || showNoConnectionError || showMismatchWarning || ((isCyToCsv || yearEndChanged) && !ackChecked)} onClick={handleCreate}>
+ <Button disabled={!isFormValid || connectionBlocksSave(isEditMode, yearSources, originalYearSources, showNoConnectionError, showMismatchWarning) || ((isCyToCsv || yearEndChanged) && !ackChecked)} onClick={handleCreate}>
  {isEditMode ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
  {isEditMode ? "Update Engagement" : "Create Engagement"}
  </Button>
