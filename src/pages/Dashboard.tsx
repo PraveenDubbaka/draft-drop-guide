@@ -6,7 +6,6 @@ import { Search, ChevronDown, MessageSquare, Send, AlertCircle, Layers, Briefcas
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Layout } from "@/components/Layout";
 import { StyledCard } from "@/components/ui/card";
@@ -99,7 +98,6 @@ const IntegrationBadge = ({
 }: {
  type: string | null;
 }) => {
- const [showPopover, setShowPopover] = React.useState(false);
   if (!type || type === "unknown") {
     return (
       <span className="inline-flex items-center justify-center h-8 px-3 rounded-lg border border-border bg-muted text-xs font-medium text-foreground">
@@ -107,19 +105,7 @@ const IntegrationBadge = ({
       </span>
     );
   }
- const badgeClasses = "inline-flex items-center justify-center h-8 w-24 px-1 rounded-lg cursor-pointer hover:opacity-80 transition-opacity bg-white border border-border";
- const getIntegrationName = () => {
- switch (type) {
- case "xero":
- return "Xero";
- case "quickbooks":
- return "QuickBooks";
- case "sage":
- return "Sage";
- default:
- return type;
- }
- };
+ const badgeClasses = "inline-flex items-center justify-center h-8 w-24 px-1 rounded-lg bg-white border border-border";
  const BadgeContent = () => {
  if (type === "xero") {
  return <div className={`${badgeClasses} gap-1.5`}>
@@ -142,33 +128,7 @@ const IntegrationBadge = ({
  }
  return null;
  };
- return <Popover open={showPopover} onOpenChange={setShowPopover}>
- <PopoverTrigger asChild>
- <div onClick={e => e.stopPropagation()}>
- <BadgeContent />
- </div>
- </PopoverTrigger>
- <PopoverContent className="w-56 p-3" align="start">
- <div className="space-y-3">
- <div className="flex items-center gap-2">
- <div className="h-2 w-2 rounded-full bg-emerald-500" />
- <span className="text-sm font-medium">Connected</span>
- </div>
- <p className="text-xs text-muted-foreground">
- {getIntegrationName()} integration is active and syncing data.
- </p>
- <div className="text-xs text-muted-foreground">
- Last synced: 2 hours ago
- </div>
- <Button variant="outline" size="sm" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10" onClick={e => {
- e.stopPropagation();
- setShowPopover(false);
- }}>
- Disconnect
- </Button>
- </div>
- </PopoverContent>
- </Popover>;
+ return <BadgeContent />;
 };
 const AUDIT_SECTIONS = [
  { key: "co", label: "Client Onboarding", color: "#1C63A6", worksheetKeys: ["audit-engagement-letter", "checklist-aud-408", "checklist-aud-410"] },
