@@ -1484,13 +1484,11 @@ const [ackText, setAckText] = useState("");
     const isExternallyDisconnected = isEditMode && !clientHasSourceConnection && originalDataSource === "source" && dataSource === "source" && !isSourceLockedStub;
     // Red "No source connection found" error — blocks Create/Update while visible
     // Blocks Create/Update whenever any year is set to Source without an active client connection;
-    // the red error below uses this same condition so the button is never disabled silently.
+    // Only reachable in Edit when a saved Source year has lost its connection.
     const showNoConnectionError = !clientHasSourceConnection && !isSourceLockedStub
       && (dataSource === "source" || yearErrors.some(Boolean));
     // Mismatch warning only while at least one year row still points to the old provider
     const showMismatchWarning = isSourceProviderMismatch && [0, 1, 2].some(i => yearDisconnectedProvider(i) !== null);
-    // Single red "No source connection found" error: never-connected Source selection or an externally disconnected saved source
-    const showRedNoConnectionError = showNoConnectionError;
     // "Switching…" messages — while either is visible, the generic per-year source note is hidden
     // Software the year(s) switching to CSV pulled from: CY's, else (Partial year on a roll forward) a locked prior year's
     const switchFromProvider: AccountingProvider | null = originalCyProvider ?? (isSourceLockedStub ? lockedPriorProvider : null);
@@ -1907,7 +1905,7 @@ yearSourceProviders: yearFields.yearSourceProviders,
          const p = cur ?? activeProvider;
          return p
           ? <SelectItem value={`source:${p}`}>{sourceLabel(p)}</SelectItem>
-          : <SelectItem value="source:none">Not connected</SelectItem>;
+          : val === "source:none" ? <SelectItem value="source:none">Not connected</SelectItem> : null; // legacy saved value only; never offered as a choice
         })()}
         <SelectItem value="csv">CSV / Excel / PDF</SelectItem>
        </SelectContent>
@@ -1944,15 +1942,6 @@ yearSourceProviders: yearFields.yearSourceProviders,
  </>
 ) : (
  <>
-  {showRedNoConnectionError && (
-   <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
-    <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
-    <span className="text-sm text-red-800 dark:text-red-200">
-     No source connection found. Please go to the Clients page and establish the connection.{" "}
-     <Button variant="link" onClick={() => navigate("/clients")} className="h-auto p-0 text-sm underline underline-offset-2">Go to Clients →</Button>
-    </span>
-   </div>
-  )}
   {!showMismatchWarning && clientHasSourceConnection && !isSourceToCsvSwitch && yearSourceMix.csv > 0 && !isSourceLockedStub && !isFooPeriod && !showSwitchToCsvMessage && !showSwitchToSourceMessage && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
     <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
