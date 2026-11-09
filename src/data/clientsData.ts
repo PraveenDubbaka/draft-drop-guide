@@ -212,7 +212,7 @@ export const clientsData: Client[] = [
  {
  id: 'CR007',
  entityName: 'Upper Avenue Textiles',
- legalEntityName: 'UAT 41 Test Enterprises Inc.',
+ legalEntityName: 'Upper Avenue Textiles Inc.',
  entityType: 'Corporation',
  status: 'Accepted',
  integration: 'quickbooks',
