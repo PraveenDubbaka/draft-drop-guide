@@ -2109,7 +2109,7 @@ yearSourceProviders: yearFields.yearSourceProviders,
  <X className="h-4 w-4" />
  Cancel
  </Button>
- <Button data-dbg={JSON.stringify({isFormValid, showNoConnectionError, showMismatchWarning, isCyToCsv, yearEndChanged, ackChecked})} disabled={!isFormValid || showNoConnectionError || showMismatchWarning || ((isCyToCsv || yearEndChanged) && !ackChecked)} onClick={handleCreate}>
+ <Button data-dbg={JSON.stringify({tm: teamMembers.length, s: currentYearStart, e: currentYearEnd, acc: accountingStandards, ad: additionalDisclosures, et: engagementType, tpl: engagementTemplate, isFormValid, showNoConnectionError, showMismatchWarning, isCyToCsv, yearEndChanged, ackChecked})} disabled={!isFormValid || showNoConnectionError || showMismatchWarning || ((isCyToCsv || yearEndChanged) && !ackChecked)} onClick={handleCreate}>
  {isEditMode ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
  {isEditMode ? "Update Engagement" : "Create Engagement"}
  </Button>
