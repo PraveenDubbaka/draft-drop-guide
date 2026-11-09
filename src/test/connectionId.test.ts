@@ -42,3 +42,16 @@ describe("connection id comparison", () => {
     expect(rowProvider("source:quickbooks|prev")).toBe("quickbooks");
   });
 });
+
+describe("re-confirming a live connection", () => {
+  beforeEach(() => localStorage.clear());
+  it("keeps the same id when connecting the same provider again without a disconnect", () => {
+    connectClientSource("Harbor Freight Logistics LLC", "quickbooks");
+    expect(getClientConnectionId("Harbor Freight Logistics LLC")).toBe("quickbooks-initial");
+  });
+  it("switching provider creates a new id", () => {
+    connectClientSource("Harbor Freight Logistics LLC", "xero");
+    expect(getClientConnectionId("Harbor Freight Logistics LLC")).toMatch(/^xero-/);
+    expect(getClientConnectionId("Harbor Freight Logistics LLC")).not.toBe("xero-initial");
+  });
+});

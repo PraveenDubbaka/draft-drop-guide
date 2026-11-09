@@ -199,7 +199,12 @@ export function connectClientSource(
   if (engagementId) localStorage.removeItem(`${ENGAGEMENT_CONN_PREFIX}${engagementId}`);
   const overrides = readOverrides();
   // Every connect (including switching provider) creates a new connection
-  const connectionId = `${provider}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  // (re-confirming the same live connection, e.g. closing the modal, keeps its id)
+  const keys = clientKeys(clientName);
+  const current = getClientConnectionState(...keys);
+  const connectionId = current === provider
+    ? (getClientConnectionId(...keys) ?? initialConnectionId(provider))
+    : `${provider}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
   for (const key of clientKeys(clientName)) overrides[key] = { provider, connectionId };
   localStorage.setItem(CONN_OVERRIDE_KEY, JSON.stringify(overrides));
   window.dispatchEvent(new Event(CLIENT_CONNECTION_EVENT));
