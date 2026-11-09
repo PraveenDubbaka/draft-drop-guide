@@ -1484,12 +1484,11 @@ const [ackText, setAckText] = useState("");
     const isExternallyDisconnected = isEditMode && !clientHasSourceConnection && originalDataSource === "source" && dataSource === "source" && !isSourceLockedStub;
     // Red "No source connection found" error — blocks Create/Update while visible
     // Blocks Create/Update whenever any year is set to Source without an active client connection;
-    // the red error below uses this same condition so the button is never disabled silently.
+    // Only reachable in Edit when a saved Source year has lost its connection.
     const showNoConnectionError = !clientHasSourceConnection && !isSourceLockedStub
       && (dataSource === "source" || yearErrors.some(Boolean));
     // Mismatch warning only while at least one year row still points to the old provider
     const showMismatchWarning = isSourceProviderMismatch && [0, 1, 2].some(i => yearDisconnectedProvider(i) !== null);
-    // Single red "No source connection found" error: never-connected Source selection or an externally disconnected saved source
     // "Switching…" messages — while either is visible, the generic per-year source note is hidden
     // Software the year(s) switching to CSV pulled from: CY's, else (Partial year on a roll forward) a locked prior year's
     const switchFromProvider: AccountingProvider | null = originalCyProvider ?? (isSourceLockedStub ? lockedPriorProvider : null);
