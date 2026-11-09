@@ -79,6 +79,7 @@ const StatusBadge = ({ status }: { status: string }) => {
 };
 
 const IntegrationCell = ({ type, onConnect }: { type: string; onConnect?: () => void }) => {
+  const open = (e: React.MouseEvent) => { e.stopPropagation(); onConnect?.(); };
   if (type === "connect" || type === "none") {
  return (
  <Button variant="outline" size="sm" className="h-7 text-xs font-medium" onClick={(e) => { e.stopPropagation(); onConnect?.(); }}>
@@ -87,25 +88,25 @@ const IntegrationCell = ({ type, onConnect }: { type: string; onConnect?: () => 
  );
  }
  
- const badgeClasses = "inline-flex items-center justify-center h-7 w-20 px-1 bg-card dark:bg-[hsl(var(--m3-inverse-surface))] border border-border rounded-sm";
+ const badgeClasses = "inline-flex items-center justify-center h-7 w-20 px-1 bg-card dark:bg-[hsl(var(--m3-inverse-surface))] border border-border rounded-sm cursor-pointer hover:bg-muted hover:border-foreground/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
  
  if (type === "xero") {
  return (
- <div className={badgeClasses}>
+ <button type="button" aria-label="Manage Xero connection" onClick={open} className={badgeClasses}>
   <img src={accountingProviders.xero.badgeLogo} alt="Xero" className="h-4" />
- </div>
+ </button>
  );
  }
  
  if (type === "quickbooks") {
  return (
- <div className={badgeClasses}>
+ <button type="button" aria-label="Manage QuickBooks connection" onClick={open} className={badgeClasses}>
  <img src={intuitQuickbooksLogo} alt="Intuit QuickBooks" className="h-4" />
- </div>
+ </button>
  );
  }
  
-  if (type === "sage") return <div className={badgeClasses}><img src={accountingProviders.sage.logo} alt="Sage" className="h-5" /></div>;
+  if (type === "sage") return <button type="button" aria-label="Manage Sage connection" onClick={open} className={badgeClasses}><img src={accountingProviders.sage.logo} alt="Sage" className="h-5" /></button>;
   return null;
 };
 
