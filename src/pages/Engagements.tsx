@@ -78,7 +78,7 @@ const ENGAGEMENT_ASSIGNEES: Record<string, { firmTeam: AssigneeEntry[]; clientTe
      { initials: 'KP', name: 'K. Patel', role: 'Engagement Partner', email: 'k.patel@countable.co', phone: '(416) 555-0104', color: '#4C6EF5' },
    ],
    clientTeam: [
-     { initials: 'HF', name: 'Harbor Freight Logistics', role: 'Contact Person', email: 'accounts@harborfreight.com', phone: '(312) 555-0300', color: '#F76707' },
+     { initials: 'HF', name: 'Harbor Freight Logistics LLC', role: 'Contact Person', email: 'accounts@harborfreight.com', phone: '(312) 555-0300', color: '#F76707' },
    ],
  },
 };

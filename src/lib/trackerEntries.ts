@@ -26,7 +26,7 @@ export const NON_BILLABLE_CATEGORIES = [
 
 export const DEMO_CLIENTS: Record<string, string[]> = {
   'Northline Precision': ['AUD-NPM-Dec312025'],
-  'Harbor Freight Logistics': ['AUD-HFL-Mar312025'],
+  'Harbor Freight Logistics LLC': ['AUD-HFL-Mar312025'],
   'Kaushal Corp': ['COM-KAU-Feb282025'],
 };
 

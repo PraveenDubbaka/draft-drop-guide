@@ -345,7 +345,7 @@ export const clientsData: Client[] = [
  },
  {
  id: 'MRD001',
- entityName: 'Maple Ridge Dental',
+ entityName: 'Maple Ridge Dental Corp.',
  legalEntityName: 'Maple Ridge Dental Corp.',
  entityType: 'Corporation',
  status: 'Accepted',
