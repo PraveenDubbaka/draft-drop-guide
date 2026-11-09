@@ -1820,45 +1820,27 @@ yearSourceProviders: yearFields.yearSourceProviders,
 
 <SectionCard icon={<Calendar className="h-5 w-5" />} title="Engagement Period">
  {/* Source Data status */}
- {prevSourceProvider ? (
-  <div className="mt-3 pb-4 mb-2 border-b border-border/50 flex flex-col gap-3">
-   <div className="flex items-center gap-4">
-    <span className="text-sm text-foreground w-[160px] shrink-0">Previous source data</span>
-    <div className="flex flex-wrap items-center gap-3">
-     <span className="inline-flex items-center gap-2">
-      <span onClick={() => setShowSourceConnection(true)} className="inline-flex items-center rounded-[10px] border border-border px-2 py-1 cursor-pointer"><img src={accountingProviders[prevSourceProvider].badgeLogo} alt={sourceLabel(prevSourceProvider)} className="h-4 object-contain" /></span>
-      <span className="inline-flex items-center rounded-full border border-border bg-muted px-2.5 py-0.5 text-[11px] font-medium text-foreground">Disconnected</span>
-     </span>
-    </div>
-   </div>
-   {activeProvider && (
-    <div className="flex items-center gap-4">
-     <span className="text-sm text-foreground w-[160px] shrink-0">New available connection</span>
-     <div className="flex flex-wrap items-center gap-3">
-      <span className="inline-flex items-center gap-2">
-       <span onClick={() => setShowSourceConnection(true)} className="inline-flex items-center rounded-[10px] border border-border px-2 py-1 cursor-pointer"><img src={accountingProviders[activeProvider].badgeLogo} alt={sourceLabel(activeProvider)} className="h-4 object-contain" /></span>
-       <span className="inline-flex items-center rounded-full border border-connection-success/30 bg-connection-success-surface px-2.5 py-0.5 text-[11px] font-medium text-connection-success">Connected</span>
-      </span>
-     </div>
-    </div>
-   )}
-  </div>
- ) : (
  <div className="mt-3 pb-4 mb-2 border-b border-border/50 flex items-center gap-4">
   <span className="text-sm text-foreground w-[160px] shrink-0">Source Data</span>
-  <div className="flex flex-wrap items-center gap-3">
-   {!activeProvider ? (<>
-    <span className="inline-flex items-center rounded-full border border-border bg-muted px-2.5 py-0.5 text-[11px] font-medium text-foreground">Not Connected</span>
-    <button type="button" onClick={() => setShowSourceConnection(true)} className="text-sm text-primary underline underline-offset-2 hover:text-primary/80">Connect Source</button>
-   </>) : (
-    <span className="inline-flex items-center gap-2">
+  <div className="flex flex-nowrap items-center gap-[200px]">
+   <span className="inline-flex flex-nowrap items-center gap-3">
+    {!activeProvider ? (<>
+     <span className="inline-flex items-center rounded-full border border-border bg-muted px-2.5 py-0.5 text-[11px] font-medium text-foreground">Not Connected</span>
+     <button type="button" onClick={() => setShowSourceConnection(true)} className="text-sm text-primary underline underline-offset-2 hover:text-primary/80">Connect Source</button>
+    </>) : (<>
      <span onClick={() => setShowSourceConnection(true)} className="inline-flex items-center rounded-[10px] border border-border px-2 py-1 cursor-pointer"><img src={accountingProviders[activeProvider].badgeLogo} alt={sourceLabel(activeProvider)} className="h-4 object-contain" /></span>
      <span className="inline-flex items-center rounded-full border border-connection-success/30 bg-connection-success-surface px-2.5 py-0.5 text-[11px] font-medium text-connection-success">Connected</span>
+    </>)}
+   </span>
+   {prevSourceProvider && (
+    <span className="inline-flex flex-nowrap items-center gap-2">
+     <span className="text-sm text-muted-foreground">Previous</span>
+     <span onClick={() => setShowSourceConnection(true)} className="inline-flex items-center rounded-[10px] border border-border px-2 py-1 cursor-pointer"><img src={accountingProviders[prevSourceProvider].badgeLogo} alt={sourceLabel(prevSourceProvider)} className="h-4 object-contain" /></span>
+     <span className="inline-flex items-center rounded-full border border-border bg-muted px-2.5 py-0.5 text-[11px] font-medium text-foreground">Disconnected</span>
     </span>
    )}
   </div>
  </div>
- )}
 {/* Period Type */}
  <div className="flex items-center gap-4 py-2.5">
  <span className="text-sm text-foreground w-44 shrink-0 whitespace-nowrap">Period Type<span className="text-destructive ml-0.5">*</span></span>
