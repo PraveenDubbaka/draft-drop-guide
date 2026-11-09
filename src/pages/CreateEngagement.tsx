@@ -850,6 +850,11 @@ export function clientInitials(name: string): string {
 const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 /** Build PREFIX-INITIALS-MonDDYYYY, adding -2, -3… when the ID is already taken. */
+/** Edit keeps the stored engagement client name; Create uses the selected client. */
+export function resolveSavedClientName(isEditMode: boolean, storedClient: string | undefined, selectedClient: string): string {
+  return isEditMode && storedClient ? storedClient : selectedClient;
+}
+
 export function generateEngagementId(type: string, clientName: string, cyEnd: string, existingIds: string[]): string {
  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec((cyEnd || "").trim());
  const datePart = m && MONTHS_SHORT[Number(m[1]) - 1]
@@ -1581,7 +1586,7 @@ const performSave = () => {
    const firstSourceProvider = firstSourceRow ? rowProvider(firstSourceRow) : undefined;
  const record: EngagementRecord = {
  id: engagementId,
- client: clientName,
+ client: resolveSavedClientName(isEditMode, editingRecord?.client, clientName),
  type: engagementType,
  yearEnd: formatYearEnd(currentYearEnd),
  team: "View Assignees",
@@ -1730,7 +1735,7 @@ yearSourceProviders: yearFields.yearSourceProviders,
  <Select value={clientName} onValueChange={setClientName} disabled={isEditMode}>
  <SelectTrigger className="h-9 text-sm opacity-70 cursor-not-allowed"><SelectValue placeholder="Select client..." /></SelectTrigger>
  <SelectContent>
- {Array.from(new Set([...appClientsData.filter(c => c.status !== "Archived").map(c => c.entityName), ...(clientName ? [clientName] : [])])).map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}
+ {Array.from(new Set([...appClientsData.filter(c => c.status !== "Archived").map(c => c.entityName), ...(clientName ? [clientName] : [])])).map(name => <SelectItem key={name} value={name}>{isEditMode && name === clientName && editingRecord?.client ? editingRecord.client : name}</SelectItem>)}
  </SelectContent>
  </Select>
  </InlineRow>
