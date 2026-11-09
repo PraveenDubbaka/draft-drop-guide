@@ -100,10 +100,10 @@ const IntegrationBadge = ({
  type: string | null;
 }) => {
  const [showPopover, setShowPopover] = React.useState(false);
-  if (!type) {
+  if (!type || type === "unknown") {
     return (
       <span className="inline-flex items-center justify-center h-8 px-3 rounded-lg border border-border bg-muted text-xs font-medium text-foreground">
-        CSV
+        {type === "unknown" ? "Source" : "CSV"}
       </span>
     );
   }

@@ -11,6 +11,9 @@ describe("deriveEngagementDataType", () => {
   it("CY csv shows CSV even if engagement has a provider", () => {
     expect(deriveEngagementDataType({ dataSource: "source", sourceProvider: "quickbooks", yearDataSources: { cy: "csv" } })).toBeNull();
   });
+  it("CY source with no saved provider is unknown (never the client's connection)", () => {
+    expect(deriveEngagementDataType({ dataSource: "source", yearDataSources: { cy: "source" } })).toBe("unknown");
+  });
   it("no meta is undefined", () => {
     expect(deriveEngagementDataType(undefined)).toBeUndefined();
   });

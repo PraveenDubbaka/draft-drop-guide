@@ -31,16 +31,16 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Layout } from "@/components/Layout";
 import { StyledCard } from "@/components/ui/card";
 import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
-import { getEngagementSourceIntegration, getClientSourceIntegration, filterVisibleEngagements, type ClientSourceIntegration } from "@/lib/clientSource";
+import { getEngagementSourceIntegration, getClientSourceIntegration, filterVisibleEngagements, type ClientSourceIntegration, type EngagementDataType } from "@/lib/clientSource";
 import { createRollForward } from "@/store/engagementsStore";
 import { accountingProviders } from "@/lib/accountingProviders";
 
 
-function SourceBadge({ type }: { type: ClientSourceIntegration }) {
-  if (!type) {
+function SourceBadge({ type }: { type: EngagementDataType }) {
+  if (!type || type === "unknown") {
     return (
       <span className="inline-flex items-center justify-center h-8 px-3 rounded-lg border border-border bg-muted text-xs font-medium text-foreground">
-        CSV
+        {type === "unknown" ? "Source" : "CSV"}
       </span>
     );
   }
