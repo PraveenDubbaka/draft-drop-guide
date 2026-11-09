@@ -211,6 +211,7 @@ export function getEngagementConnectionOverride(_engagementId?: string | null): 
 /** Former display names, so overrides saved under them (and callers using them) still resolve. */
 const LEGACY_CLIENT_ALIASES: Readonly<Record<string, string>> = {
   "harbor freight logistics": "harbor freight logistics llc",
+  "maple ridge dental": "maple ridge dental corp.",
 };
 
 /** All names a client may be stored under (given name plus entity/legal names and legacy aliases). */

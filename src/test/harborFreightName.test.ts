@@ -13,3 +13,15 @@ describe("Harbor Freight display name", () => {
     expect(getClientSourceIntegration("Harbor Freight Logistics LLC")).toBeNull();
   });
 });
+
+describe("Maple Ridge display name", () => {
+  beforeEach(() => localStorage.clear());
+  it("keeps the reconnected demo connection under both names", () => {
+    expect(getClientConnectionId("Maple Ridge Dental Corp.")).toBe("quickbooks-reconnected-1");
+    expect(getClientConnectionId("Maple Ridge Dental")).toBe("quickbooks-reconnected-1");
+  });
+  it("reads a legacy override saved only under the old name", () => {
+    localStorage.setItem("client-connection-overrides", JSON.stringify({ "maple ridge dental": "none" }));
+    expect(getClientSourceIntegration("Maple Ridge Dental Corp.")).toBeNull();
+  });
+});
