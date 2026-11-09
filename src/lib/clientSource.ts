@@ -201,7 +201,7 @@ export function connectClientSource(
   // Every connect (including switching provider) creates a new connection
   // (re-confirming the same live connection, e.g. closing the modal, keeps its id)
   const keys = clientKeys(clientName);
-  const current = getClientConnectionState(...keys);
+  const current = getClientSourceIntegration(clientName);
   const connectionId = current === provider
     ? (getClientConnectionId(...keys) ?? initialConnectionId(provider))
     : `${provider}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
