@@ -1820,7 +1820,6 @@ yearSourceProviders: yearFields.yearSourceProviders,
 
 <SectionCard icon={<Calendar className="h-5 w-5" />} title="Engagement Period">
  {/* Source Data status */}
- {prevSourceProvider ? (
  <div className="mt-3 pb-4 mb-2 border-b border-border/50 flex items-center gap-4">
   <span className="text-sm text-foreground w-[160px] shrink-0">Source Data</span>
   <div className="flex flex-nowrap items-center gap-[200px]">
