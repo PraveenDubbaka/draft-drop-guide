@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Check, Search, Loader2, PlugZap, Calculator, Banknote, CreditCard, Users, Briefcase, Receipt, FolderOpen, MessageSquare, ShieldCheck, Building2, ClipboardList, Network, Video } from "lucide-react";
 import { toast } from "sonner";
+import { isClientAccountingConnector } from "@/lib/engagementConnectors";
 
 interface ConnectorDef {
  id: string;
@@ -296,11 +297,12 @@ export function ConnectorsModal({ open, onOpenChange, connectedApps, onConnect, 
  const connectedCount = connectedApps.size;
 
  const handleConnectClick = useCallback((id: string) => {
- if (loadingId) return;
+ if (loadingId || isClientAccountingConnector(id)) return;
  setExpandedId(prev => (prev === id ? null : id));
  }, [loadingId]);
 
  const handleAuthorize = useCallback((connector: ConnectorDef) => {
+ if (isClientAccountingConnector(connector.id)) return;
  setExpandedId(null);
  setLoadingId(connector.id);
  setTimeout(() => {
@@ -311,6 +313,7 @@ export function ConnectorsModal({ open, onOpenChange, connectedApps, onConnect, 
  }, [onConnect]);
 
  const handleDisconnect = useCallback((connector: ConnectorDef) => {
+ if (isClientAccountingConnector(connector.id)) return;
  onDisconnect(connector.id);
  toast.success(`Disconnected from ${connector.name}`);
  }, [onDisconnect]);
@@ -368,13 +371,14 @@ export function ConnectorsModal({ open, onOpenChange, connectedApps, onConnect, 
  {/* Connector list */}
  <div className="space-y-1">
  {(() => {
- const catConnectedCount = cat.connectors.filter(c => connectedApps.has(c.id)).length;
+ const catConnectedCount = cat.connectors.filter(c => !isClientAccountingConnector(c.id) && connectedApps.has(c.id)).length;
  const exclusiveLocked = !!cat.exclusive && catConnectedCount > 0;
  return cat.connectors.map(connector => {
  const isConnected = connectedApps.has(connector.id);
+ const isReadOnly = isClientAccountingConnector(connector.id);
  const isLoading = loadingId === connector.id;
- const isExpanded = expandedId === connector.id;
- const isBlockedByExclusive = exclusiveLocked && !isConnected;
+ const isExpanded = !isReadOnly && expandedId === connector.id;
+ const isBlockedByExclusive = !isReadOnly && exclusiveLocked && !isConnected;
 
  return (
  <div key={connector.id}>
@@ -387,7 +391,7 @@ export function ConnectorsModal({ open, onOpenChange, connectedApps, onConnect, 
  <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded font-medium">{connector.region}</span>
  )}
  </div>
- <div className="text-xs text-muted-foreground mt-0.5 truncate">{connector.description}</div>
+ {!isReadOnly && <div className="text-xs text-muted-foreground mt-0.5 truncate">{connector.description}</div>}
  </div>
  <div className="flex-shrink-0 flex items-center gap-2">
  {isConnected ? (
@@ -396,13 +400,15 @@ export function ConnectorsModal({ open, onOpenChange, connectedApps, onConnect, 
  <Check className="h-3 w-3" />
  Connected
  </span>
- <button
+ {!isReadOnly && <button
  onClick={() => handleDisconnect(connector)}
  className="text-xs text-muted-foreground hover:text-destructive transition-colors ml-1"
  >
  Disconnect
- </button>
+ </button>}
  </>
+ ) : isReadOnly ? (
+ <span className="text-xs text-muted-foreground select-none">Not connected</span>
  ) : isLoading ? (
  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
  <Loader2 className="h-3.5 w-3.5 animate-spin" />
