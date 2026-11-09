@@ -79,20 +79,46 @@ export const sourceLabel = (t: ClientSourceIntegration) =>
  * user picked when creating/editing the engagement. CSV engagements always show
  * CSV even when the client has a live source connection.
  */
+type SavedSourceMeta = {
+  dataSource?: "csv" | "source";
+  sourceProvider?: AccountingProvider;
+  yearDataSources?: { cy?: "csv" | "source" | string };
+  yearSourceProviders?: { cy?: AccountingProvider };
+};
+
+/**
+ * Pure derivation of the Data Type badge from an engagement's saved meta only.
+ * Returns `undefined` when the meta has no saved provider for a Source CY (legacy).
+ */
+export function deriveEngagementDataType(meta: SavedSourceMeta | undefined | null): ClientSourceIntegration | undefined {
+  if (!meta) return undefined;
+  const cy = meta.yearDataSources?.cy ?? meta.dataSource;
+  if (cy === undefined) return undefined;
+  if (cy !== "source") return null;
+  return meta.yearSourceProviders?.cy ?? meta.sourceProvider ?? undefined;
+}
+
+/**
+ * Resolve the Data Type shown for an engagement from its SAVED current-year
+ * source — never the client's live connection (unless legacy meta has no provider).
+ */
 export function getEngagementSourceIntegration(
   engagementId: string,
   clientName: string
 ): ClientSourceIntegration {
-  let dataSource: "csv" | "source" | undefined;
+  let meta: SavedSourceMeta | undefined;
   try {
     const raw = localStorage.getItem(`engagement-meta-${engagementId}`);
-    if (raw) dataSource = JSON.parse(raw)?.dataSource;
+    if (raw) meta = JSON.parse(raw);
   } catch {}
-  dataSource ??= DEMO_DATA_SOURCES[engagementId];
-  if (dataSource === "csv") return null;
-  // No saved selection (legacy engagement): fall back to the client's connection.
-  if (dataSource !== "source" && dataSource !== undefined) return null;
-  return getClientSourceIntegration(clientName);
+  if (!meta || (meta.dataSource === undefined && meta.yearDataSources?.cy === undefined)) {
+    const seeded = DEMO_DATA_SOURCES[engagementId];
+    meta = { ...(meta ?? {}), dataSource: seeded };
+  }
+  const derived = deriveEngagementDataType(meta);
+  if (derived !== undefined) return derived;
+  // Legacy: Source with no saved provider — fall back to the client's connection.
+  return meta.dataSource === "source" ? getClientSourceIntegration(clientName) : null;
 }
 
 /** The five scenario engagements shown on Dashboard and Engagements, in display order. */
