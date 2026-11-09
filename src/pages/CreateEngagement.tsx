@@ -10,7 +10,7 @@ import { clientsData as appClientsData } from "@/data/clientsData";
 import { getClientSourceIntegration, sourceLabel, getClientConnectionState, CLIENT_CONNECTION_EVENT, type AccountingProvider } from "@/lib/clientSource";
 import { accountingProviders } from "@/lib/accountingProviders";
 import { SourceConnectionModal } from "@/components/SourceConnectionModal";
-import { ArrowLeft, Briefcase, Calendar, Users, ChevronDown, Plus, Pencil, Trash2, Search, ExternalLink, X, Building2, FileText, Settings2, Check, UserPlus, Link2, AlertTriangle, XCircle, FilePen, FolderPlus, MessageSquareText } from "lucide-react";
+import { ArrowLeft, Briefcase, Calendar, Users, ChevronDown, Plus, Pencil, Trash2, Search, ExternalLink, X, Building2, FileText, Settings2, Check, UserPlus, Link2, AlertTriangle, XCircle, Info, FilePen, FolderPlus, MessageSquareText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -1964,17 +1964,11 @@ yearSourceProviders: yearFields.yearSourceProviders,
   )}
   {switchToCsvMessage}
   {showMismatchWarning && originalCyProvider && !isSourceLockedStub && (
-   <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
-    <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
-    <div className="flex flex-col items-start gap-2">
-     <span className="text-sm text-red-800 dark:text-red-200">Your client's source connection has changed. Click Switch Connection to update this engagement to the new source.</span>
-     <Button variant="outline" size="sm" className="h-8 text-sm" onClick={() => {
-      setHasSelectedActiveConnection(true);
-      setAckText("");
-      // Move every row still on the old provider to the client's active connection
-      if (activeProvider) setYearSources(s => s.map(v => (v.startsWith("source:") && v !== "source:none" && v.slice(7) !== activeProvider ? `source:${activeProvider}` : v)));
-     }}>Switch Connection</Button>
-    </div>
+   <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-blue-200 bg-blue-50 dark:bg-blue-950/30 px-3 py-2">
+    <Info className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+    <span className="text-sm text-blue-800 dark:text-blue-200">
+     {`Your client is now connected to ${sourceLabel(activeProvider as AccountingProvider)}. This engagement still uses ${sourceLabel(originalCyProvider)} data. To switch, select ${sourceLabel(activeProvider as AccountingProvider)} from the Data Source dropdown.`}
+    </span>
    </div>
   )}
   {showSwitchToSourceMessage && (
