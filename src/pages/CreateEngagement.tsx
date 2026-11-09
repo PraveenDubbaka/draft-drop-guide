@@ -1490,7 +1490,6 @@ const [ackText, setAckText] = useState("");
     // Mismatch warning only while at least one year row still points to the old provider
     const showMismatchWarning = isSourceProviderMismatch && [0, 1, 2].some(i => yearDisconnectedProvider(i) !== null);
     // Single red "No source connection found" error: never-connected Source selection or an externally disconnected saved source
-    const showRedNoConnectionError = showNoConnectionError;
     // "Switching…" messages — while either is visible, the generic per-year source note is hidden
     // Software the year(s) switching to CSV pulled from: CY's, else (Partial year on a roll forward) a locked prior year's
     const switchFromProvider: AccountingProvider | null = originalCyProvider ?? (isSourceLockedStub ? lockedPriorProvider : null);
