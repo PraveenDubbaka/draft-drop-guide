@@ -1450,7 +1450,7 @@ const [ackText, setAckText] = useState("");
  engagementTemplate.trim() !== "" &&
  engagementType !== "" &&
  budget.trim() !== "" &&
- (isSourceLockedStub || dataSource !== "source" || clientHasSourceConnection || sourceConnected) &&
+ (isSourceLockedStub || dataSource !== "source" || clientHasSourceConnection || sourceConnected || (isEditMode && yearSources.every((source, i) => source === originalYearSources[i]))) &&
  accountingStandards !== "" &&
  additionalDisclosures !== "" &&
  currentYearStart.trim() !== "" &&
