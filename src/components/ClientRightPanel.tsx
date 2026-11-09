@@ -31,7 +31,7 @@ const folderStructure: FolderItem[] = [
  },
 ];
 
-export function ClientRightPanel({ className, clientName = 'CR tickets' }: ClientRightPanelProps) {
+export function ClientRightPanel({ className, clientName = 'Lakeshore Ticketing' }: ClientRightPanelProps) {
  const [isExpanded, setIsExpanded] = useState(false);
  const [activeItem, setActiveItem] = useState('documents');
  const [expandedFolders, setExpandedFolders] = useState<string[]>([]);
