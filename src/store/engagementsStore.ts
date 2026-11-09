@@ -18,6 +18,7 @@ export const SEED_ENGAGEMENTS: EngagementRecord[] = [
   { id: "COM-NEW-Dec312024", client: "Cedar Point Logistics", type: "Compilation (COM)", yearEnd: "Dec 31, 2024", team: "View Assignees", status: "New", statusVariant: "new", hasRF: false, dateCreated: "Jan 13, 2026 09:00 AM", firstYearAudit: false },
   { id: "COM-FYO-RF-Dec312025", client: "Harbor Freight Logistics LLC", type: "Compilation (COM)", yearEnd: "Dec 31, 2025", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: true, dateCreated: "Jan 12, 2026 09:00 AM", firstYearAudit: false },
   { id: "COM-QB-Dec312026", client: "Harbor Freight Logistics LLC", type: "Compilation (COM)", yearEnd: "Dec 31, 2026", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: false, dateCreated: "Jan 14, 2026 09:00 AM", firstYearAudit: false },
+  { id: "COM-MRD-Dec312025", client: "Maple Ridge Dental Corp.", type: "Compilation (COM)", yearEnd: "Dec 31, 2025", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: false, dateCreated: "Jan 15, 2026 09:00 AM", firstYearAudit: false },
   { id: "COM-INPROGRESS-Dec312024", client: "Riverstone Capital", type: "Compilation (COM)", yearEnd: "Dec 31, 2024", team: "View Assignees", status: "In Progress", statusVariant: "inProgress", hasRF: true, dateCreated: "Jan 10, 2026 09:00 AM", firstYearAudit: false },
 ];
 
@@ -46,13 +47,20 @@ function seedDemoEngagementMeta() {
     { id: 'tm-staff', role: 'Staff / Assistant', name: 'Sarah Chen', email: 'sarahc@countable.co', title: 'Staff Auditor', hourlyRate: '65.00', timeAllocation: '20' },
   ]);
 
-  const seeds: Record<string, { dataSource: 'csv' | 'source'; sourceProvider?: 'xero' | 'quickbooks'; sourceYearsAvailable?: number; sourceYears?: number; sourceRollForward?: boolean; periodType?: 'stub' | 'full' | 'fyoChain2' | 'full2026'; firstYearOfOperations?: boolean; yearDataSources?: EngagementMeta['yearDataSources']; yearSourceProviders?: EngagementMeta['yearSourceProviders']; priorYearSources?: EngagementMeta['priorYearSources'] }> = {
+  const seeds: Record<string, { dataSource: 'csv' | 'source'; sourceProvider?: 'xero' | 'quickbooks'; sourceYearsAvailable?: number; sourceYears?: number; sourceRollForward?: boolean; periodType?: 'stub' | 'full' | 'fyoChain2' | 'full2026' | 'full2025'; firstYearOfOperations?: boolean; yearDataSources?: EngagementMeta['yearDataSources']; yearSourceProviders?: EngagementMeta['yearSourceProviders']; priorYearSources?: EngagementMeta['priorYearSources']; sourceConnectionId?: string }> = {
     'COM-NEW-Dec312024': { dataSource: 'csv' },
     // Future year end (Dec 31, 2026): CY from QuickBooks Online (pulled as of), PY1 / PY2 CSV with seeded data
     'COM-QB-Dec312026': {
       dataSource: 'source', sourceProvider: 'quickbooks', sourceYearsAvailable: 3, sourceYears: 1, periodType: 'full2026',
       yearDataSources: { cy: 'source', py1: 'csv', py2: 'csv' },
       yearSourceProviders: { cy: 'quickbooks' },
+    },
+    // Same-source reconnect: CY pulled from the client's original QuickBooks connection; the client has since reconnected QuickBooks
+    'COM-MRD-Dec312025': {
+      dataSource: 'source', sourceProvider: 'quickbooks', sourceYearsAvailable: 3, sourceYears: 1, periodType: 'full2025',
+      yearDataSources: { cy: 'source', py1: 'csv', py2: 'csv' },
+      yearSourceProviders: { cy: 'quickbooks' },
+      sourceConnectionId: 'quickbooks-initial',
     },
     // First Year of Operations, 1st roll forward (chain 2): CY + PY1 from QuickBooks, PY2 hidden
     'COM-FYO-RF-Dec312025': {
@@ -85,6 +93,7 @@ function seedDemoEngagementMeta() {
         if (seed.sourceRollForward) meta.sourceRollForward = true; else delete meta.sourceRollForward;
         if (seed.yearDataSources) meta.yearDataSources = seed.yearDataSources;
         if (seed.yearSourceProviders) meta.yearSourceProviders = seed.yearSourceProviders;
+        if (seed.sourceConnectionId) meta.sourceConnectionId = seed.sourceConnectionId;
       } else if (!meta.yearDataSources && seed.yearDataSources) {
         // Older stored meta without per-year sources (never saved via Edit) — fill in the seeded per-year sources
         meta.yearDataSources = seed.yearDataSources;
@@ -111,6 +120,11 @@ function seedDemoEngagementMeta() {
         delete meta.firstYearOfOperations;
         meta.periodStart = '01/01/2026';
         meta.periodEnd = '12/31/2026';
+      } else if (seed.periodType === 'full2025') {
+        meta.auditPeriodType = 'Full year';
+        delete meta.firstYearOfOperations;
+        meta.periodStart = '01/01/2025';
+        meta.periodEnd = '12/31/2025';
       } else if (seed.periodType === 'full') {
         meta.auditPeriodType = 'Full Year';
         delete meta.firstYearOfOperations;
@@ -211,6 +225,7 @@ export type EngagementMeta = {
   /** Edit only: years switched Source to CSV whose existing data the user chose to remove. */
  yearRemoveData?: { cy?: boolean; py1?: boolean; py2?: boolean };
  sourceYears?: number; // 1 = CY only, 2 = CY + PY1, 3 = all years connected to source
+ sourceConnectionId?: string; // client connection the source years were pulled from (default `${provider}-initial`)
  sourceDisconnectedFrom?: "xero" | "quickbooks" | "sage"; // set when a CSV import disconnected a source engagement
  sourceRollForward?: boolean; // roll forward: CY from source, prior years stay CSV
  /** Roll forward: where each locked prior year came from (last year's CY → PY1, last year's PY1 → PY2).

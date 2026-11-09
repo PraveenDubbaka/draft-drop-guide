@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
 import xeroLogo from "@/assets/xero-logo-full.svg";
 import { clientsData as appClientsData } from "@/data/clientsData";
-import { getClientSourceIntegration, sourceLabel, getClientConnectionState, CLIENT_CONNECTION_EVENT, type AccountingProvider } from "@/lib/clientSource";
+import { getClientSourceIntegration, sourceLabel, getClientConnectionState, getClientConnectionId, isConnectionChanged, rowProvider, CLIENT_CONNECTION_EVENT, type AccountingProvider } from "@/lib/clientSource";
 import { accountingProviders } from "@/lib/accountingProviders";
 import { SourceConnectionModal } from "@/components/SourceConnectionModal";
 import { ArrowLeft, Briefcase, Calendar, Users, ChevronDown, Plus, Pencil, Trash2, Search, ExternalLink, X, Building2, FileText, Settings2, Check, UserPlus, Link2, AlertTriangle, XCircle, FilePen, FolderPlus, MessageSquareText } from "lucide-react";
@@ -1272,6 +1272,12 @@ const [ackText, setAckText] = useState("");
    );
    const [py1DataSource, setPy1DataSource] = useState<"csv" | "source">(() => editingMeta?.yearDataSources?.py1 ?? "csv");
    const [py2DataSource, setPy2DataSource] = useState<"csv" | "source">(() => editingMeta?.yearDataSources?.py2 ?? "csv");
+   // Client's active connection id; differs from the engagement's saved one after a disconnect + reconnect
+   const activeConnectionId = activeProvider ? getClientConnectionId(clientName, localClientInfo?.entityLegalName, clientInfo?.entityLegalName) : null;
+   /** Edit only: saved provider equals the active one, but the connection was re-made (new connection id). */
+   const sameProviderReconnected = (yp: AccountingProvider | null | undefined) =>
+     isEditMode && !!yp && yp === activeProvider
+     && isConnectionChanged(yp, editingMeta?.sourceConnectionId, activeProvider, activeConnectionId);
    const initYearSources = (): string[] => {
      const p = clientSourceIntegration;
      if (isRollForwardSource) {
@@ -1286,7 +1292,8 @@ const [ackText, setAckText] = useState("");
          const ysp = editingMeta?.yearSourceProviders;
          return [yds.cy, yds.py1, yds.py2].map((v, i) => {
            const yp = ysp?.[(["cy", "py1", "py2"] as const)[i]] ?? savedProvider;
-           return v === "source" ? (yp ? `source:${yp}` : "source:none") : "csv";
+           // Same provider on a new connection: mark the saved row as the previous connection
+           return v === "source" ? (yp ? `source:${yp}${sameProviderReconnected(yp) ? "|prev" : ""}` : "source:none") : "csv";
          });
        }
        const n = editingMeta?.dataSource === "source" && savedProvider ? (editingMeta?.sourceYears ?? 1) : 0;
@@ -1296,7 +1303,7 @@ const [ackText, setAckText] = useState("");
    };
    const [yearSources, setYearSources] = useState<string[]>(initYearSources);
    const [originalCySource] = useState<string>(() => initYearSources()[0]);
-   const originalCyProvider = (originalCySource.startsWith("source:") ? originalCySource.slice(7) : null) as AccountingProvider | null;
+   const originalCyProvider = (originalCySource.startsWith("source:") ? rowProvider(originalCySource) : null) as AccountingProvider | null;
    const [yearErrors, setYearErrors] = useState<boolean[]>([false, false, false]);
    useEffect(() => { if (!isEditMode) setYearSources(initYearSources()); }, [clientSourceIntegration, clientName]); // eslint-disable-line react-hooks/exhaustive-deps
    useEffect(() => {
@@ -1349,7 +1356,7 @@ const [ackText, setAckText] = useState("");
      if (o.startsWith("source:") && c === "csv") return "toCsv";
      if (o === "csv" && c.startsWith("source:") && c !== "source:none") return "toSource";
      // Switching off a provider that was disconnected externally (per-row switch prompt)
-     if (o.startsWith("source:") && c.startsWith("source:") && c !== "source:none" && o.slice(7) !== activeProvider) return "toOtherSource";
+     if (o.startsWith("source:") && c.startsWith("source:") && c !== "source:none" && (rowProvider(o) !== activeProvider || o.endsWith("|prev"))) return "toOtherSource";
      return null;
    };
    /** Edit only: the year's saved provider (regardless of current selection) is no longer an active connection. */
@@ -1357,16 +1364,16 @@ const [ackText, setAckText] = useState("");
      if (!isEditMode) return null;
      const o = originalYearSources[i];
      if (!o?.startsWith("source:") || o === "source:none") return null;
-     const p = o.slice(7) as AccountingProvider;
-     return p === activeProvider ? null : p;
+     const p = rowProvider(o);
+     return p === activeProvider && !o.endsWith("|prev") ? null : p;
    };
    /** Edit only: the year's saved provider is no longer among the client's active connections (and the row is unchanged). */
    const yearDisconnectedProvider = (i: number): AccountingProvider | null => {
      if (!isEditMode) return null;
      const o = originalYearSources[i];
      if (!o?.startsWith("source:") || o === "source:none" || yearSources[i] !== o) return null;
-     const p = o.slice(7) as AccountingProvider;
-     return p === activeProvider ? null : p;
+     const p = rowProvider(o);
+     return p === activeProvider && !o.endsWith("|prev") ? null : p;
    };
    const visibleYearIdx = [0, 1, 2].filter(i => (!isFooPeriod || i < fyoChain) && !(rfPy2NoData && i === 2) && yearSources[i] !== "nodata");
    // Edit: changing the Current Year end date (any period type) resets the whole trial balance
@@ -1482,13 +1489,14 @@ const [ackText, setAckText] = useState("");
    // Edit only: the provider this engagement was saved on, when it is no longer the client's active connection
    const prevSourceProvider: AccountingProvider | null = (() => {
      if (!isEditMode || originalDataSource !== "source") return null;
-     const fromYears = originalYearSources.find(o => o?.startsWith("source:") && o !== "source:none")?.slice(7) as AccountingProvider | undefined;
-     const saved = (savedSourceProvider ?? fromYears) ?? null;
-     return saved && saved !== activeProvider ? saved : null;
+     const fromYears = originalYearSources.find(o => o?.startsWith("source:") && o !== "source:none")as string | undefined;
+     const fromYearsP = fromYears ? rowProvider(fromYears) : undefined;
+     const saved = (savedSourceProvider ?? fromYearsP) ?? null;
+     return saved && (saved !== activeProvider || sameProviderReconnected(saved)) ? saved : null;
    })();
    const isSourceProviderMismatch = isEditMode && !isRollForwardSource && clientHasSourceConnection
      && originalDataSource === "source" && dataSource === "source"
-     && !!savedSourceProvider && savedSourceProvider !== clientSourceIntegration;
+     && !!savedSourceProvider && (savedSourceProvider !== clientSourceIntegration || sameProviderReconnected(savedSourceProvider));
    // The client's connection can't be used by this engagement right now:
    // either the connection isn't active or the engagement is linked to a different source.
    const showConnectionDropdown = isSourceProviderMismatch || isReconnectFlow;
@@ -1570,7 +1578,7 @@ const performSave = () => {
      priorYearSources: editingMeta?.priorYearSources, sourceRollForward: editingMeta?.sourceRollForward,
    });
    const firstSourceRow = effectiveYearSources.find(isSourceRow);
-   const firstSourceProvider = firstSourceRow ? (firstSourceRow.slice(7) as AccountingProvider) : undefined;
+   const firstSourceProvider = firstSourceRow ? rowProvider(firstSourceRow) : undefined;
  const record: EngagementRecord = {
  id: engagementId,
  client: clientName,
@@ -1608,6 +1616,10 @@ yearSourceProviders: yearFields.yearSourceProviders,
  priorYearSources: yearFields.priorYearSources,
  sourceDisconnectedFrom: savedDataSource === "csv" ? editingMeta?.sourceDisconnectedFrom : undefined,
  sourceRollForward: yearFields.sourceRollForward,
+ // Rows still on the previous connection keep its id; any row on the active connection moves the engagement to it
+ sourceConnectionId: savedDataSource !== "source" ? undefined
+  : effectiveYearSources.some(v => isSourceRow(v) && !v.endsWith("|prev")) && activeConnectionId ? activeConnectionId
+  : editingMeta?.sourceConnectionId,
  sourceYearsAvailable: editingMeta?.sourceYearsAvailable,
  // Year end changed: existing CSV data is removed (Source years are pulled again for the new dates)
  yearRemoveData: yearEndChanged
@@ -1901,7 +1913,7 @@ yearSourceProviders: yearFields.yearSourceProviders,
         <SelectValue>{sourceLabel(disconnectedP)} · Disconnected</SelectValue>
        </SelectTrigger>
        <SelectContent>
-        {activeProvider && activeProvider !== disconnectedP && (
+        {activeProvider && (activeProvider !== disconnectedP || val.endsWith("|prev")) && (
          <SelectItem value={`source:${activeProvider}`}>{sourceLabel(activeProvider)}</SelectItem>
         )}
         <SelectItem value="csv">CSV / Excel / PDF</SelectItem>
@@ -1909,11 +1921,11 @@ yearSourceProviders: yearFields.yearSourceProviders,
       </Select>
      ) : (
       <Select value={stubLocked ? "csv" : (val.startsWith("source:") ? val : "csv")} disabled={stubLocked} onValueChange={v => setYearSource(i, v)}>
-       <SelectTrigger className="h-9 text-sm" title={stubLocked || !val.startsWith("source:") ? "CSV / Excel / PDF" : val === "source:none" ? "Not connected" : `${sourceLabel(val.slice(7) as AccountingProvider)}`}><SelectValue /></SelectTrigger>
+       <SelectTrigger className="h-9 text-sm" title={stubLocked || !val.startsWith("source:") ? "CSV / Excel / PDF" : val === "source:none" ? "Not connected" : `${sourceLabel(rowProvider(val))}`}><SelectValue /></SelectTrigger>
        <SelectContent>
         {(() => {
          // Exactly one source option: the year's saved provider, else the client's single active connection
-         const cur = val.startsWith("source:") && val !== "source:none" ? (val.slice(7) as AccountingProvider) : null;
+         const cur = val.startsWith("source:") && val !== "source:none" ? rowProvider(val) : null;
          const p = cur ?? activeProvider;
          return p
           ? <SelectItem value={`source:${p}`}>{sourceLabel(p)}</SelectItem>
