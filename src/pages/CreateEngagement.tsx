@@ -1708,7 +1708,7 @@ yearSourceProviders: yearFields.yearSourceProviders,
  <Select value={clientName} onValueChange={setClientName} disabled={isEditMode}>
  <SelectTrigger className="h-9 text-sm opacity-70 cursor-not-allowed"><SelectValue placeholder="Select client..." /></SelectTrigger>
  <SelectContent>
- {Array.from(new Set([...Object.keys(CLIENT_DATA), ...appClientsData.map(c => c.entityName), ...(clientName ? [clientName] : [])])).map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}
+ {Array.from(new Set([...Object.keys(CLIENT_DATA), ...appClientsData.filter(c => c.status !== "Archived").map(c => c.entityName), ...(clientName ? [clientName] : [])])).map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}
  </SelectContent>
  </Select>
  </InlineRow>
