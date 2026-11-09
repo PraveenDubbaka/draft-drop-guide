@@ -1468,15 +1468,12 @@ const [ackText, setAckText] = useState("");
    // Edit-mode scenario 5: the client's source connection changed since the engagement was set up
    const savedSourceProvider = editingMeta?.sourceProvider;
    // Edit only: the provider this engagement was saved on, when it is no longer the client's active connection
-   const prevSourceProvider: AccountingProvider | null = isEditMode && originalDataSource === "source"
-     ? ((savedSourceProvider
-         ?? (originalYearSources.find(o => o?.startsWith("source:") && o !== "source:none")?.slice(7) as AccountingProvider | undefined)
-         ?? null) !== activeProvider
-       ? (savedSourceProvider
-         ?? (originalYearSources.find(o => o?.startsWith("source:") && o !== "source:none")?.slice(7) as AccountingProvider | undefined)
-         ?? null)
-       : null)
-     : null;
+   const prevSourceProvider: AccountingProvider | null = (() => {
+     if (!isEditMode || originalDataSource !== "source") return null;
+     const fromYears = originalYearSources.find(o => o?.startsWith("source:") && o !== "source:none")?.slice(7) as AccountingProvider | undefined;
+     const saved = (savedSourceProvider ?? fromYears) ?? null;
+     return saved && saved !== activeProvider ? saved : null;
+   })();
    const isSourceProviderMismatch = isEditMode && !isRollForwardSource && clientHasSourceConnection
      && originalDataSource === "source" && dataSource === "source"
      && !!savedSourceProvider && savedSourceProvider !== clientSourceIntegration;
