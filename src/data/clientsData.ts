@@ -323,7 +323,7 @@ export const clientsData: Client[] = [
  },
  {
  id: 'HF001',
- entityName: 'Harbor Freight Logistics',
+ entityName: 'Harbor Freight Logistics LLC',
  legalEntityName: 'Harbor Freight Logistics LLC',
  entityType: 'Corporation',
  status: 'Accepted',
