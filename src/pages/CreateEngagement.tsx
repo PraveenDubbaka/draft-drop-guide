@@ -27,6 +27,15 @@ import { Label } from "@/components/ui/label";
 import { TemplatePickerPanel } from "@/components/TemplatePickerPanel";
 import { TEMPLATE_CONFIG } from "@/lib/engagementTemplatesData";
 
+export const connectionBlocksSave = (
+  isEditMode: boolean,
+  yearSources: string[],
+  originalYearSources: string[],
+  showNoConnectionError: boolean,
+  showMismatchWarning: boolean,
+) => (!isEditMode || yearSources.some((source, i) => source !== originalYearSources[i]))
+  && (showNoConnectionError || showMismatchWarning);
+
 const INDUSTRIES = [
  "Construction & Real Estate", "Financial Services", "Healthcare & Life Sciences",
  "Hospitality & Tourism", "Manufacturing", "Mining & Resources", "Not-for-Profit",
@@ -2109,7 +2118,7 @@ yearSourceProviders: yearFields.yearSourceProviders,
  <X className="h-4 w-4" />
  Cancel
  </Button>
- <Button disabled={!isFormValid || showNoConnectionError || showMismatchWarning || ((isCyToCsv || yearEndChanged) && !ackChecked)} onClick={handleCreate}>
+ <Button disabled={!isFormValid || connectionBlocksSave(isEditMode, yearSources, originalYearSources, showNoConnectionError, showMismatchWarning) || ((isCyToCsv || yearEndChanged) && !ackChecked)} onClick={handleCreate}>
  {isEditMode ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
  {isEditMode ? "Update Engagement" : "Create Engagement"}
  </Button>
