@@ -2,6 +2,8 @@ import { clientsData } from "@/data/clientsData";
 
 export type AccountingProvider = "xero" | "quickbooks" | "sage";
 export type ClientSourceIntegration = AccountingProvider | null;
+/** Data Type badge value: provider, null (CSV), or "unknown" (Source CY with no saved provider). */
+export type EngagementDataType = ClientSourceIntegration | "unknown";
 
 const DEMO_DATA_SOURCES: Readonly<Record<string, "csv" | "source">> = {
   "COM-NEW-Dec312024": "csv",
@@ -91,12 +93,12 @@ type SavedSourceMeta = {
  * Pure derivation of the Data Type badge from an engagement's saved meta only.
  * Returns `undefined` when the meta has no saved provider for a Source CY (legacy).
  */
-export function deriveEngagementDataType(meta: SavedSourceMeta | undefined | null): ClientSourceIntegration | undefined {
+export function deriveEngagementDataType(meta: SavedSourceMeta | undefined | null): EngagementDataType | undefined {
   if (!meta) return undefined;
   const cy = meta.yearDataSources?.cy ?? meta.dataSource;
   if (cy === undefined) return undefined;
   if (cy !== "source") return null;
-  return meta.yearSourceProviders?.cy ?? meta.sourceProvider ?? undefined;
+  return meta.yearSourceProviders?.cy ?? meta.sourceProvider ?? "unknown";
 }
 
 /**
@@ -105,8 +107,8 @@ export function deriveEngagementDataType(meta: SavedSourceMeta | undefined | nul
  */
 export function getEngagementSourceIntegration(
   engagementId: string,
-  clientName: string
-): ClientSourceIntegration {
+  _clientName?: string
+): EngagementDataType {
   let meta: SavedSourceMeta | undefined;
   try {
     const raw = localStorage.getItem(`engagement-meta-${engagementId}`);
@@ -118,8 +120,8 @@ export function getEngagementSourceIntegration(
   }
   const derived = deriveEngagementDataType(meta);
   if (derived !== undefined) return derived;
-  // Legacy: Source with no saved provider — fall back to the client's connection.
-  return meta.dataSource === "source" ? getClientSourceIntegration(clientName) : null;
+  // Source CY with no saved provider: never read the client's live connection.
+  return (meta.yearDataSources?.cy ?? meta.dataSource) === "source" ? "unknown" : null;
 }
 
 /** The five scenario engagements shown on Dashboard and Engagements, in display order. */
