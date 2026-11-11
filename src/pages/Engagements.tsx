@@ -160,7 +160,7 @@ export default function Engagements() {
  const [selectedClient, setSelectedClient] = useState("");
  const [selectedEngType, setSelectedEngType] = useState("");
 
- const uniqueClients = Array.from(new Set(engagementList.map(e => e.client))).sort();
+ const uniqueClients = Array.from(new Set(appClientsData.filter(c => c.status !== "Archived").map(c => c.entityName))).sort();
 
  const handleProceed = () => {
  setCreateModalOpen(false);
@@ -468,7 +468,7 @@ export default function Engagements() {
  <SelectTrigger className="h-10 text-sm">
  <SelectValue placeholder="Select" />
  </SelectTrigger>
- <SelectContent>
+ <SelectContent className="max-h-72">
  {uniqueClients.map(client => (
  <SelectItem key={client} value={client}>{client}</SelectItem>
  ))}
