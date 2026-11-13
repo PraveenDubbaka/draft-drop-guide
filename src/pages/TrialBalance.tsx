@@ -345,7 +345,6 @@ export default function TrialBalance() {
  const removed = srcMeta.yearRemoveData ?? {};
  const isRemoved = (y: "cy" | "py1" | "py2") => !!removed[y] && srcMeta.yearDataSources?.[y] !== "source";
  const cyRemoved = isRemoved("cy"), py1Removed = isRemoved("py1"), py2Removed = isRemoved("py2");
- const removedYearLabels = [cyRemoved && "Current Year", py1Removed && "Prior Year 1", py2Removed && "Prior Year 2"].filter(Boolean) as string[];
  const dash = <span className="text-muted-foreground">—</span>;
    const sourceStatusDisconnected = isExternallyDisconnected || !!disconnectedFrom;
 // Refreshing the Current Year moves the "pulled as of" date to today
@@ -1026,12 +1025,6 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  <span className="text-sm text-blue-900">{cyIsSourcePull
   ? `This year ends on ${cyYearEndLabel} and hasn't finished yet. Data is pulled as of ${pulledAsOfLabel}. The numbers will change each time you refresh.`
   : `This year ends on ${cyYearEndLabel} and hasn't finished yet. Data shown is from the last import.`}</span>
- </div>
- )}
- {removedYearLabels.length > 0 && (
- <div className="mx-6 mt-4 flex items-center justify-between gap-3 rounded-[10px] border border-amber-300 bg-amber-50 px-3 py-2">
- <span className="text-sm text-amber-800">Existing data was removed for {removedYearLabels.join(" / ")}. Import a new trial balance for these years.</span>
- <Button size="sm" variant="secondary" className="gap-1.5" onClick={() => setShowImport(true)}><Upload className="h-4 w-4" /> Import</Button>
  </div>
  )}
  {stalePriorYears.map(({ provider, labels }) => (
