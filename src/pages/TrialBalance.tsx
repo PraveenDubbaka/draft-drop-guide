@@ -325,9 +325,6 @@ export default function TrialBalance() {
   : null;
   // Source disconnected outside the app: engagement still linked, but the client's active connection differs / is gone
   const isExternallyDisconnected = !!configuredProvider && clientActiveProvider !== configuredProvider;
-  // A1: client has no active connection at all · A2: client is connected, but to a different provider
-  const hasNoActiveConnection = isExternallyDisconnected && !clientActiveProvider;
-  const hasProviderMismatch = isExternallyDisconnected && !!clientActiveProvider;
   const linkedProvider = isExternallyDisconnected ? null : configuredProvider;
   // First Year of Operations: PY1 / PY2 don't exist — every year-based rule uses CY only
   const isFyo = srcMeta.auditPeriodType === "First Year of Operations"
@@ -471,7 +468,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  // Import is available whenever at least one year is CSV, regardless of the selected year tab
  const allYearsSource = ((["cy", "py1", "py2"] as TbYear[]).slice(0, visibleYearCount)).every((y, i) => yearIsSource(y, i));
  // Roll forward: locked prior years on a software that isn't the client's active connection (stale, can't refresh).
- // Years already covered by the "No source connection" / "connection has changed" banner are skipped.
+ // Prior years whose provider is the engagement's own disconnected source are skipped here.
  const stalePriorYears = (() => {
   if (!srcMeta.sourceRollForward) return [] as { provider: NonNullable<ClientSourceIntegration>; labels: string[] }[];
   const groups = new Map<NonNullable<ClientSourceIntegration>, string[]>();
@@ -1064,21 +1061,6 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
   <span className="text-sm text-amber-800">{`${sourceLabel(provider)} is disconnected for ${labels.join(" and ")}. Data shown is from the last pull and can't be refreshed.`}</span>
  </div>
  ))}
- {disconnectedFrom && (
- <div className="mx-6 mt-4 flex items-center justify-between gap-3 rounded-[10px] border border-amber-300 bg-amber-50 px-3 py-2">
- <span className="text-sm text-amber-800">{hasNoActiveConnection
-  ? `No source connection found. Data shown is from the last pull from ${sourceLabel(configuredProvider)}. Reconnect on the Clients page, or switch to CSV in Edit Engagement.`
-  : hasProviderMismatch
-   ? `Your client's source connection has changed. Data shown is from ${sourceLabel(configuredProvider)}. Go to Edit Engagement to switch to the new source.`
-   : `This engagement is now CSV. Source connection is inactive. To reconnect to ${sourceLabel(disconnectedFrom)}, go to Edit Engagement.`}</span>
- <div className="flex items-center gap-4 shrink-0">
-  {hasNoActiveConnection && (
-   <button type="button" className="text-sm font-medium text-[#1C63A6] hover:underline whitespace-nowrap" onClick={() => navigate("/clients")}>Go to Clients →</button>
-  )}
-  <button type="button" className="text-sm font-medium text-[#1C63A6] hover:underline whitespace-nowrap" onClick={() => navigate(`/engagements/${engagementId}/edit`)}>Edit Engagement →</button>
- </div>
- </div>
- )}
  <AlertDialog open={switchToCsvOpen} onOpenChange={(o) => { setSwitchToCsvOpen(o); if (!o) setDisconnectText(""); }}>
  <AlertDialogContent className="max-w-2xl">
  <AlertDialogHeader>
