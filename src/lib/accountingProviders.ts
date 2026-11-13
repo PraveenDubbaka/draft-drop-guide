@@ -6,7 +6,7 @@ import xeroBadge from "@/assets/xero-logo-full.svg";
 import type { AccountingProvider } from "@/lib/clientSource";
 
 export const accountingProviders: Record<AccountingProvider, { name: string; buttonName: string; logo: string; badgeLogo: string }> = {
-  quickbooks: { name: "QuickBooks Online", buttonName: "QuickBooks", logo: quickbooks, badgeLogo: quickbooksBadge },
+  quickbooks: { name: "QuickBooks", buttonName: "QuickBooks", logo: quickbooks, badgeLogo: quickbooksBadge },
   xero: { name: "Xero", buttonName: "Xero", logo: xero, badgeLogo: xeroBadge },
   sage: { name: "Sage", buttonName: "Sage", logo: sage, badgeLogo: sage },
 };

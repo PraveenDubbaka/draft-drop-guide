@@ -487,7 +487,7 @@ const SUB_TYPE_CONFIG: Record<string, SubTypeConfig> = {
 // ── Source connection labels ─────────────────────────────────────────────────
 
 const SOURCE_CONNECTIONS: Array<{ value: string; label: string }> = [
-  { value: "qbo", label: "QuickBooks Online" },
+  { value: "qbo", label: "QuickBooks" },
   { value: "xero", label: "Xero" },
   { value: "sage", label: "Sage" },
 ];
@@ -602,8 +602,8 @@ type EntryMode = "choose" | "manual" | "source-select" | "source-connecting" | "
 const SOURCE_CARDS = [
   {
     value: "qbo",
-    label: "QuickBooks Online",
-    logo: <img src={intuitQuickbooksLogo} alt="QuickBooks Online" className="h-8 object-contain" />,
+    label: "QuickBooks",
+    logo: <img src={intuitQuickbooksLogo} alt="QuickBooks" className="h-8 object-contain" />,
   },
   {
     value: "xero",
@@ -761,7 +761,7 @@ export default function AddNewClientV2() {
                 >
                   <RefreshCw className="h-8 w-8 text-primary mb-4" />
                   <p className="text-sm font-semibold text-foreground mb-1">Connect from Source</p>
-                  <p className="text-xs text-muted-foreground">Link QuickBooks Online, Xero, or Sage and we'll import the client information automatically.</p>
+                  <p className="text-xs text-muted-foreground">Link QuickBooks, Xero, or Sage and we'll import the client information automatically.</p>
                 </button>
               </div>
             </div>

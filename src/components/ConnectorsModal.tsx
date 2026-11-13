@@ -39,7 +39,7 @@ const CATEGORIES: CategoryDef[] = [
  Icon: Calculator,
  exclusive: true,
  connectors: [
- { id: "qbo", name: "QuickBooks Online", description: "Full GL, AR/AP, payroll data", bg: "#2CA01C", fg: "#fff", label: "QB" },
+  { id: "qbo", name: "QuickBooks", description: "Full GL, AR/AP, payroll data", bg: "#2CA01C", fg: "#fff", label: "QB" },
  { id: "xero", name: "Xero", description: "Cloud accounting, bank feeds, reports", bg: "#13B5EA", fg: "#fff", label: "X" },
  { id: "sage50", name: "Sage 50", description: "Desktop GL, journal entries", bg: "#00904A", fg: "#fff", label: "S" },
  { id: "sage-intacct", name: "Sage Intacct", description: "Multi-entity cloud ERP", bg: "#007749", fg: "#fff", label: "SI" },

@@ -75,7 +75,7 @@ export function getClientSourceIntegration(clientName: string): ClientSourceInte
 }
 
 export const sourceLabel = (t: ClientSourceIntegration) =>
-   t === "xero" ? "Xero" : t === "quickbooks" ? "QuickBooks Online" : t === "sage" ? "Sage" : "CSV";
+   t === "xero" ? "Xero" : t === "quickbooks" ? "QuickBooks" : t === "sage" ? "Sage" : "CSV";
 
 /**
  * Resolve the source shown for an engagement: it reflects the Data Source the
