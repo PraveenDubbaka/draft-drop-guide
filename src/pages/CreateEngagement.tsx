@@ -868,6 +868,24 @@ export function generateEngagementId(type: string, clientName: string, cyEnd: st
  return `${base}-${n}`;
 }
 
+/** Connected / Disconnected pill used by the Source Data row and the Data Source dropdowns. */
+const SourceStatusPill = ({ connected }: { connected: boolean }) => (
+ <span className={`inline-flex shrink-0 items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${
+  connected
+   ? "border-connection-success/30 bg-connection-success-surface text-connection-success"
+   : "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300"
+ }`}>{connected ? "Connected" : "Disconnected"}</span>
+);
+
+/** One source row's identity: provider name, connection status, then the client entity name. */
+const SourceIdentityRow = ({ provider, connected, entityName }: { provider: AccountingProvider; connected: boolean; entityName: string }) => (
+ <span className="flex w-full min-w-0 items-center gap-2">
+  <span className="shrink-0">{sourceLabel(provider)}</span>
+  <SourceStatusPill connected={connected} />
+  <span className="min-w-0 flex-1 truncate text-muted-foreground" title={entityName}>{entityName}</span>
+ </span>
+);
+
 export default function CreateEngagement() {
  const navigate = useNavigate();
  const location = useLocation();
@@ -912,6 +930,8 @@ export default function CreateEngagement() {
           businessPhone: appClient.businessPhone || "",
           cellPhone: appClient.cellPhone || "",
         } : null);
+ // Entity name shown beside the source connection and inside the Data Source dropdowns
+ const sourceEntityName = clientInfo?.entityLegalName || clientName;
  const [engagementType, setEngagementType] = useState(prefill.engagementType || "Review (REV)");
  const prefillIsAudit = (prefill.engagementType || "Review (REV)") === "Audit (AUD)";
  const initialTypeDefaults = typeDefaults(prefill.engagementType || "Review (REV)");
@@ -1869,14 +1889,16 @@ yearSourceProviders: yearFields.yearSourceProviders,
      <span className="inline-flex items-center rounded-full border border-border bg-muted px-2.5 py-0.5 text-[11px] font-medium text-foreground">Not Connected</span>
     ) : (<>
      <span className="inline-flex items-center rounded-[10px] border border-border px-2 py-1"><img src={accountingProviders[activeProvider].badgeLogo} alt={sourceLabel(activeProvider)} className="h-4 object-contain" /></span>
-     <span className="inline-flex items-center rounded-full border border-connection-success/30 bg-connection-success-surface px-2.5 py-0.5 text-[11px] font-medium text-connection-success">Connected</span>
+     <SourceStatusPill connected />
+     <span className="max-w-[200px] truncate text-sm text-foreground" title={sourceEntityName}>{sourceEntityName}</span>
     </>)}
    </span>
    {prevSourceProvider && (
     <span className="inline-flex flex-nowrap items-center gap-2">
      <span className="text-sm text-muted-foreground">Previous</span>
      <span className="inline-flex items-center rounded-[10px] border border-border px-2 py-1"><img src={accountingProviders[prevSourceProvider].badgeLogo} alt={sourceLabel(prevSourceProvider)} className="h-4 object-contain" /></span>
-     <span className="inline-flex items-center rounded-full border border-border bg-muted px-2.5 py-0.5 text-[11px] font-medium text-foreground">Disconnected</span>
+     <SourceStatusPill connected={false} />
+     <span className="max-w-[200px] truncate text-sm text-foreground" title={sourceEntityName}>{sourceEntityName}</span>
     </span>
    )}
   </div>
@@ -1929,25 +1951,31 @@ yearSourceProviders: yearFields.yearSourceProviders,
      ) : (!stubLocked && disconnectedP) ? (
       <Select value="disconnected" onValueChange={v => setYearSource(i, v)}>
        <SelectTrigger className="h-9 text-sm text-muted-foreground" title={`${sourceLabel(disconnectedP)} · Disconnected`}>
-        <SelectValue>{sourceLabel(disconnectedP)} · Disconnected</SelectValue>
+        <SelectValue><SourceIdentityRow provider={disconnectedP} connected={false} entityName={sourceEntityName} /></SelectValue>
        </SelectTrigger>
        <SelectContent>
         {activeProvider && (activeProvider !== disconnectedP || val.endsWith("|prev")) && (
-         <SelectItem value={`source:${activeProvider}`}>{sourceLabel(activeProvider)}</SelectItem>
+         <SelectItem value={`source:${activeProvider}`}><SourceIdentityRow provider={activeProvider} connected entityName={sourceEntityName} /></SelectItem>
         )}
         <SelectItem value="csv">CSV / Excel / PDF</SelectItem>
        </SelectContent>
       </Select>
      ) : (
       <Select value={stubLocked ? "csv" : (val.startsWith("source:") ? val : "csv")} disabled={stubLocked} onValueChange={v => setYearSource(i, v)}>
-       <SelectTrigger className="h-9 text-sm" title={stubLocked || !val.startsWith("source:") ? "CSV / Excel / PDF" : val === "source:none" ? "Not connected" : `${sourceLabel(rowProvider(val))}`}><SelectValue /></SelectTrigger>
+       <SelectTrigger className="h-9 text-sm" title={stubLocked || !val.startsWith("source:") ? "CSV / Excel / PDF" : val === "source:none" ? "Not connected" : `${sourceLabel(rowProvider(val))}`}>
+        <SelectValue>
+         {stubLocked || !val.startsWith("source:") ? "CSV / Excel / PDF"
+          : val === "source:none" ? "Not connected"
+          : <SourceIdentityRow provider={rowProvider(val)} connected={rowProvider(val) === activeProvider && !val.endsWith("|prev")} entityName={sourceEntityName} />}
+        </SelectValue>
+       </SelectTrigger>
        <SelectContent>
         {(() => {
          // Exactly one source option: the year's saved provider, else the client's single active connection
          const cur = val.startsWith("source:") && val !== "source:none" ? rowProvider(val) : null;
          const p = cur ?? activeProvider;
          return p
-          ? <SelectItem value={`source:${p}`}>{sourceLabel(p)}</SelectItem>
+          ? <SelectItem value={`source:${p}`}><SourceIdentityRow provider={p} connected={p === activeProvider && !val.endsWith("|prev")} entityName={sourceEntityName} /></SelectItem>
           : val === "source:none" ? <SelectItem value="source:none">Not connected</SelectItem> : null; // legacy saved value only; never offered as a choice
         })()}
         <SelectItem value="csv">CSV / Excel / PDF</SelectItem>
