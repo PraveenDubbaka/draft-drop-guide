@@ -72,9 +72,6 @@ import {
  CloudUpload,
  Plug,
  Lock,
- FilePen,
- FolderPlus,
- MessageSquareText,
 } from "lucide-react";
 import { SourceSwitchDisclaimer } from "@/components/SourceSwitchDisclaimer";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -1349,10 +1346,10 @@ function ReimportWarningModal({ open, onOpenChange, yearLabels, onProceed }: {
  const [confirmText, setConfirmText] = useState("");
  useEffect(() => { if (open) setConfirmText(""); }, [open]);
  const items = [
-  { icon: FilePen, text: "Adjusting entries will be deleted" },
-  { icon: FolderPlus, text: "Manually added accounts will be deleted" },
-  { icon: MessageSquareText, text: "Issues, comments and requests will be deleted" },
-  { icon: FileText, text: "Documents will only move after data is imported" },
+  { text: "Adjusting entries", status: "Deleted", tagClass: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300" },
+  { text: "Manually added accounts", detail: "To remove them, exit, delete those accounts, and reimport.", status: "Stays", tagClass: "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300" },
+  { text: "Issues, comments and requests", status: "Deleted", tagClass: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300" },
+  { text: "Documents", detail: "A temporary folder will be created and your documents will be moved there.", status: "Moved", tagClass: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300" },
  ];
  return (
   <Dialog open={open} onOpenChange={onOpenChange}>
@@ -1364,16 +1361,20 @@ function ReimportWarningModal({ open, onOpenChange, yearLabels, onProceed }: {
      <DialogTitle className="text-lg font-semibold text-foreground">Reimport Warning</DialogTitle>
      <DialogDescription className="text-xs text-muted-foreground">Re-importing: {yearLabels.join(", ")}</DialogDescription>
     </div>
-    <ul className="space-y-2">
-     {items.map(({ icon: Icon, text }) => (
-      <li key={text} className="flex items-start gap-2 text-sm text-foreground">
-       <Icon className="h-4 w-4 shrink-0 mt-0.5 text-foreground" />
-       <span>{text}</span>
-      </li>
+    <div className="rounded-[10px] border border-border px-3.5 py-1">
+     {items.map(({ text, detail, status, tagClass }, i) => (
+      <div key={text} className={`flex items-start gap-2.5 py-2.5 ${i < items.length - 1 ? "border-b border-gray-100 dark:border-gray-800" : ""}`}>
+       <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-gray-100 text-[11px] font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">{i + 1}</span>
+       <div className="flex-1 min-w-0">
+        <p className="text-sm text-foreground">{text}</p>
+        {detail && <p className="mt-0.5 text-xs text-gray-600 dark:text-gray-300">{detail}</p>}
+       </div>
+       <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${tagClass}`}>{status}</span>
+      </div>
      ))}
-    </ul>
+    </div>
     <div className="space-y-1.5">
-     <label htmlFor="reimport-confirm" className="text-sm text-foreground">Please type DELETE below to confirm your understanding *</label>
+     <label htmlFor="reimport-confirm" className="text-sm text-foreground">Type DELETE to confirm you understand *</label>
      <Input id="reimport-confirm" value={confirmText} onChange={e => setConfirmText(e.target.value)} placeholder="DELETE" autoComplete="off" />
     </div>
     <div className="flex gap-3">
