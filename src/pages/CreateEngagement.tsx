@@ -1548,6 +1548,8 @@ const [ackText, setAckText] = useState("");
       && (dataSource === "source" || yearErrors.some(Boolean));
     // Mismatch warning only while at least one year row still points to the old provider
     const showMismatchWarning = isSourceProviderMismatch && [0, 1, 2].some(i => yearDisconnectedProvider(i) !== null);
+    const anyRowDisconnected = !isExternallyDisconnected && !isSourceLockedStub && visibleYearIdx.some(i =>
+      yearSources[i] !== "locked" && yearSources[i] !== "nodata" && yearDisconnectedProvider(i) !== null);
     // "Switching…" messages — while either is visible, the generic per-year source note is hidden
     // Software the year(s) switching to CSV pulled from: CY's, else (Partial year on a roll forward) a locked prior year's
     const switchFromProvider: AccountingProvider | null = originalCyProvider ?? (isSourceLockedStub ? lockedPriorProvider : null);
@@ -1994,15 +1996,6 @@ yearSourceProviders: yearFields.yearSourceProviders,
      <span className="col-span-2 text-xs text-muted-foreground">{row.note}</span>
     </div>
    )}
-   {!showMismatchWarning && !isExternallyDisconnected && !locked && !noData && !stubLocked && disconnectedP && (
-    <div className="grid grid-cols-[176px_minmax(0,1fr)] gap-4 mt-2">
-     <span />
-     <div className="flex items-start gap-2 rounded-[10px] border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-amber-800 dark:text-amber-200" role="status">
-      <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-      <p className="text-sm">{sourceLabel(disconnectedP)} is disconnected for this year. Select a new data source from the Data Source dropdown.</p>
-     </div>
-    </div>
-   )}
   </div>
   );
  })}
@@ -2026,7 +2019,7 @@ yearSourceProviders: yearFields.yearSourceProviders,
    </div>
   )}
   {switchToCsvMessage}
-  {showMismatchWarning && originalCyProvider && !isSourceLockedStub && (
+  {((showMismatchWarning && originalCyProvider) || (!showMismatchWarning && anyRowDisconnected)) && (
    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2">
     <XCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
     <span className="text-sm text-red-800 dark:text-red-200">Your client's source connection has changed.</span>
