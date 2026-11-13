@@ -9,8 +9,9 @@ import xeroLogo from "@/assets/xero-logo-full.svg";
 import { clientsData as appClientsData } from "@/data/clientsData";
 import { getClientSourceIntegration, sourceLabel, getClientConnectionState, getClientConnectionId, isConnectionChanged, rowProvider, CLIENT_CONNECTION_EVENT, type AccountingProvider } from "@/lib/clientSource";
 import { accountingProviders } from "@/lib/accountingProviders";
+import { isFutureYearEnd } from "@/lib/tbYearData";
 import { SourceConnectionModal } from "@/components/SourceConnectionModal";
-import { ArrowLeft, Briefcase, Calendar, Users, ChevronDown, Plus, Pencil, Trash2, Search, ExternalLink, X, Building2, Settings2, Check, UserPlus, Link2, AlertTriangle, XCircle } from "lucide-react";
+import { ArrowLeft, Briefcase, Calendar, Users, ChevronDown, Plus, Pencil, Trash2, Search, ExternalLink, X, Building2, Settings2, Check, UserPlus, Link2, AlertTriangle, Info, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -1327,6 +1328,9 @@ const [ackText, setAckText] = useState("");
      return p ? [`source:${p}`, `source:${p}`, `source:${p}`] : ["csv", "csv", "csv"];
    };
    const [yearSources, setYearSources] = useState<string[]>(initYearSources);
+   // Future year-end (CY end date after today): display message only, never blocks saving
+   const cyIsFutureYearEnd = isFutureYearEnd(currentYearEnd);
+   const cyRowIsSource = !!yearSources[0]?.startsWith("source:");
    const [originalCySource] = useState<string>(() => initYearSources()[0]);
    const originalCyProvider = (originalCySource.startsWith("source:") ? rowProvider(originalCySource) : null) as AccountingProvider | null;
    const [yearErrors, setYearErrors] = useState<boolean[]>([false, false, false]);
@@ -2036,6 +2040,14 @@ yearSourceProviders: yearFields.yearSourceProviders,
   )}
  </>
 )}
+ {cyIsFutureYearEnd && (
+  <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-blue-200 bg-blue-50 dark:bg-blue-950/30 px-3 py-2">
+   <Info className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+   <span className="text-sm text-blue-800 dark:text-blue-200">
+    {`${isEditMode ? "This is" : "You're creating"} a future year-end engagement. ${cyRowIsSource ? "Data will be pulled as of each refresh until the year ends." : "Data will show what you import."}`}
+   </span>
+  </div>
+ )}
  </SectionCard>
  </div>
 

@@ -56,6 +56,7 @@ import {
  Settings2,
  Building2,
  Calendar,
+ Clock,
  Check,
  Plus,
  Trash2,
@@ -455,9 +456,18 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  const cyYearEndLabel = fmtLong(parseDateOnly(cyYearEndStr));
  const pulledAsOfDate = parseDateOnly(srcMeta.dataPulledAsOf) ?? new Date();
  const pulledAsOfLabel = fmtLong(pulledAsOfDate);
- const pulledAsOfShort = pulledAsOfDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
- const asOfBadge = <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-800 whitespace-nowrap">As of {pulledAsOfShort}</span>;
- const showAsOfBadge = isFutureYearEnd && cyIsSourcePull;
+ const futureYearEndIcon = (
+  <Tooltip delayDuration={100}>
+   <TooltipTrigger asChild>
+    <span className="inline-flex shrink-0 items-center" aria-label="Future year-end">
+     <Clock className="h-3.5 w-3.5 text-blue-600 pointer-events-none" />
+    </span>
+   </TooltipTrigger>
+   <TooltipContent side="bottom" className="max-w-[260px] z-[200]">
+    Future year-end. This year ends on {cyYearEndLabel} and hasn't finished yet.
+   </TooltipContent>
+  </Tooltip>
+ );
  // Import is available whenever at least one year is CSV, regardless of the selected year tab
  const allYearsSource = ((["cy", "py1", "py2"] as TbYear[]).slice(0, visibleYearCount)).every((y, i) => yearIsSource(y, i));
  // Roll forward: locked prior years on a software that isn't the client's active connection (stale, can't refresh).
@@ -838,7 +848,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  <DropdownMenuTrigger asChild>
  <Button variant="secondary" size="sm" className="h-9 text-xs gap-1.5">
    <span className="whitespace-nowrap">{activeYear.date}</span>
-   {showAsOfBadge && activeYear.id === "cy" && asOfBadge}
+   {isFutureYearEnd && activeYear.id === "cy" && futureYearEndIcon}
  <ChevronDown className="h-3.5 w-3.5" />
  </Button>
  </DropdownMenuTrigger>
@@ -852,7 +862,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
    <span className="flex shrink-0 items-center gap-2">
      <span className="w-7 shrink-0 text-xs font-semibold text-muted-foreground whitespace-nowrap">{year.label.split(' ')[0]}</span>
      <span className="text-sm text-foreground whitespace-nowrap">{year.date}</span>
-     {showAsOfBadge && year.id === "cy" && asOfBadge}
+     {isFutureYearEnd && year.id === "cy" && futureYearEndIcon}
    </span>
    <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium whitespace-nowrap">
     <span className={`h-1.5 w-1.5 rounded-full ${year.isSource ? "bg-emerald-500" : "bg-gray-400"}`} />
@@ -969,6 +979,8 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  {/* Refresh button beside Actions */}
  {isSourceLinked || disconnectedFrom ? (
  <Popover open={refreshOpen} onOpenChange={(o) => { if (o) setRefreshChecked({ cy: isYearSource("cy", 0), py1: visibleYearCount >= 2 && isYearSource("py1", 1), py2: visibleYearCount >= 3 && isYearSource("py2", 2) }); setRefreshOpen(o); }}>
+ <Tooltip delayDuration={100}>
+ <TooltipTrigger asChild>
  <PopoverTrigger asChild>
  <ExpandableIconButton
  variant="secondary"
@@ -977,6 +989,13 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  disabled={!isSourceLinked || !anyYearRefreshable}
  />
  </PopoverTrigger>
+ </TooltipTrigger>
+ {srcMeta.dataPulledAsOf && (
+ <TooltipContent side="bottom" className="max-w-[260px] z-[200]">
+  Last refreshed {pulledAsOfLabel}
+ </TooltipContent>
+ )}
+ </Tooltip>
  <PopoverContent align="end" className="w-56 p-3 z-[100]">
  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Refresh</p>
  <div className="space-y-2">
@@ -1040,13 +1059,6 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  </div>
  </div>
 
- {isFutureYearEnd && (
- <div className="mx-6 mt-4 flex items-center justify-between gap-3 rounded-[10px] border border-blue-200 bg-blue-50 px-3 py-2">
- <span className="text-sm text-blue-900">{cyIsSourcePull
-  ? `This year ends on ${cyYearEndLabel} and hasn't finished yet. Data is pulled as of ${pulledAsOfLabel}. The numbers will change each time you refresh.`
-  : `This year ends on ${cyYearEndLabel} and hasn't finished yet. Data shown is from the last import.`}</span>
- </div>
- )}
  {stalePriorYears.map(({ provider, labels }) => (
  <div key={provider} className="mx-6 mt-4 flex items-center justify-between gap-3 rounded-[10px] border border-amber-300 bg-amber-50 px-3 py-2">
   <span className="text-sm text-amber-800">{`${sourceLabel(provider)} is disconnected for ${labels.join(" and ")}. Data shown is from the last pull and can't be refreshed.`}</span>
