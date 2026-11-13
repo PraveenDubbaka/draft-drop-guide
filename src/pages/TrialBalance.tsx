@@ -25,7 +25,6 @@ import {
 } from "@/components/ui/tooltip";
 import { StyledCard } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { getEngagementMeta, setEngagementMeta, SEED_ENGAGEMENTS } from "@/store/engagementsStore";
 import { isYearOnProvider, isFutureYearEnd as isFutureDate, parseDateOnly, todayMdY, readUploadedYears, tbYearHasData, TB_UPLOADED_KEY, type TbYear } from "@/lib/tbYearData";
 import { sourceLabel, getClientSourceIntegration as getClientSourceIntegrationSafe, VISIBLE_ENGAGEMENT_IDS, type ClientSourceIntegration } from "@/lib/clientSource";
@@ -73,7 +72,6 @@ import {
  Plug,
  Lock,
 } from "lucide-react";
-import { SourceSwitchDisclaimer } from "@/components/SourceSwitchDisclaimer";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 // Filter categories with badge colors and short labels (matching screenshot)
@@ -230,12 +228,9 @@ export default function TrialBalance() {
  const [isUploading, setIsUploading] = useState(false);
  // Source ↔ CSV state for source-linked engagements
  const [metaVersion, setMetaVersion] = useState(0);
- const [switchToCsvOpen, setSwitchToCsvOpen] = useState(false);
- const [pendingCsvSwitch, setPendingCsvSwitch] = useState(false);
  const [refreshOpen, setRefreshOpen] = useState(false);
  const [refreshChecked, setRefreshChecked] = useState<Record<"cy" | "py1" | "py2", boolean>>({ cy: false, py1: false, py2: false });
  const [activeYearTab, setActiveYearTab] = useState<"cy" | "py1" | "py2">("cy");
- const [disconnectText, setDisconnectText] = useState("");
  const cyInputRef = useRef<HTMLInputElement>(null);
  const py1InputRef = useRef<HTMLInputElement>(null);
  const py2InputRef = useRef<HTMLInputElement>(null);
@@ -283,14 +278,6 @@ export default function TrialBalance() {
  setEngagementMeta(engagementId, { ...m, yearRemoveData: hasAny ? next : undefined });
  setMetaVersion(v => v + 1);
  }
- }
- if (pendingCsvSwitch) {
- // CSV import disconnects the engagement from its source for all years
- const m = getEngagementMeta(engagementId);
- const provider = m.sourceProvider ?? linkedProvider ?? undefined;
- setEngagementMeta(engagementId, { ...m, dataSource: 'csv', sourceProvider: provider, sourceDisconnectedFrom: provider });
- setPendingCsvSwitch(false);
- setMetaVersion(v => v + 1);
  }
  setShowImport(false);
  setImportDismissed(true);
@@ -415,7 +402,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  const cyIsSource = yearIsSource("cy", 0);
  const canDelete = !cyIsSource && activeYearEditable;
  const yearProviderName = (y: TbYear) => sourceLabel(srcMeta.yearSourceProviders?.[y] ?? srcMeta.sourceProvider ?? configuredProvider);
- const uploadLocked = (y: TbYear, i: number) => pyLockedRf(i) || (!pendingCsvSwitch && yearIsSource(y, i));
+ const uploadLocked = (y: TbYear, i: number) => pyLockedRf(i) || yearIsSource(y, i);
  const cyUploadLocked = uploadLocked("cy", 0), py1UploadLocked = uploadLocked("py1", 1), py2UploadLocked = uploadLocked("py2", 2);
  const effCy = cyUploadLocked ? null : cyFile;
  const effPy1 = visibleYearCount < 2 || py1UploadLocked ? null : py1File, effPy2 = visibleYearCount < 3 || py2UploadLocked ? null : py2File;
@@ -1063,27 +1050,6 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
   <span className="text-sm text-amber-800">{`${sourceLabel(provider)} is disconnected for ${labels.join(" and ")}. Data shown is from the last pull and can't be refreshed.`}</span>
  </div>
  ))}
- <AlertDialog open={switchToCsvOpen} onOpenChange={(o) => { setSwitchToCsvOpen(o); if (!o) setDisconnectText(""); }}>
- <AlertDialogContent className="max-w-2xl">
- <AlertDialogHeader>
- <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle className="h-5 w-5 text-amber-600" />Switch to CSV</AlertDialogTitle>
- <AlertDialogDescription className="text-foreground">
- This engagement is currently connected to {sourceLabel(linkedProvider)}. Importing a CSV file will disconnect all source-connected years.
- </AlertDialogDescription>
- </AlertDialogHeader>
- <SourceSwitchDisclaimer title="The following will happen:" footnote={null} />
- <div className="space-y-1.5">
- <label htmlFor="disconnect-confirm" className="text-sm text-foreground">Type <span className="font-semibold">DISCONNECT</span> to confirm</label>
- <Input id="disconnect-confirm" value={disconnectText} onChange={e => setDisconnectText(e.target.value)} placeholder="DISCONNECT" autoComplete="off" />
- </div>
- <AlertDialogFooter>
- <AlertDialogCancel>Cancel</AlertDialogCancel>
- <AlertDialogAction disabled={disconnectText !== "DISCONNECT"} className="bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-50" onClick={() => { setPendingCsvSwitch(true); setShowImport(true); setDisconnectText(""); }}>
- Proceed with CSV import
- </AlertDialogAction>
- </AlertDialogFooter>
- </AlertDialogContent>
- </AlertDialog>
  {/* Table */}
  <StyledCard className="mx-6 mt-6 mb-6 overflow-hidden flex flex-col flex-1 min-h-0">
  <div className="flex-1 overflow-auto">
