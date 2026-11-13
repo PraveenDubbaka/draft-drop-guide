@@ -31,34 +31,77 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Layout } from "@/components/Layout";
 import { StyledCard } from "@/components/ui/card";
 import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
-import { getEngagementSourceIntegration, getClientSourceIntegration, filterVisibleEngagements, type ClientSourceIntegration, type EngagementDataType } from "@/lib/clientSource";
+import { getEngagementSourceIntegration, getClientSourceIntegration, getClientConnectionId, isConnectionChanged, filterVisibleEngagements, type ClientSourceIntegration, type EngagementDataType } from "@/lib/clientSource";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { createRollForward } from "@/store/engagementsStore";
 import { accountingProviders } from "@/lib/accountingProviders";
 
 
-function SourceBadge({ type }: { type: EngagementDataType }) {
-  if (!type || type === "unknown") {
-    return (
-      <span className="inline-flex items-center justify-center h-8 px-3 rounded-lg border border-border bg-muted text-xs font-medium text-foreground">
-        {type === "unknown" ? "Source" : "CSV"}
-      </span>
-    );
-  }
-  const badgeClasses = "inline-flex items-center justify-center h-8 w-24 px-1 rounded-lg bg-white border border-border";
-  if (type === 'sage') return <div className={badgeClasses}><img src={accountingProviders.sage.logo} alt="Sage" className="h-5" /></div>;
-  if (type === 'xero') {
-    return (
-      <div className={`${badgeClasses} gap-1.5`}>
-        <img src="https://upload.wikimedia.org/wikipedia/en/9/9f/Xero_software_logo.svg" alt="Xero" className="h-5" />
-        <span className="text-xs font-medium text-gray-900">Xero</span>
-      </div>
-    );
-  }
-  return (
-    <div className={badgeClasses}>
-      <img src={intuitQuickbooksLogo} alt="Intuit QuickBooks" className="h-5" />
-    </div>
-  );
+/** Engagement meta: the source connection id saved with the engagement. */
+function getSavedSourceConnectionId(engagementId: string): string | undefined {
+ try {
+  const raw = localStorage.getItem(`engagement-meta-${engagementId}`);
+  return raw ? JSON.parse(raw)?.sourceConnectionId : undefined;
+ } catch {
+  return undefined;
+ }
+}
+
+/**
+ * True when the engagement's saved current-year source is no longer the client's
+ * active connection: different provider, same provider re-connected, or no
+ * active connection at all. CSV and unknown "Source" badges are never flagged.
+ */
+export function engagementSourceDisconnected(
+ savedType: EngagementDataType,
+ savedConnectionId: string | null | undefined,
+ activeProvider: ClientSourceIntegration,
+ activeConnectionId: string | null | undefined
+): boolean {
+ if (!savedType || savedType === "unknown") return false;
+ if (!activeProvider) return true;
+ return isConnectionChanged(savedType, savedConnectionId, activeProvider, activeConnectionId);
+}
+
+const DISCONNECTED_TOOLTIP = "Disconnected. Update the engagement in Edit Engagement to switch source.";
+
+function SourceBadge({ type, disconnected = false }: { type: EngagementDataType; disconnected?: boolean }) {
+ if (!type || type === "unknown") {
+   return (
+     <span className="inline-flex items-center justify-center h-8 px-3 rounded-lg border border-border bg-muted text-xs font-medium text-foreground">
+       {type === "unknown" ? "Source" : "CSV"}
+     </span>
+   );
+ }
+ const badgeClasses = `inline-flex items-center justify-center h-8 w-24 px-1 rounded-lg bg-white border ${
+   disconnected ? "border-red-400 dark:border-red-700" : "border-border"
+ }`;
+ const content =
+   type === "sage" ? (
+     <img src={accountingProviders.sage.logo} alt="Sage" className="h-5" />
+   ) : type === "xero" ? (
+     <>
+       <img src="https://upload.wikimedia.org/wikipedia/en/9/9f/Xero_software_logo.svg" alt="Xero" className="h-5" />
+       <span className="text-xs font-medium text-gray-900">Xero</span>
+     </>
+   ) : (
+     <img src={intuitQuickbooksLogo} alt="Intuit QuickBooks" className="h-5" />
+   );
+ const badge = (
+   <div
+     className={`${badgeClasses}${type === "xero" ? " gap-1.5" : ""}`}
+     aria-label={disconnected ? `${accountingProviders[type].buttonName} — disconnected` : undefined}
+   >
+     {content}
+   </div>
+ );
+ if (!disconnected) return badge;
+ return (
+   <Tooltip>
+     <TooltipTrigger asChild>{badge}</TooltipTrigger>
+     <TooltipContent>{DISCONNECTED_TOOLTIP}</TooltipContent>
+   </Tooltip>
+ );
 }
 
 type AssigneeEntry = { initials: string; name: string; role: string; email: string; phone: string; color: string };
@@ -316,6 +359,14 @@ export default function Engagements() {
  {filteredEngagements.map((engagement) => {
  const isExpanded = expandedId === engagement.id;
  const assignees = ENGAGEMENT_ASSIGNEES[engagement.id];
+ const savedType = getEngagementSourceIntegration(engagement.id, engagement.client);
+ const activeProvider = getClientSourceIntegration(engagement.client);
+ const sourceDisconnected = engagementSourceDisconnected(
+   savedType,
+   getSavedSourceConnectionId(engagement.id),
+   activeProvider,
+   activeProvider ? getClientConnectionId(engagement.client) : null
+ );
  return (
  <React.Fragment key={engagement.id}>
  <tr className="hover:bg-muted/50 transition-colors group">
@@ -338,7 +389,7 @@ export default function Engagements() {
  <td className="px-6 py-2 text-sm text-foreground whitespace-nowrap">{engagement.type}</td>
   <td className="px-6 py-2 text-sm text-muted-foreground whitespace-nowrap">{engagement.yearEnd}</td>
   <td className="px-6 py-2 whitespace-nowrap">
-  <SourceBadge type={getEngagementSourceIntegration(engagement.id, engagement.client)} />
+  <SourceBadge type={savedType} disconnected={sourceDisconnected} />
   </td>
   <td className="px-6 py-2 whitespace-nowrap">
  <button
