@@ -2018,7 +2018,7 @@ yearSourceProviders: yearFields.yearSourceProviders,
    <XCircle className="h-4 w-4 text-red-500 shrink-0 mt-1" />
    <div className="min-w-0 flex-1">
     <p className="text-lg font-bold leading-snug text-red-700 dark:text-red-300">Please read carefully — THIS ACTION CANNOT BE UNDONE</p>
-    <p className="mt-1 text-sm text-red-800 dark:text-red-200">This action is triggered because you changed one of the data source dropdowns above. It applies only to the CSV selected years.</p>
+    <p className="mt-1 text-sm text-red-800 dark:text-red-200">This action is triggered because you changed one of the data source dropdowns above. It applies only to the years whose data source you changed.</p>
     <ol className="mt-2 space-y-1.5 list-none">
      {[
       "Adjusting entries will be deleted.",
