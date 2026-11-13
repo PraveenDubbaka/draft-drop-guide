@@ -10,7 +10,7 @@ import { clientsData as appClientsData } from "@/data/clientsData";
 import { getClientSourceIntegration, sourceLabel, getClientConnectionState, getClientConnectionId, isConnectionChanged, rowProvider, CLIENT_CONNECTION_EVENT, type AccountingProvider } from "@/lib/clientSource";
 import { accountingProviders } from "@/lib/accountingProviders";
 import { SourceConnectionModal } from "@/components/SourceConnectionModal";
-import { ArrowLeft, Briefcase, Calendar, Users, ChevronDown, Plus, Pencil, Trash2, Search, ExternalLink, X, Building2, FileText, Settings2, Check, UserPlus, Link2, AlertTriangle, XCircle, FilePen, FolderPlus, MessageSquareText } from "lucide-react";
+import { ArrowLeft, Briefcase, Calendar, Users, ChevronDown, Plus, Pencil, Trash2, Search, ExternalLink, X, Building2, Settings2, Check, UserPlus, Link2, AlertTriangle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -2018,15 +2018,20 @@ yearSourceProviders: yearFields.yearSourceProviders,
    <XCircle className="h-4 w-4 text-red-500 shrink-0 mt-1" />
    <div className="min-w-0 flex-1">
     <p className="text-lg font-bold leading-snug text-red-700 dark:text-red-300">Please read carefully — THIS ACTION CANNOT BE UNDONE</p>
-    <p className="mt-1 text-sm text-red-800 dark:text-red-200">{yearEndChanged ? "Applies to all years, because the period dates changed." : "Applies to the years whose data source was changed."}</p>
-    <ul className="mt-2 space-y-1.5">
-     {yearEndChanged && <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><Calendar className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Trial balance data for all years will be reset to the new period dates</span></li>}
-     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><FilePen className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Adjusting entries will be deleted</span></li>
-     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><FolderPlus className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Manually added accounts will be deleted</span></li>
-     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><MessageSquareText className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Issues, comments and requests will be deleted</span></li>
-     <li className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200"><FileText className="h-4 w-4 text-red-500 shrink-0 mt-0.5" /><span>Documents will only move after data is imported</span></li>
-    </ul>
-    <p className="mt-2 text-sm text-red-800 dark:text-red-200">To remove the impact, choose a different option above.</p>
+    <p className="mt-1 text-sm text-red-800 dark:text-red-200">This action is triggered because you changed one of the data source dropdowns above. It applies only to the CSV selected years.</p>
+    <ol className="mt-2 space-y-1.5 list-none">
+     {[
+      "Adjusting entries will be deleted.",
+      "Manually added accounts will stay. To remove them, exit this page, delete those accounts, and run this change again.",
+      "Issues, comments and requests will be deleted.",
+      "A temporary folder will be created and your documents will be moved there.",
+     ].map((text, index) => (
+      <li key={text} className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200">
+       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-destructive text-xs font-medium text-destructive">{index + 1}</span>
+       <span>{text}</span>
+      </li>
+     ))}
+    </ol>
     <label className="mt-3 flex items-center gap-1 text-sm font-semibold text-red-800 dark:text-red-200">Please type DELETE below to confirm your understanding<span className="text-destructive">*</span></label>
     <input type="text" value={ackText} onChange={e => setAckText(e.target.value)} placeholder="DELETE" required aria-required="true"
      className="input-double-border mt-1 h-9 w-64 rounded-[10px] border border-border bg-card px-3 text-sm text-foreground outline-none" />
