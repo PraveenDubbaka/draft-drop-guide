@@ -49,18 +49,13 @@ const DEMO_EXACT_CONNECTIONS: Readonly<Record<string, "xero" | "quickbooks">> = 
 
 /**
  * Resolve which accounting source a client is connected to.
- * Matches on legal entity name or short entity name (case/whitespace insensitive).
+ * Matches exact names, legacy aliases, then uniquely matching partial names.
  * User-made connections/disconnections (overrides) win over demo seeds and client data.
  */
 export function getClientSourceIntegration(clientName: string): ClientSourceIntegration {
   const given = (clientName || "").trim().toLowerCase();
   if (!given) return null;
-  const normalized = LEGACY_CLIENT_ALIASES[given] ?? given;
-  const client = clientsData.find(
-    (c) =>
-      c.legalEntityName.toLowerCase() === normalized ||
-      c.entityName.toLowerCase() === normalized
-  );
+  const client = resolveClient(clientName);
   const state = getClientConnectionState(clientName, client?.legalEntityName, client?.entityName);
   if (state !== undefined) return state;
   for (const n of [clientName, client?.legalEntityName, client?.entityName]) {
@@ -216,13 +211,28 @@ const LEGACY_CLIENT_ALIASES: Readonly<Record<string, string>> = {
   "maple ridge dental": "maple ridge dental corp.",
 };
 
+/** Resolve names consistently without guessing between multiple partial matches. */
+function resolveClient(clientName: string): (typeof clientsData)[number] | undefined {
+  const given = clientName.trim().toLowerCase();
+  if (!given) return undefined;
+  const namesOf = (client: (typeof clientsData)[number]) =>
+    [client.entityName, client.legalEntityName].map(name => name.trim().toLowerCase());
+  const exact = clientsData.find(client => namesOf(client).includes(given));
+  if (exact) return exact;
+  const alias = LEGACY_CLIENT_ALIASES[given];
+  if (alias) {
+    const aliased = clientsData.find(client => namesOf(client).includes(alias));
+    if (aliased) return aliased;
+  }
+  const matches = clientsData.filter(client =>
+    namesOf(client).some(name => name && (name.includes(given) || given.includes(name)))
+  );
+  return matches.length === 1 ? matches[0] : undefined;
+}
+
 /** All names a client may be stored under (given name plus entity/legal names and legacy aliases). */
 function clientKeys(clientName: string): string[] {
-  const given = clientName.trim().toLowerCase();
-  const normalized = LEGACY_CLIENT_ALIASES[given] ?? given;
-  const client = clientsData.find(
-    c => c.entityName.toLowerCase() === normalized || c.legalEntityName.toLowerCase() === normalized
-  );
+  const client = resolveClient(clientName);
   const names = client ? [clientName, client.entityName, client.legalEntityName] : [clientName];
   for (const [alias, target] of Object.entries(LEGACY_CLIENT_ALIASES)) if (names.some(n => n.trim().toLowerCase() === target)) names.push(alias);
   return Array.from(new Set(names.map(n => n.trim().toLowerCase()).filter(Boolean)));
