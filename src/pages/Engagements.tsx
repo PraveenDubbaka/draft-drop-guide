@@ -31,37 +31,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Layout } from "@/components/Layout";
 import { StyledCard } from "@/components/ui/card";
 import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
-import { getEngagementSourceIntegration, getClientSourceIntegration, getClientConnectionId, isConnectionChanged, filterVisibleEngagements, type ClientSourceIntegration, type EngagementDataType } from "@/lib/clientSource";
+import { getEngagementSourceIntegration, getClientSourceIntegration, isEngagementSourceDisconnected, filterVisibleEngagements, type EngagementDataType } from "@/lib/clientSource";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { createRollForward } from "@/store/engagementsStore";
 import { accountingProviders } from "@/lib/accountingProviders";
 
-
-/** Engagement meta: the source connection id saved with the engagement. */
-function getSavedSourceConnectionId(engagementId: string): string | undefined {
- try {
-  const raw = localStorage.getItem(`engagement-meta-${engagementId}`);
-  return raw ? JSON.parse(raw)?.sourceConnectionId : undefined;
- } catch {
-  return undefined;
- }
-}
-
-/**
- * True when the engagement's saved current-year source is no longer the client's
- * active connection: different provider, same provider re-connected, or no
- * active connection at all. CSV and unknown "Source" badges are never flagged.
- */
-export function engagementSourceDisconnected(
- savedType: EngagementDataType,
- savedConnectionId: string | null | undefined,
- activeProvider: ClientSourceIntegration,
- activeConnectionId: string | null | undefined
-): boolean {
- if (!savedType || savedType === "unknown") return false;
- if (!activeProvider) return true;
- return isConnectionChanged(savedType, savedConnectionId, activeProvider, activeConnectionId);
-}
 
 const DISCONNECTED_TOOLTIP = "Disconnected. Update the engagement in Edit Engagement to switch source.";
 
@@ -360,13 +334,7 @@ export default function Engagements() {
  const isExpanded = expandedId === engagement.id;
  const assignees = ENGAGEMENT_ASSIGNEES[engagement.id];
  const savedType = getEngagementSourceIntegration(engagement.id, engagement.client);
- const activeProvider = getClientSourceIntegration(engagement.client);
- const sourceDisconnected = engagementSourceDisconnected(
-   savedType,
-   getSavedSourceConnectionId(engagement.id),
-   activeProvider,
-   activeProvider ? getClientConnectionId(engagement.client) : null
- );
+ const sourceDisconnected = isEngagementSourceDisconnected(engagement.id, engagement.client);
  return (
  <React.Fragment key={engagement.id}>
  <tr className="hover:bg-muted/50 transition-colors group">

@@ -119,6 +119,20 @@ export function getEngagementSourceIntegration(
   return (meta.yearDataSources?.cy ?? meta.dataSource) === "source" ? "unknown" : null;
 }
 
+/** Shared badge status: saved CY source no longer matches the client's active connection. */
+export function isEngagementSourceDisconnected(engagementId: string, clientName: string): boolean {
+  const savedType = getEngagementSourceIntegration(engagementId, clientName);
+  if (!savedType || savedType === "unknown") return false;
+  const activeProvider = getClientSourceIntegration(clientName);
+  if (!activeProvider) return true;
+  let savedConnectionId: string | undefined;
+  try {
+    const raw = localStorage.getItem(`engagement-meta-${engagementId}`);
+    if (raw) savedConnectionId = JSON.parse(raw)?.sourceConnectionId;
+  } catch {}
+  return isConnectionChanged(savedType, savedConnectionId, activeProvider, getClientConnectionId(clientName));
+}
+
 /** The five scenario engagements shown on Dashboard and Engagements, in display order. */
 export const VISIBLE_ENGAGEMENT_IDS: readonly string[] = [
   "COM-NEW-Dec312024",

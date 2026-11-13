@@ -12,7 +12,9 @@ import { StyledCard } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import intuitQuickbooksLogo from "@/assets/intuit-quickbooks-logo.svg";
 import sageLogo from "@/assets/sage-logo.svg";
-import { getEngagementSourceIntegration, filterVisibleEngagements } from "@/lib/clientSource";
+import { getEngagementSourceIntegration, isEngagementSourceDisconnected, filterVisibleEngagements, type EngagementDataType } from "@/lib/clientSource";
+import { Tooltip as BadgeTooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { accountingProviders } from "@/lib/accountingProviders";
 
 
 function Highlight({ text, query }: { text: string; query: string }) {
@@ -94,9 +96,10 @@ const recentActivity = [{
  path: "Engagement > COM-HF-Dec312024 > Financial Statements > Financial Statements Docs"
 }];
 const IntegrationBadge = ({
- type
+ type, disconnected = false
 }: {
- type: string | null;
+ type: EngagementDataType;
+ disconnected?: boolean;
 }) => {
   if (!type || type === "unknown") {
     return (
@@ -105,21 +108,22 @@ const IntegrationBadge = ({
       </span>
     );
   }
- const badgeClasses = "inline-flex items-center justify-center h-8 w-24 px-1 rounded-lg bg-white border border-border";
+ const badgeClasses = `inline-flex items-center justify-center h-8 w-24 px-1 rounded-lg bg-white border ${disconnected ? "border-red-400 dark:border-red-700" : "border-border"}`;
+ const ariaLabel = disconnected ? `${accountingProviders[type].buttonName} — disconnected` : undefined;
  const BadgeContent = () => {
  if (type === "xero") {
- return <div className={`${badgeClasses} gap-1.5`}>
+ return <div className={`${badgeClasses} gap-1.5`} aria-label={ariaLabel}>
  <img src="https://upload.wikimedia.org/wikipedia/en/9/9f/Xero_software_logo.svg" alt="Xero" className="h-5" />
  <span className="text-xs font-medium text-gray-900">Xero</span>
  </div>;
  }
  if (type === "quickbooks") {
- return <div className={badgeClasses}>
+ return <div className={badgeClasses} aria-label={ariaLabel}>
  <img src={intuitQuickbooksLogo} alt="Intuit QuickBooks" className="h-5" />
  </div>;
  }
  if (type === "sage") {
- return <div className={`${badgeClasses} gap-1.5`}>
+ return <div className={`${badgeClasses} gap-1.5`} aria-label={ariaLabel}>
  <div className="h-5 w-5 rounded-full bg-black flex items-center justify-center p-1">
  <img src={sageLogo} alt="Sage" className="h-3 w-auto" />
  </div>
@@ -128,7 +132,14 @@ const IntegrationBadge = ({
  }
  return null;
  };
- return <BadgeContent />;
+ const badge = BadgeContent();
+ if (!disconnected) return badge;
+ return (
+  <BadgeTooltip>
+   <TooltipTrigger asChild>{badge}</TooltipTrigger>
+   <TooltipContent>Disconnected. Update the engagement in Edit Engagement to switch source.</TooltipContent>
+  </BadgeTooltip>
+ );
 };
 const AUDIT_SECTIONS = [
  { key: "co", label: "Client Onboarding", color: "#1C63A6", worksheetKeys: ["audit-engagement-letter", "checklist-aud-408", "checklist-aud-410"] },
@@ -281,6 +292,7 @@ export default function Dashboard() {
   client: e.client,
   yearEnd: e.yearEnd,
   integration,
+  disconnected: isEngagementSourceDisconnected(e.id, e.client),
   status: e.status,
   statusVariant: e.status === "New" ? ("secondary" as const) : ("default" as const),
   };
@@ -372,7 +384,7 @@ export default function Dashboard() {
  <td className="px-6 py-2 text-sm text-foreground whitespace-nowrap truncate max-w-[200px]"><Highlight text={engagement.client} query={searchQuery} /></td>
  <td className="px-6 py-2 text-sm text-muted-foreground whitespace-nowrap">{engagement.yearEnd}</td>
  <td className="px-6 py-2 whitespace-nowrap">
- <IntegrationBadge type={engagement.integration} />
+ <IntegrationBadge type={engagement.integration} disconnected={engagement.disconnected} />
  </td>
  <td className="px-6 py-2 whitespace-nowrap">
  <Badge variant={engagement.status === "New" ? "new" : "inProgress"}>

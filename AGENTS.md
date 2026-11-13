@@ -9,3 +9,4 @@
 - Client connections carry a `connectionId` (new on each connect/provider switch, kept when re-confirming the same live connection); engagements save `sourceConnectionId`, and Edit marks saved rows on an older same-provider connection as `source:<provider>|prev` — so a same-source reconnect reuses the provider-switch flow without a new row type.
 - Engagement Connectors derive qbo/xero/sage50 from the live client connection and persist only other connector IDs; one shared derivation keeps Tools, worksheets, and the read-only accounting rows in sync.
 - Client source provider and connection-key lookups share an exact-name, legacy-alias, then unique bidirectional partial-name resolver so abbreviated engagement names cannot disagree across pages or select ambiguous clients.
+- Dashboard and Engagements use `isEngagementSourceDisconnected` in clientSource for saved-source badge status so their connection warnings cannot diverge.
