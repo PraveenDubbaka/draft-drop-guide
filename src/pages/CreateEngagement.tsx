@@ -880,7 +880,7 @@ const SourceStatusPill = ({ connected }: { connected: boolean }) => (
 /** One source row's identity: provider name, connection status, then the client entity name. */
 const SourceIdentityRow = ({ provider, connected, entityName }: { provider: AccountingProvider; connected: boolean; entityName: string }) => (
  <span className="flex w-full min-w-0 items-center gap-2">
-  <span className="shrink-0">{sourceLabel(provider)}</span>
+  <span className="shrink-0">{accountingProviders[provider].buttonName}</span>
   <SourceStatusPill connected={connected} />
   <span className="min-w-0 flex-1 truncate text-muted-foreground" title={entityName}>{entityName}</span>
  </span>
@@ -1574,7 +1574,7 @@ const [ackText, setAckText] = useState("");
     const lockedYearLabel = (k: "py1" | "py2") => {
       const v = lockedYearSource(k);
       // Partial year turns every year to CSV, including locked prior years
-      return v === "csv" || v === "nodata" || priorYearsToCsv ? "CSV / Excel / PDF · Prior year" : `${sourceLabel(v)} · Prior year`;
+      return v === "csv" || v === "nodata" || priorYearsToCsv ? "CSV / Excel / PDF · Prior year" : `${accountingProviders[v].buttonName} · Prior year`;
     };
     // Year selection (CY locked; PY1/PY2 optional, in order)
     const originalSourceYears = originalDataSource === "source" ? (editingMeta?.sourceYears ?? 1) : 0;
@@ -1950,7 +1950,7 @@ yearSourceProviders: yearFields.yearSourceProviders,
        <SelectContent><SelectItem value="nodata">No data</SelectItem></SelectContent></Select>
      ) : (!stubLocked && disconnectedP) ? (
       <Select value="disconnected" onValueChange={v => setYearSource(i, v)}>
-       <SelectTrigger className="h-9 text-sm text-muted-foreground" title={`${sourceLabel(disconnectedP)} · Disconnected`}>
+       <SelectTrigger className="h-9 text-sm text-muted-foreground" title={`${accountingProviders[disconnectedP].buttonName} · Disconnected`}>
         <SelectValue><SourceIdentityRow provider={disconnectedP} connected={false} entityName={sourceEntityName} /></SelectValue>
        </SelectTrigger>
        <SelectContent>
@@ -1962,7 +1962,7 @@ yearSourceProviders: yearFields.yearSourceProviders,
       </Select>
      ) : (
       <Select value={stubLocked ? "csv" : (val.startsWith("source:") ? val : "csv")} disabled={stubLocked} onValueChange={v => setYearSource(i, v)}>
-       <SelectTrigger className="h-9 text-sm" title={stubLocked || !val.startsWith("source:") ? "CSV / Excel / PDF" : val === "source:none" ? "Not connected" : `${sourceLabel(rowProvider(val))}`}>
+       <SelectTrigger className="h-9 text-sm" title={stubLocked || !val.startsWith("source:") ? "CSV / Excel / PDF" : val === "source:none" ? "Not connected" : `${accountingProviders[rowProvider(val)].buttonName}`}>
         <SelectValue>
          {stubLocked || !val.startsWith("source:") ? "CSV / Excel / PDF"
           : val === "source:none" ? "Not connected"
