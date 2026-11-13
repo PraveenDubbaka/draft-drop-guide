@@ -411,6 +411,12 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  const allYearsBlank = [cyBlank, py1Blank, py2Blank].slice(0, visibleYearCount).every(Boolean);
  // Per-year upload availability on the Import screen: Source years are locked to their provider
  const yearIsSource = (y: TbYear, i: number) => yearTabs[i].isSource || srcMeta.yearDataSources?.[y] === "source";
+ // Editing follows the selected year: CSV years are editable, Source years stay locked.
+ // Delete stays blocked whenever the Current Year is a Source year.
+ const activeYearIdx = (["cy", "py1", "py2"] as TbYear[]).indexOf(activeYearTab);
+ const activeYearEditable = !yearIsSource(activeYearTab, activeYearIdx);
+ const cyIsSource = yearIsSource("cy", 0);
+ const canDelete = !cyIsSource && activeYearEditable;
  const yearProviderName = (y: TbYear) => sourceLabel(srcMeta.yearSourceProviders?.[y] ?? srcMeta.sourceProvider ?? configuredProvider);
  const uploadLocked = (y: TbYear, i: number) => !pendingCsvSwitch && yearIsSource(y, i);
  const cyUploadLocked = uploadLocked("cy", 0), py1UploadLocked = uploadLocked("py1", 1), py2UploadLocked = uploadLocked("py2", 2);
@@ -892,10 +898,24 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  <TooltipContent side="left" className="max-w-[240px] z-[200]">Merge is available only when all years are set to CSV. Change data sources in Edit Engagement.</TooltipContent>
  </Tooltip>
  )}
- <DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-destructive focus:text-destructive" disabled={activeTabIsSource}>
+ {cyIsSource ? (
+ <Tooltip delayDuration={100}>
+ <TooltipTrigger asChild>
+ <div>
+ <DropdownMenuItem className="flex items-center gap-2 text-destructive" disabled>
  <Trash2 className="h-4 w-4 text-destructive" />
  <span>Delete</span>
  </DropdownMenuItem>
+ </div>
+ </TooltipTrigger>
+ <TooltipContent side="left" className="max-w-[240px] z-[200]">Delete isn't available while the Current Year is connected to a source.</TooltipContent>
+ </Tooltip>
+ ) : (
+ <DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-destructive focus:text-destructive" disabled={!canDelete}>
+ <Trash2 className="h-4 w-4 text-destructive" />
+ <span>Delete</span>
+ </DropdownMenuItem>
+ )}
  <DropdownMenuSeparator />
  <DropdownMenuItem className="flex items-center gap-2 cursor-pointer">
  <FileX2 className="h-4 w-4 text-muted-foreground" />
@@ -1164,7 +1184,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  </div>
  </td>
   <td className="px-2 py-2 text-center">
-  {allYearsCsv && (
+  {activeYearEditable && (
   <button className="text-muted-foreground hover:text-foreground">
   <MoreVertical className="h-3.5 w-3.5" />
   </button>
@@ -1173,13 +1193,13 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
   <td className="px-2 py-2"><Checkbox /></td>
   <td className="px-6 py-2 text-foreground whitespace-nowrap">{row.accNo}</td>
   <td className="px-6 py-2 text-foreground whitespace-nowrap">
-  {!allYearsCsv ? (
+  {!activeYearEditable ? (
   <span className="inline-flex items-center gap-1.5">
   <Tooltip delayDuration={100}>
   <TooltipTrigger asChild>
   <span tabIndex={0} aria-label="Locked" className="inline-flex cursor-help"><Lock className="h-3 w-3 text-foreground shrink-0" /></span>
   </TooltipTrigger>
-  <TooltipContent side="top" className="max-w-[240px] z-[200]">Editing is available only when all years are set to CSV.</TooltipContent>
+  <TooltipContent side="top" className="max-w-[240px] z-[200]">This year pulls data from the source. Editing is available for CSV years only.</TooltipContent>
   </Tooltip>
   <span className="cursor-not-allowed">{row.description}</span>
   </span>
