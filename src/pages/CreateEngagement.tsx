@@ -2013,30 +2013,36 @@ yearSourceProviders: yearFields.yearSourceProviders,
 
 
  {showDeleteBlock && (
- <div className="rounded-[10px] border border-red-200 border-l-4 border-l-red-500 bg-red-50 dark:bg-red-950/30 px-3 py-2.5">
-  <div className="flex items-start gap-2">
-   <XCircle className="h-4 w-4 text-red-500 shrink-0 mt-1" />
+ <div className="overflow-hidden rounded-[12px] border border-border bg-card">
+  <div className="flex items-start gap-3 border-b border-red-200 bg-red-50 px-5 py-3.5 dark:border-red-900 dark:bg-red-950/40">
+   <AlertTriangle className="h-5 w-5 shrink-0 text-red-600 dark:text-red-400" />
    <div className="min-w-0 flex-1">
-    <p className="text-lg font-bold leading-snug text-red-700 dark:text-red-300">Please read carefully — THIS ACTION CANNOT BE UNDONE</p>
-    <p className="mt-1 text-sm text-red-800 dark:text-red-200">This action is triggered because you changed one of the data source dropdowns above. It applies only to the years whose data source you changed.</p>
-    <ol className="mt-2 space-y-1.5 list-none">
-     {[
-      "Adjusting entries will be deleted.",
-      "Manually added accounts will stay. To remove them, exit this page, delete those accounts, and run this change again.",
-      "Issues, comments and requests will be deleted.",
-      "A temporary folder will be created and your documents will be moved there.",
-     ].map((text, index) => (
-      <li key={text} className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200">
-       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-destructive text-xs font-medium text-destructive">{index + 1}</span>
-       <span>{text}</span>
-      </li>
-     ))}
-    </ol>
-    <label className="mt-3 flex items-center gap-1 text-sm font-semibold text-red-800 dark:text-red-200">Please type DELETE below to confirm your understanding<span className="text-destructive">*</span></label>
-    <input type="text" value={ackText} onChange={e => setAckText(e.target.value)} placeholder="DELETE" required aria-required="true"
-     className="input-double-border mt-1 h-9 w-64 rounded-[10px] border border-border bg-card px-3 text-sm text-foreground outline-none" />
-    {ackChecked && <p className="mt-1 text-xs font-medium text-[#2E7D52]">Confirmed</p>}
+    <p className="text-base font-bold leading-snug text-red-700 dark:text-red-300">This action cannot be undone</p>
+    <p className="mt-1 text-sm text-red-900 dark:text-red-200">This action is triggered because you changed one of the data source dropdowns above. It applies only to the years whose data source you changed.</p>
    </div>
+  </div>
+  <div className="px-5 py-2">
+   {[
+    { text: "Adjusting entries", sub: "", tag: "Deleted" },
+    { text: "Manually added accounts", sub: "To remove them, exit this page, delete those accounts, and run this change again.", tag: "Stays" },
+    { text: "Issues, comments and requests", sub: "", tag: "Deleted" },
+    { text: "Documents", sub: "A temporary folder will be created and your documents will be moved there.", tag: "Moved" },
+   ].map((row, index) => (
+    <div key={row.text} className={`flex items-center gap-3 py-3 ${index > 0 ? "border-t border-gray-100 dark:border-gray-800" : ""}`}>
+     <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">{index + 1}</span>
+     <div className="min-w-0 flex-1">
+      <p className="text-sm text-foreground">{row.text}</p>
+      {row.sub && <p className="mt-0.5 text-[13px] text-gray-600 dark:text-gray-300">{row.sub}</p>}
+     </div>
+     <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${row.tag === "Deleted" ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300" : row.tag === "Stays" ? "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300" : "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300"}`}>{row.tag}</span>
+    </div>
+   ))}
+  </div>
+  <div className="border-t border-border px-5 pb-[18px] pt-3.5">
+   <label className="flex items-center gap-1 text-sm font-semibold text-foreground">Type DELETE to confirm you understand<span className="text-destructive">*</span></label>
+   <input type="text" value={ackText} onChange={e => setAckText(e.target.value)} placeholder="DELETE" required aria-required="true"
+    className="input-double-border mt-1 h-10 w-64 rounded-[10px] border border-red-300 bg-card px-3 text-sm text-foreground outline-none" />
+   {ackChecked && <p className="mt-1 text-xs font-medium text-[#2E7D52]">Confirmed</p>}
   </div>
  </div>
  )}
