@@ -2058,7 +2058,7 @@ yearSourceProviders: yearFields.yearSourceProviders,
    <AlertTriangle className="h-5 w-5 shrink-0 text-red-600 dark:text-red-400" />
    <div className="min-w-0 flex-1">
     <p className="text-base font-bold leading-snug text-red-700 dark:text-red-300">This action cannot be undone</p>
-    <p className="mt-1 text-sm text-red-900 dark:text-red-200">This action is triggered because you changed one of the data source dropdowns above. It applies only to the years whose data source you changed.</p>
+    <p className="mt-1 text-sm text-red-900 dark:text-red-200">{isSourceLockedStub ? "This action is triggered because you changed the period type to Partial Year, which uses CSV only. It applies only to the years whose data source changed." : "This action is triggered because you changed one of the data source dropdowns above. It applies only to the years whose data source you changed."}</p>
    </div>
   </div>
   <div className="px-5 py-2">
