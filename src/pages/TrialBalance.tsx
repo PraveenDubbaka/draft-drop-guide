@@ -319,6 +319,8 @@ export default function TrialBalance() {
  // ── Source connection state (re-read when metaVersion changes) ──
  void metaVersion;
  const srcMeta = engagementId ? getEngagementMeta(engagementId) : ({ firstYearAudit: false } as ReturnType<typeof getEngagementMeta>);
+ const isRollForwardFile = !!srcMeta.sourceRollForward;
+ const pyLockedRf = (i: number) => isRollForwardFile && i > 0;
   const clientActiveProvider = getClientSourceIntegrationSafe(clientName);
    const configuredProvider: ClientSourceIntegration = srcMeta.dataSource === 'source'
   ? (srcMeta.sourceProvider ?? clientActiveProvider)
@@ -390,8 +392,8 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  });
  const activeYear = yearTabs.find(t => t.id === activeYearTab) ?? yearTabs[0];
  const activeTabIsSource = !!yearTabs.find(t => t.id === activeYearTab)?.isSource;
- // Refresh is available whenever at least one visible year pulls from the linked provider
- const anyYearRefreshable = (["cy", "py1", "py2"] as const).slice(0, visibleYearCount).some((y, i) => isYearSource(y, i));
+ // Roll-forward prior years can't be refreshed; other files keep per-year availability.
+ const anyYearRefreshable = (["cy", "py1", "py2"] as const).slice(0, visibleYearCount).some((y, i) => !pyLockedRf(i) && isYearSource(y, i));
  // Edit / Merge are allowed only when no year is a Source year (FYO: CY only)
  const allYearsCsv = !yearTabs.slice(0, visibleYearCount).some(t => t.isSource || srcMeta.yearDataSources?.[t.id] === "source");
  // A year has TB data when: the engagement is a seeded demo, the year is set to Source,
@@ -416,7 +418,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  const cyIsSource = yearIsSource("cy", 0);
  const canDelete = !cyIsSource && activeYearEditable;
  const yearProviderName = (y: TbYear) => sourceLabel(srcMeta.yearSourceProviders?.[y] ?? srcMeta.sourceProvider ?? configuredProvider);
- const uploadLocked = (y: TbYear, i: number) => !pendingCsvSwitch && yearIsSource(y, i);
+ const uploadLocked = (y: TbYear, i: number) => pyLockedRf(i) || (!pendingCsvSwitch && yearIsSource(y, i));
  const cyUploadLocked = uploadLocked("cy", 0), py1UploadLocked = uploadLocked("py1", 1), py2UploadLocked = uploadLocked("py2", 2);
  const effCy = cyUploadLocked ? null : cyFile;
  const effPy1 = visibleYearCount < 2 || py1UploadLocked ? null : py1File, effPy2 = visibleYearCount < 3 || py2UploadLocked ? null : py2File;
@@ -426,7 +428,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
   [effCy, "cy", 0, cyBlank, "Current Year"],
   [effPy1, "py1", 1, py1Blank, "Prior Year 1"],
   [effPy2, "py2", 2, py2Blank, "Prior Year 2"],
- ] as const).filter(([file, y, i, blank]) => !!file && !blank && !yearIsSource(y, i)).map(([, , , , label]) => label);
+ ] as const).filter(([file, y, i, blank]) => !!file && !blank && !pyLockedRf(i) && !yearIsSource(y, i)).map(([, , , , label]) => label);
   // Engagements with no data in any year (all CSV, nothing uploaded) land directly on the Import screen — any status
  const [importDismissed, setImportDismissed] = useState(false);
  useEffect(() => { setImportDismissed(false); }, [engagementId]);
@@ -467,6 +469,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  );
  // Import is available whenever at least one year is CSV, regardless of the selected year tab
  const allYearsSource = ((["cy", "py1", "py2"] as TbYear[]).slice(0, visibleYearCount)).every((y, i) => yearIsSource(y, i));
+ const importSourceLocked = isRollForwardFile ? cyIsSource : allYearsSource;
  // Roll forward: locked prior years on a software that isn't the client's active connection (stale, can't refresh).
  // Prior years whose provider is the engagement's own disconnected source are skipped here.
  const stalePriorYears = (() => {
@@ -485,7 +488,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
   return [...groups.entries()].map(([provider, labels]) => ({ provider, labels }));
  })();
  const handleImportClick = () => {
- if (allYearsSource) return;
+ if (importSourceLocked) return;
  setShowImport(true);
  };
 
@@ -595,7 +598,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  <ExpandableIconButton variant="secondary" icon={<Wrench className="h-4 w-4" />} label={<span className="inline-flex items-center gap-1">Actions<ChevronDown className="h-3 w-3" /></span>} />
  </DropdownMenuTrigger>
  <DropdownMenuContent align="end" className="w-44">
- <DropdownMenuItem className="flex items-center gap-2 cursor-pointer" disabled={allYearsSource} onClick={() => !allYearsSource && setShowImport(true)}>
+ <DropdownMenuItem className="flex items-center gap-2 cursor-pointer" disabled={importSourceLocked} onClick={handleImportClick}>
  <Upload className="h-4 w-4 text-muted-foreground" /><span>Import</span>
  </DropdownMenuItem>
  <DropdownMenuSeparator />
@@ -700,7 +703,9 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  </div>
  </div>
  );
- const lockedNoteFor = (y: TbYear, locked: boolean) => locked ? `Connected to ${yearProviderName(y)}. Data is pulled from the source.` : undefined;
+ const lockedNoteFor = (y: TbYear, locked: boolean) => isRollForwardFile && y !== "cy"
+  ? "Prior years in a roll-forward file can't be reimported."
+  : locked ? `Connected to ${yearProviderName(y)}. Data is pulled from the source.` : undefined;
 
  return (
  <Layout title="Engagements" headerContent={trialBalanceBreadcrumb}>
@@ -933,7 +938,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  <span>Auto Map</span>
  </DropdownMenuItem>
  <DropdownMenuSeparator />
-  {allYearsSource ? (
+  {importSourceLocked ? (
   <Tooltip delayDuration={100}>
   <TooltipTrigger asChild>
   <div>
@@ -943,9 +948,9 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
   </DropdownMenuItem>
   </div>
   </TooltipTrigger>
-  <TooltipContent side="left" className="max-w-[240px] z-[200]">All years are connected to an accounting source. To import, set a year to CSV in Edit Engagement.</TooltipContent>
+  <TooltipContent side="left" className="max-w-[240px] z-[200]">{isRollForwardFile ? "Prior years in a roll-forward file can't be reimported." : "All years are connected to an accounting source. To import, set a year to CSV in Edit Engagement."}</TooltipContent>
   </Tooltip>
-  ) : isExternallyDisconnected ? (
+  ) : !isRollForwardFile && isExternallyDisconnected ? (
   <Tooltip delayDuration={100}>
   <TooltipTrigger asChild>
   <div>
@@ -975,7 +980,7 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
 
  {/* Refresh button beside Actions */}
  {isSourceLinked || disconnectedFrom ? (
- <Popover open={refreshOpen} onOpenChange={(o) => { if (o) setRefreshChecked({ cy: isYearSource("cy", 0), py1: visibleYearCount >= 2 && isYearSource("py1", 1), py2: visibleYearCount >= 3 && isYearSource("py2", 2) }); setRefreshOpen(o); }}>
+ <Popover open={refreshOpen} onOpenChange={(o) => { if (o) setRefreshChecked({ cy: isYearSource("cy", 0), py1: !isRollForwardFile && visibleYearCount >= 2 && isYearSource("py1", 1), py2: !isRollForwardFile && visibleYearCount >= 3 && isYearSource("py2", 2) }); setRefreshOpen(o); }}>
  <Tooltip delayDuration={100}>
  <TooltipTrigger asChild>
  <PopoverTrigger asChild>
@@ -1001,9 +1006,9 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  { id: "py1", label: "Prior Year 1", idx: 1 },
  { id: "py2", label: "Prior Year 2", idx: 2 },
  ] as const).filter(opt => opt.idx < visibleYearCount).map(opt => {
- const enabled = isYearSource(opt.id, opt.idx);
+ const enabled = !pyLockedRf(opt.idx) && isYearSource(opt.id, opt.idx);
  return (
- <label key={opt.id} className={`flex items-center gap-2 px-2 py-1 text-sm ${enabled ? "cursor-pointer" : "opacity-40 cursor-not-allowed"}`}>
+ <label key={opt.id} title={pyLockedRf(opt.idx) ? "Prior years in a roll-forward file can't be refreshed." : undefined} className={`flex items-center gap-2 px-2 py-1 text-sm ${enabled ? "cursor-pointer" : "opacity-40 cursor-not-allowed"}`}>
  <Checkbox
  disabled={!enabled}
  checked={enabled && refreshChecked[opt.id]}
@@ -1018,8 +1023,8 @@ const confirmRefresh = (years: "cy" | "py1" | "py2" | "all") => {
  variant="secondary"
  size="sm"
  className="mt-3"
- disabled={!(["cy", "py1", "py2"] as const).some((y, i) => i < visibleYearCount && isYearSource(y, i) && refreshChecked[y])}
- onClick={() => confirmRefreshYears((["cy", "py1", "py2"] as const).filter((y, i) => i < visibleYearCount && isYearSource(y, i) && refreshChecked[y]))}
+ disabled={!(["cy", "py1", "py2"] as const).some((y, i) => i < visibleYearCount && !pyLockedRf(i) && isYearSource(y, i) && refreshChecked[y])}
+ onClick={() => confirmRefreshYears((["cy", "py1", "py2"] as const).filter((y, i) => i < visibleYearCount && !pyLockedRf(i) && isYearSource(y, i) && refreshChecked[y]))}
  >
  Refresh
  </Button>
