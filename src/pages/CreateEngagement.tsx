@@ -12,7 +12,7 @@ import { accountingProviders } from "@/lib/accountingProviders";
 import { SourceConnectionModal } from "@/components/SourceConnectionModal";
 import { ArrowLeft, Briefcase, Calendar, Users, ChevronDown, Plus, Pencil, Trash2, Search, ExternalLink, X, Building2, FileText, Settings2, Check, UserPlus, Link2, AlertTriangle, XCircle, FilePen, FolderPlus, MessageSquareText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Layout } from "@/components/Layout";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -1381,10 +1381,20 @@ const [ackText, setAckText] = useState("");
      return p === activeProvider && !o.endsWith("|prev") ? null : p;
    };
    const visibleYearIdx = [0, 1, 2].filter(i => (!isFooPeriod || i < fyoChain) && !(rfPy2NoData && i === 2) && yearSources[i] !== "nodata");
-   // Edit: changing the Current Year end date (any period type) resets the whole trial balance
+   // Edit: date-only changes offer keep/reset choices before saving.
    const yearEndChanged = isEditMode && (toMmDdYyyy(currentYearEnd) ?? currentYearEnd) !== initialCyEnd;
    const isCyToCsv = [0, 1, 2].some(i => yearChangeKind(i) !== null) || (isEditMode && hasSelectedActiveConnection && !!editingMeta?.sourceProvider && editingMeta.sourceProvider !== clientSourceIntegration);
-   const showDeleteBlock = isCyToCsv || yearEndChanged;
+   const showDeleteBlock = isCyToCsv;
+   const [showUpdateWarning, setShowUpdateWarning] = useState(false);
+   const savedVisibleSources = visibleYearIdx.map(i => {
+     const key = (["cy", "py1", "py2"] as const)[i];
+     return editingMeta?.yearDataSources?.[key]
+       ?? (originalYearSources[i] === "locked" && key !== "cy"
+         ? (lockedYearSource(key) === "csv" ? "csv" : "source")
+         : originalYearSources[i]?.startsWith("source:") ? "source" : "csv");
+   });
+   const updateWarningVariant = savedVisibleSources.every(source => source === "source") ? "source"
+     : savedVisibleSources.every(source => source === "csv") ? "csv" : "mixed";
    // Keep the typed DELETE while the red block stays visible; clear it once the block goes away
    useEffect(() => { if (!showDeleteBlock) setAckText(""); }, [showDeleteBlock]);
 
@@ -1571,7 +1581,7 @@ const [ackText, setAckText] = useState("");
         || showAck
       ))
       || isRollForwardNoSource;
-const performSave = () => {
+const performSave = (action?: "keep" | "reset") => {
    const savedDataSource: "csv" | "source" = isSourceLockedStub || isRollForwardNoSource ? "csv" : dataSource;
    // Save what each row actually uses: Partial year forces every non-locked row to CSV
    const effectiveYearSources = isSourceLockedStub ? yearSources.map(v => (v === "locked" ? v : "csv")) : yearSources;
@@ -1626,8 +1636,8 @@ yearSourceProviders: yearFields.yearSourceProviders,
   : effectiveYearSources.some(v => isSourceRow(v) && !v.endsWith("|prev")) && activeConnectionId ? activeConnectionId
   : editingMeta?.sourceConnectionId,
  sourceYearsAvailable: editingMeta?.sourceYearsAvailable,
- // Year end changed: existing CSV data is removed (Source years are pulled again for the new dates)
- yearRemoveData: yearEndChanged
+ // Only an explicit reset removes CSV data; Source years re-pull on any year-end change.
+ yearRemoveData: yearEndChanged && action === "reset"
   ? Object.fromEntries(visibleYearIdx.map(i => (["cy", "py1", "py2"] as const)[i]).filter(k => yearFields.yearDataSources?.[k] === "csv").map(k => [k, true]))
   : undefined,
  dataPulledAsOf: yearEndChanged ? undefined : editingMeta?.dataPulledAsOf,
@@ -1671,6 +1681,10 @@ yearSourceProviders: yearFields.yearSourceProviders,
  };
 
   const handleCreate = () => {
+    if (isEditMode && yearEndChanged && !isCyToCsv) {
+      setShowUpdateWarning(true);
+      return;
+    }
     performSave();
   };
 
@@ -1998,7 +2012,7 @@ yearSourceProviders: yearFields.yearSourceProviders,
  </div>
 
 
- {(isCyToCsv || yearEndChanged) && (
+ {showDeleteBlock && (
  <div className="rounded-[10px] border border-red-200 border-l-4 border-l-red-500 bg-red-50 dark:bg-red-950/30 px-3 py-2.5">
   <div className="flex items-start gap-2">
    <XCircle className="h-4 w-4 text-red-500 shrink-0 mt-1" />
@@ -2138,7 +2152,7 @@ yearSourceProviders: yearFields.yearSourceProviders,
  <X className="h-4 w-4" />
  Cancel
  </Button>
- <Button disabled={!isFormValid || connectionBlocksSave(isEditMode, yearSources, originalYearSources, showNoConnectionError, showMismatchWarning) || ((isCyToCsv || yearEndChanged) && !ackChecked)} onClick={handleCreate}>
+ <Button disabled={!isFormValid || connectionBlocksSave(isEditMode, yearSources, originalYearSources, showNoConnectionError, showMismatchWarning) || (showDeleteBlock && !ackChecked)} onClick={handleCreate}>
  {isEditMode ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
  {isEditMode ? "Update Engagement" : "Create Engagement"}
  </Button>
@@ -2146,6 +2160,43 @@ yearSourceProviders: yearFields.yearSourceProviders,
  </div>
  </div>
   <SourceConnectionModal open={showSourceConnection} onOpenChange={setShowSourceConnection} clientName={clientName} connectionName={clientInfo?.entityLegalName || clientName} engagementId={routeEngagementId} onComplete={() => setConnVersion(v => v + 1)} initialStep={clientHasSourceConnection ? "connected" : "select"} initialProvider={clientSourceIntegration} />
+  <Dialog open={showUpdateWarning} onOpenChange={setShowUpdateWarning}>
+   <DialogContent className="max-w-[460px] gap-5 p-6">
+    <DialogHeader className="items-center gap-3 text-center sm:text-center">
+     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+      <AlertTriangle className="h-6 w-6" />
+     </div>
+     <DialogTitle>Engagement Update Warning</DialogTitle>
+     <DialogDescription className="text-foreground">Changing the year-end date may impact your existing data.</DialogDescription>
+    </DialogHeader>
+    {updateWarningVariant === "source" && <p className="text-sm">Proceeding will permanently delete all existing data, including:</p>}
+    <div className="rounded-lg border border-border p-4 text-sm">
+     <ul className="list-disc space-y-2 pl-4">
+      {updateWarningVariant === "source" ? <>
+       <li>Trial balance</li>
+       <li>Adjusting entries</li>
+       <li>Mapping and related work</li>
+      </> : updateWarningVariant === "csv" ? <>
+       <li><strong>Keep Existing Data:</strong> Retains your current data and update it to the new year-end dates.</li>
+       <li><strong>Reset Data:</strong> Deletes all existing data (including trial balance, adjusting entries and mappings) and reloads fresh data.</li>
+      </> : <>
+       <li><strong>Source-connected years:</strong> Data will be pulled again for the new year-end dates.</li>
+       <li><strong>CSV years – Keep Existing Data:</strong> Retains your current data and updates it to the new year-end dates.</li>
+       <li><strong>CSV years – Reset Data:</strong> Deletes existing data (trial balance, adjusting entries and mappings) for CSV years. Import new data afterwards.</li>
+      </>}
+     </ul>
+    </div>
+    <p className="text-center text-sm text-destructive"><strong>Note:</strong> This action cannot be undone.</p>
+    <DialogFooter className="grid grid-cols-2 gap-3 sm:space-x-0">
+     <Button variant="outline" className="h-auto min-h-9 whitespace-normal" onClick={() => updateWarningVariant === "source" ? setShowUpdateWarning(false) : performSave("keep")}>
+      {updateWarningVariant === "source" ? "Cancel" : updateWarningVariant === "csv" ? "Keep Existing data" : "Keep Existing Data"}
+     </Button>
+     <Button variant="destructive" className="h-auto min-h-9 whitespace-normal" onClick={() => performSave("reset")}>
+      {updateWarningVariant === "source" ? "Proceed" : "Reset Data"}
+     </Button>
+    </DialogFooter>
+   </DialogContent>
+  </Dialog>
   <Dialog open={showAddRoleModal} onOpenChange={setShowAddRoleModal}>
  <DialogContent className="max-w-sm">
  <DialogHeader>
