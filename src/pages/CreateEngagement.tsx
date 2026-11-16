@@ -2054,23 +2054,19 @@ yearSourceProviders: yearFields.yearSourceProviders,
     <p className="mt-1 text-sm text-red-900 dark:text-red-200">{isSourceLockedStub ? "This action is triggered because you changed the period type to Partial Year, which uses CSV only. It applies only to the years whose data source changed." : "This action is triggered because you changed one of the data source dropdowns above. It applies only to the years whose data source you changed."}</p>
    </div>
   </div>
-  <div className="grid grid-cols-[auto_minmax(0,max-content)_auto_1fr] gap-x-4 px-5 py-2">
+  <div className="px-5 py-2">
    {[
     { text: "Already posted adjusting entries", sub: "", tag: "Deleted" },
     { text: "Manually added accounts", sub: "To remove them, exit this page, delete those accounts, and run this change again.", tag: "Stays as is" },
     { text: "Issues, comments and requests raised till date", sub: "", tag: "Deleted" },
     { text: "Documents added till date", sub: "A temporary folder will be created and your documents will be moved there.", tag: "Moved" },
-   ].map((row, index) => (
-    <div key={row.text} className="contents">
-     {(() => { const cell = `py-3 ${index > 0 ? "border-t border-gray-100 dark:border-gray-800" : ""}`; return (<>
-     <div className={cell}><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">{index + 1}</span></div>
-     <div className={`min-w-0 ${cell}`}>
-      <p className="text-sm text-foreground">{row.text}</p>
+   ].map((row, index, rows) => (
+    <div key={row.text} className={`flex items-start gap-4 py-3 ${index < rows.length - 1 ? "border-b border-gray-100 dark:border-gray-800" : ""}`}>
+     <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">{index + 1}</span>
+     <div className="min-w-0 flex-1">
+      <p className="text-sm text-foreground">{row.text}<span className={`ml-6 inline-block whitespace-nowrap rounded-full px-2.5 py-0.5 align-middle text-xs font-semibold ${row.tag === "Deleted" ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300" : row.tag === "Stays as is" ? "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300" : "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300"}`}>{row.tag}</span></p>
       {row.sub && <p className="mt-0.5 text-[13px] text-gray-600 dark:text-gray-300">{row.sub}</p>}
      </div>
-     <div className={cell}><span className={`inline-block whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ${row.tag === "Deleted" ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300" : row.tag === "Stays as is" ? "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300" : "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300"}`}>{row.tag}</span></div>
-     <div className={cell} />
-     </>); })()}
     </div>
    ))}
   </div>

@@ -1327,21 +1327,16 @@ function ReimportWarningModal({ open, onOpenChange, yearLabels, onProceed }: {
      <DialogTitle className="text-lg font-semibold text-foreground">Reimport Warning</DialogTitle>
      <DialogDescription className="text-xs text-muted-foreground">Re-importing: {yearLabels.join(", ")}</DialogDescription>
     </div>
-    <div className="grid grid-cols-[auto_minmax(0,max-content)_auto_1fr] gap-x-4 rounded-[10px] border border-border px-3.5 py-1">
-     {items.map(({ text, detail, status, tagClass }, i) => {
-      const cell = `py-2.5 ${i < items.length - 1 ? "border-b border-gray-100 dark:border-gray-800" : ""}`;
-      return (
-      <div key={text} className="contents">
-       <div className={cell}><span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-gray-100 text-[11px] font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">{i + 1}</span></div>
-       <div className={`min-w-0 ${cell}`}>
-        <p className="text-sm text-foreground">{text}</p>
+     <div className="rounded-[10px] border border-border px-3.5 py-1">
+     {items.map(({ text, detail, status, tagClass }, i) => (
+      <div key={text} className={`flex items-start gap-4 py-2.5 ${i < items.length - 1 ? "border-b border-gray-100 dark:border-gray-800" : ""}`}>
+       <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-gray-100 text-[11px] font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">{i + 1}</span>
+       <div className="min-w-0 flex-1">
+        <p className="text-sm text-foreground">{text}<span className={`ml-6 inline-block whitespace-nowrap rounded-full px-2 py-0.5 align-middle text-[11px] font-semibold ${tagClass}`}>{status}</span></p>
         {detail && <p className="mt-0.5 text-xs text-gray-600 dark:text-gray-300">{detail}</p>}
        </div>
-       <div className={cell}><span className={`inline-block whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold ${tagClass}`}>{status}</span></div>
-       <div className={cell} />
       </div>
-      );
-     })}
+     ))}
     </div>
     <div className="space-y-1.5">
      <label htmlFor="reimport-confirm" className="text-sm text-foreground">Type DELETE to confirm you understand *</label>
