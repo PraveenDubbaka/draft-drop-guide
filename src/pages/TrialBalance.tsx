@@ -1312,10 +1312,10 @@ function ReimportWarningModal({ open, onOpenChange, yearLabels, onProceed }: {
  const [confirmText, setConfirmText] = useState("");
  useEffect(() => { if (open) setConfirmText(""); }, [open]);
  const items = [
-  { text: "Adjusting entries", status: "Deleted", tagClass: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300" },
-  { text: "Manually added accounts", detail: "To remove them, exit, delete those accounts, and reimport.", status: "Stays", tagClass: "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300" },
-  { text: "Issues, comments and requests", status: "Deleted", tagClass: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300" },
-  { text: "Documents", detail: "A temporary folder will be created and your documents will be moved there.", status: "Moved", tagClass: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300" },
+  { text: "Already posted adjusting entries", status: "Deleted", tagClass: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300" },
+  { text: "Manually added accounts", detail: "To remove them, exit, delete those accounts, and reimport.", status: "Stays as is", tagClass: "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300" },
+  { text: "Issues, comments and requests raised till date", status: "Deleted", tagClass: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300" },
+  { text: "Documents added till date", detail: "A temporary folder will be created and your documents will be moved there.", status: "Moved", tagClass: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300" },
  ];
  return (
   <Dialog open={open} onOpenChange={onOpenChange}>
@@ -1327,17 +1327,21 @@ function ReimportWarningModal({ open, onOpenChange, yearLabels, onProceed }: {
      <DialogTitle className="text-lg font-semibold text-foreground">Reimport Warning</DialogTitle>
      <DialogDescription className="text-xs text-muted-foreground">Re-importing: {yearLabels.join(", ")}</DialogDescription>
     </div>
-    <div className="rounded-[10px] border border-border px-3.5 py-1">
-     {items.map(({ text, detail, status, tagClass }, i) => (
-      <div key={text} className={`flex items-start gap-2.5 py-2.5 ${i < items.length - 1 ? "border-b border-gray-100 dark:border-gray-800" : ""}`}>
-       <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-gray-100 text-[11px] font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">{i + 1}</span>
-       <div className="flex-1 min-w-0">
+    <div className="grid grid-cols-[auto_minmax(0,max-content)_auto_1fr] gap-x-4 rounded-[10px] border border-border px-3.5 py-1">
+     {items.map(({ text, detail, status, tagClass }, i) => {
+      const cell = `py-2.5 ${i < items.length - 1 ? "border-b border-gray-100 dark:border-gray-800" : ""}`;
+      return (
+      <div key={text} className="contents">
+       <div className={cell}><span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-gray-100 text-[11px] font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">{i + 1}</span></div>
+       <div className={`min-w-0 ${cell}`}>
         <p className="text-sm text-foreground">{text}</p>
         {detail && <p className="mt-0.5 text-xs text-gray-600 dark:text-gray-300">{detail}</p>}
        </div>
-       <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${tagClass}`}>{status}</span>
+       <div className={cell}><span className={`inline-block whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold ${tagClass}`}>{status}</span></div>
+       <div className={cell} />
       </div>
-     ))}
+      );
+     })}
     </div>
     <div className="space-y-1.5">
      <label htmlFor="reimport-confirm" className="text-sm text-foreground">Type DELETE to confirm you understand *</label>
