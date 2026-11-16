@@ -1312,10 +1312,10 @@ function ReimportWarningModal({ open, onOpenChange, yearLabels, onProceed }: {
  const [confirmText, setConfirmText] = useState("");
  useEffect(() => { if (open) setConfirmText(""); }, [open]);
  const items = [
-  { text: "Already posted adjusting entries", status: "Deleted", tagClass: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300" },
-  { text: "Manually added accounts", detail: "To remove them, exit, delete those accounts, and reimport.", status: "Stays as is", tagClass: "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300" },
-  { text: "Issues, comments and requests raised till date", status: "Deleted", tagClass: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300" },
-  { text: "Documents added till date", detail: "A temporary folder will be created and your documents will be moved there.", status: "Moved", tagClass: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300" },
+  { text: "Already posted adjusting entries", status: "Deleted", variant: "destructive" as const },
+  { text: "Manually added accounts", detail: "To remove them, exit, delete those accounts, and reimport.", status: "Stays as is", variant: "success" as const },
+  { text: "Issues, comments and requests raised till date", status: "Deleted", variant: "destructive" as const },
+  { text: "Documents added till date", detail: "A temporary folder will be created and your documents will be moved there.", status: "Moved", variant: "info" as const },
  ];
  return (
   <Dialog open={open} onOpenChange={onOpenChange}>
@@ -1328,11 +1328,14 @@ function ReimportWarningModal({ open, onOpenChange, yearLabels, onProceed }: {
      <DialogDescription className="text-xs text-muted-foreground">Re-importing: {yearLabels.join(", ")}</DialogDescription>
     </div>
      <div className="rounded-[10px] border border-border px-3.5 py-1">
-     {items.map(({ text, detail, status, tagClass }, i) => (
+     {items.map(({ text, detail, status, variant }, i) => (
       <div key={text} className={`flex items-start gap-4 py-2.5 ${i < items.length - 1 ? "border-b border-gray-100 dark:border-gray-800" : ""}`}>
        <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-gray-100 text-[11px] font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">{i + 1}</span>
        <div className="min-w-0 flex-1">
-        <p className="text-sm text-foreground">{text}<span className={`ml-6 inline-block whitespace-nowrap rounded-full px-2 py-0.5 align-middle text-[11px] font-semibold ${tagClass}`}>{status}</span></p>
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-1">
+         <span className="text-sm text-foreground">{text}</span>
+         <Badge variant={variant}>{status}</Badge>
+        </div>
         {detail && <p className="mt-0.5 text-xs text-gray-600 dark:text-gray-300">{detail}</p>}
        </div>
       </div>

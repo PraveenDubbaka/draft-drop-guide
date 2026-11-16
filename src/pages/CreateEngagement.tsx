@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Layout } from "@/components/Layout";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { SourceYearSelection, type YearsChoice } from "@/components/SourceYearSelection";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -2064,7 +2065,10 @@ yearSourceProviders: yearFields.yearSourceProviders,
     <div key={row.text} className={`flex items-start gap-4 py-3 ${index < rows.length - 1 ? "border-b border-gray-100 dark:border-gray-800" : ""}`}>
      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">{index + 1}</span>
      <div className="min-w-0 flex-1">
-      <p className="text-sm text-foreground">{row.text}<span className={`ml-6 inline-block whitespace-nowrap rounded-full px-2.5 py-0.5 align-middle text-xs font-semibold ${row.tag === "Deleted" ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300" : row.tag === "Stays as is" ? "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300" : "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300"}`}>{row.tag}</span></p>
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-1">
+       <span className="text-sm text-foreground">{row.text}</span>
+       <Badge variant={row.tag === "Deleted" ? "destructive" : row.tag === "Stays as is" ? "success" : "info"}>{row.tag}</Badge>
+      </div>
       {row.sub && <p className="mt-0.5 text-[13px] text-gray-600 dark:text-gray-300">{row.sub}</p>}
      </div>
     </div>
