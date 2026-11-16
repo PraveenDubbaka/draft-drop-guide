@@ -1329,15 +1329,13 @@ function ReimportWarningModal({ open, onOpenChange, yearLabels, onProceed }: {
     </div>
      <div className="rounded-[10px] border border-border px-3.5 py-1">
      {items.map(({ text, detail, status, variant }, i) => (
-      <div key={text} className={`flex items-start gap-4 py-2.5 ${i < items.length - 1 ? "border-b border-gray-100 dark:border-gray-800" : ""}`}>
+      <div key={text} className={`flex items-start gap-3 py-2.5 ${i < items.length - 1 ? "border-b border-gray-100 dark:border-gray-800" : ""}`}>
        <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-gray-100 text-[11px] font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">{i + 1}</span>
        <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-1">
-         <span className="text-sm text-foreground">{text}</span>
-         <Badge variant={variant}>{status}</Badge>
-        </div>
+        <span className="text-sm text-foreground">{text}</span>
         {detail && <p className="mt-0.5 text-xs text-gray-600 dark:text-gray-300">{detail}</p>}
        </div>
+       <Badge variant={variant} className="mt-0.5 shrink-0">{status}</Badge>
       </div>
      ))}
     </div>
