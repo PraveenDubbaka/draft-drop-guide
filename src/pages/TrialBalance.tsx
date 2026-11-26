@@ -1316,7 +1316,7 @@ function ReimportWarningModal({ open, onOpenChange, yearLabels, onProceed }: {
   { text: "Manually added new accounts will be deleted", status: "Deleted", variant: "destructive" as const },
   { text: "Issues, comments and requests for the current year will be deleted", status: "Deleted", variant: "destructive" as const },
   { text: "Documents will be moved to a temporary folder", status: "Moved", variant: "info" as const },
-  { text: "Workbook changes (grouping, FS names, header/footer, sorting, schedules) will also be deleted", status: "Deleted", variant: "destructive" as const },
+  { text: "Workbook changes (RHS name changes, grouping, schedules) and FS header/footer", status: "Deleted", variant: "destructive" as const },
  ];
  return (
   <Dialog open={open} onOpenChange={onOpenChange}>

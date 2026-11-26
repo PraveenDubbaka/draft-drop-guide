@@ -2061,7 +2061,7 @@ yearSourceProviders: yearFields.yearSourceProviders,
     { text: "Manually added new accounts", tag: "Deleted" },
     { text: "Issues, comments and requests raised till date\u00a0for the current year", tag: "Deleted" },
     { text: "Documents added till date will be moved to a temporary folder", tag: "Moved" },
-    { text: "Workbook changes (grouping, FS names, header/footer, sorting, schedules)", tag: "Deleted" },
+    { text: "Workbook changes (RHS name changes, grouping, schedules) and FS header/footer", tag: "Deleted" },
    ].map((row, index, rows) => (
     <div key={row.text} className={`flex items-start gap-4 py-3 ${index < rows.length - 1 ? "border-b border-gray-100 dark:border-gray-800" : ""}`}>
      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">{index + 1}</span>
