@@ -1312,11 +1312,11 @@ function ReimportWarningModal({ open, onOpenChange, yearLabels, onProceed }: {
  const [confirmText, setConfirmText] = useState("");
  useEffect(() => { if (open) setConfirmText(""); }, [open]);
  const items = [
-  "Already posted adjusting entries will be deleted",
-  "Manually added new accounts will be deleted",
-  "Issues, comments and requests for the current year will be deleted",
-  "Documents will be moved to a temporary folder",
-  "Workbook changes (grouping, FS names, header/footer, sorting, schedules) will also be deleted",
+  { text: "Already posted adjusting entries will be deleted", status: "Deleted", variant: "destructive" as const },
+  { text: "Manually added new accounts will be deleted", status: "Deleted", variant: "destructive" as const },
+  { text: "Issues, comments and requests for the current year will be deleted", status: "Deleted", variant: "destructive" as const },
+  { text: "Documents will be moved to a temporary folder", status: "Moved", variant: "info" as const },
+  { text: "Workbook changes (grouping, FS names, header/footer, sorting, schedules) will also be deleted", status: "Deleted", variant: "destructive" as const },
  ];
  return (
   <Dialog open={open} onOpenChange={onOpenChange}>
@@ -1329,14 +1329,15 @@ function ReimportWarningModal({ open, onOpenChange, yearLabels, onProceed }: {
      <DialogDescription className="text-xs text-muted-foreground">Re-importing: {yearLabels.join(", ")}</DialogDescription>
     </div>
      <div className="rounded-[10px] border border-border px-3.5 py-1">
-     <ul className="space-y-1.5 py-1.5">
-      {items.map((text) => (
-       <li key={text} className="flex items-start gap-2.5 text-sm text-foreground">
-        <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-foreground/50" aria-hidden="true" />
-        <span className="min-w-0">{text}</span>
-       </li>
-      ))}
-     </ul>
+     {items.map(({ text, status, variant }, i) => (
+      <div key={text} className={`flex items-start gap-3 py-2.5 ${i < items.length - 1 ? "border-b border-gray-100 dark:border-gray-800" : ""}`}>
+       <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-gray-100 text-[11px] font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">{i + 1}</span>
+       <div className="min-w-0 flex-1">
+        <span className="text-sm text-foreground">{text}</span>
+       </div>
+       <Badge variant={variant} className="mt-0.5 shrink-0">{status}</Badge>
+      </div>
+     ))}
     </div>
     <div className="space-y-1.5">
      <label htmlFor="reimport-confirm" className="text-sm text-foreground">Type DELETE to confirm you understand *</label>
