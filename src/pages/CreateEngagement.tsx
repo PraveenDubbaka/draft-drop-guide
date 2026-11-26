@@ -2057,11 +2057,11 @@ yearSourceProviders: yearFields.yearSourceProviders,
   </div>
   <div className="px-5 py-2">
    {[
-    { text: "Already posted adjusting entries will be deleted", tag: "Deleted" },
-    { text: "Manually added new accounts will be deleted", tag: "Deleted" },
-    { text: "Issues, comments and requests for the current year will be deleted", tag: "Deleted" },
-    { text: "Documents will be moved to a temporary folder", tag: "Moved" },
-    { text: "Workbook changes (grouping, FS names, header/footer, sorting, schedules) will also be deleted", tag: "Deleted" },
+    { text: "Already posted adjusting entries\n", tag: "Deleted" },
+    { text: "Manually added new accounts", tag: "Deleted" },
+    { text: "Issues, comments and requests raised till date\u00a0for the current year", tag: "Deleted" },
+    { text: "Documents added till date\u00a0moved to a temporary folder", tag: "Moved" },
+    { text: "Workbook changes (grouping, FS names, header/footer, sorting, schedules)", tag: "Deleted" },
    ].map((row, index, rows) => (
     <div key={row.text} className={`flex items-start gap-4 py-3 ${index < rows.length - 1 ? "border-b border-gray-100 dark:border-gray-800" : ""}`}>
      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">{index + 1}</span>
