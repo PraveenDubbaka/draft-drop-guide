@@ -17,7 +17,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Layout } from "@/components/Layout";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
 import { SourceYearSelection, type YearsChoice } from "@/components/SourceYearSelection";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -2056,23 +2055,20 @@ yearSourceProviders: yearFields.yearSourceProviders,
    </div>
   </div>
   <div className="px-5 py-2">
-   {[
-    { text: "Already posted adjusting entries", sub: "", tag: "Deleted" },
-    { text: "Manually added accounts", sub: "To remove them, exit this page, delete those accounts, and run this change again.", tag: "Stays as is" },
-    { text: "Issues, comments and requests raised till date", sub: "", tag: "Deleted" },
-    { text: "Documents added till date", sub: "A temporary folder will be created and your documents will be moved there.", tag: "Moved" },
-   ].map((row, index, rows) => (
-    <div key={row.text} className={`flex items-start gap-4 py-3 ${index < rows.length - 1 ? "border-b border-gray-100 dark:border-gray-800" : ""}`}>
-     <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">{index + 1}</span>
-     <div className="min-w-0 flex-1">
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-1">
-       <span className="text-sm text-foreground">{row.text}</span>
-       <Badge variant={row.tag === "Deleted" ? "destructive" : row.tag === "Stays as is" ? "success" : "info"}>{row.tag}</Badge>
-      </div>
-      {row.sub && <p className="mt-0.5 text-[13px] text-gray-600 dark:text-gray-300">{row.sub}</p>}
-     </div>
-    </div>
-   ))}
+   <ul className="space-y-1.5">
+    {[
+     "Already posted adjusting entries will be deleted",
+     "Manually added new accounts will be deleted",
+     "Issues, comments and requests for the current year will be deleted",
+     "Documents will be moved to a temporary folder",
+     "Workbook changes (grouping, FS names, header/footer, sorting, schedules) will also be deleted",
+    ].map((text) => (
+     <li key={text} className="flex items-start gap-2.5 text-sm text-foreground">
+      <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-foreground/50" aria-hidden="true" />
+      <span className="min-w-0">{text}</span>
+     </li>
+    ))}
+   </ul>
   </div>
   <div className="border-t border-border px-5 pb-[18px] pt-3.5">
    <label className="flex items-center gap-1 text-sm font-semibold text-foreground">Type DELETE to confirm you understand<span className="text-destructive">*</span></label>

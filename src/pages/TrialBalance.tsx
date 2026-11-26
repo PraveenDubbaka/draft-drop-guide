@@ -1312,10 +1312,11 @@ function ReimportWarningModal({ open, onOpenChange, yearLabels, onProceed }: {
  const [confirmText, setConfirmText] = useState("");
  useEffect(() => { if (open) setConfirmText(""); }, [open]);
  const items = [
-  { text: "Already posted adjusting entries", status: "Deleted", variant: "destructive" as const },
-  { text: "Manually added accounts", detail: "To remove them, exit, delete those accounts, and reimport.", status: "Stays as is", variant: "success" as const },
-  { text: "Issues, comments and requests raised till date", status: "Deleted", variant: "destructive" as const },
-  { text: "Documents added till date", detail: "A temporary folder will be created and your documents will be moved there.", status: "Moved", variant: "info" as const },
+  "Already posted adjusting entries will be deleted",
+  "Manually added new accounts will be deleted",
+  "Issues, comments and requests for the current year will be deleted",
+  "Documents will be moved to a temporary folder",
+  "Workbook changes (grouping, FS names, header/footer, sorting, schedules) will also be deleted",
  ];
  return (
   <Dialog open={open} onOpenChange={onOpenChange}>
@@ -1328,16 +1329,14 @@ function ReimportWarningModal({ open, onOpenChange, yearLabels, onProceed }: {
      <DialogDescription className="text-xs text-muted-foreground">Re-importing: {yearLabels.join(", ")}</DialogDescription>
     </div>
      <div className="rounded-[10px] border border-border px-3.5 py-1">
-     {items.map(({ text, detail, status, variant }, i) => (
-      <div key={text} className={`flex items-start gap-3 py-2.5 ${i < items.length - 1 ? "border-b border-gray-100 dark:border-gray-800" : ""}`}>
-       <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-gray-100 text-[11px] font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">{i + 1}</span>
-       <div className="min-w-0 flex-1">
-        <span className="text-sm text-foreground">{text}</span>
-        {detail && <p className="mt-0.5 text-xs text-gray-600 dark:text-gray-300">{detail}</p>}
-       </div>
-       <Badge variant={variant} className="mt-0.5 shrink-0">{status}</Badge>
-      </div>
-     ))}
+     <ul className="space-y-1.5 py-1.5">
+      {items.map((text) => (
+       <li key={text} className="flex items-start gap-2.5 text-sm text-foreground">
+        <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-foreground/50" aria-hidden="true" />
+        <span className="min-w-0">{text}</span>
+       </li>
+      ))}
+     </ul>
     </div>
     <div className="space-y-1.5">
      <label htmlFor="reimport-confirm" className="text-sm text-foreground">Type DELETE to confirm you understand *</label>
